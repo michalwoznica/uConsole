@@ -95,13 +95,20 @@ Current kernel baseline:
 - Raspberry Pi `rpi-6.18.y`
 - commit `0b41724521c9adf5399409d02aece6c1df0a4432`
 
-Stage 2 CWU50 dry-port candidate is prepared. The panel source is pinned to
-AK-Rex commit `0234e320bec7748fc6f1fb6904a055de10f0a727`, integrated by a small
-Kconfig/Kbuild patch, and checked by `scripts/validate-cwu50-port.sh` plus
-GitHub Actions.
+Stage 2 CWU50 dry-port is complete.
 
-The first CI run exposed a Kconfig patch-context mismatch before compilation.
-The patch has been tightened to use a stable exact anchor and the validator now
-uses `--fuzz=0`. Stage 2 becomes complete only after the replacement CI run
-passes the ARM64 object compile. Next after validation: Stage 3 — OCP8178
-backlight.
+The panel source is pinned to AK-Rex commit
+`0234e320bec7748fc6f1fb6904a055de10f0a727`, integrated by a small
+Kconfig/Kbuild patch, and validated by GitHub Actions against the pinned
+Raspberry Pi Linux 6.18.60 baseline.
+
+The corrected validation workflow successfully:
+
+- fetched both exact source revisions;
+- applied the integration patch with `--fuzz=0`;
+- enabled `CONFIG_DRM_PANEL_CWU50=m`;
+- cross-compiled `drivers/gpu/drm/panel/panel-cwu50.o` for ARM64.
+
+No functional adaptation of the CWU50 driver was required for Linux 6.18.60.
+
+Next: Stage 3 — OCP8178 backlight.

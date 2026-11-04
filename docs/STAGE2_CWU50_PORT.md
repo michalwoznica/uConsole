@@ -83,6 +83,27 @@ anchor match rather than silently accepting fuzzy context. On failure, the
 validator prints the fetched Kconfig anchor region for diagnosis.
 
 A synthetic application test using the relevant pinned 6.18.60 Kconfig and
-Makefile context passes with the corrected patch. Full ARM64 compile
-validation remains pending until the replacement CI run succeeds.
+Makefile context passed with the corrected patch.
+
+## Final validation result
+
+The replacement GitHub Actions run completed successfully.
+
+This proves, for the exact pinned inputs used by this project, that:
+
+1. Raspberry Pi Linux commit
+   `0b41724521c9adf5399409d02aece6c1df0a4432` can be fetched;
+2. AK-Rex CWU50 source commit
+   `0234e320bec7748fc6f1fb6904a055de10f0a727` can be fetched;
+3. the local integration patch applies exactly with `--fuzz=0`;
+4. `CONFIG_DRM_PANEL_CWU50=m` resolves correctly;
+5. `drivers/gpu/drm/panel/panel-cwu50.o` cross-compiles successfully for
+   ARM64 against Raspberry Pi Linux 6.18.60.
+
+Therefore no source-level API adaptation of the known-working CWU50 driver was
+required for this kernel baseline.
+
+Stage 2 is complete at the source/compile-validation level. Physical display
+behavior remains intentionally deferred to the later hardware-validation
+stage.
 

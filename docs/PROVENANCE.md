@@ -37,8 +37,12 @@ Exact source selected for Stage 2:
 - Lock file: `kernel/sources/cwu50.lock`
 
 The source file is fetched from that immutable commit rather than vendored.
-Stage 2 intentionally preserves its behavior unchanged while testing API
-compatibility with Raspberry Pi Linux 6.18.60.
+Stage 2 preserved its behavior unchanged while testing API compatibility
+with Raspberry Pi Linux 6.18.60.
+
+Validation result: **PASS**. The exact pinned driver cross-compiles for ARM64
+against the exact pinned 6.18.60 Raspberry Pi kernel baseline without
+functional source adaptation.
 
 ## OCP8178 backlight
 

@@ -38,6 +38,10 @@ materializes the driver, applies the integration patch, selects
 
 The same validation runs in GitHub Actions.
 
+Stage 2 result: **PASS**. The GitHub Actions workflow successfully
+cross-compiled `panel-cwu50.o` for ARM64 against the exact pinned Raspberry Pi
+Linux 6.18.60 baseline. No functional driver adaptation was required.
+
 ## Planned later patch order
 
 2. OCP8178 backlight
