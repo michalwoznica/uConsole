@@ -1,0 +1,40 @@
+name: Validate CWU50 port
+
+on:
+  push:
+    paths:
+      - 'kernel/**'
+      - 'scripts/validate-cwu50-port.sh'
+      - '.github/workflows/validate-cwu50.yml'
+  pull_request:
+    paths:
+      - 'kernel/**'
+      - 'scripts/validate-cwu50-port.sh'
+      - '.github/workflows/validate-cwu50.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-cwu50:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            bc bison flex gcc-aarch64-linux-gnu libelf-dev libssl-dev \
+            make patch curl
+
+      - name: Validate CWU50 source port
+        env:
+          ARCH: arm64
+          CROSS_COMPILE: aarch64-linux-gnu-
+          JOBS: '2'
+        run: ./scripts/validate-cwu50-port.sh

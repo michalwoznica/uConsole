@@ -33,15 +33,25 @@ Historical VC4/DSI workarounds will not be carried unless physical testing prove
 .
 ├── README.md
 ├── LICENSE
+├── .github/
+│   └── workflows/
+│       └── validate-cwu50.yml
 ├── docs/
 │   ├── PROVENANCE.md
+│   ├── STAGE2_CWU50_PORT.md
 │   └── UCONSOLE_ARCH_PROJECT_HANDOFF.md
 ├── kernel/
 │   ├── README.md
+│   ├── BASELINE.md
+│   ├── source.lock
+│   ├── sources/
+│   │   ├── README.md
+│   │   └── cwu50.lock
 │   ├── config/
 │   │   └── README.md
 │   └── patches/
-│       └── README.md
+│       ├── README.md
+│       └── 0001-drm-panel-integrate-cwu50.patch
 ├── image/
 │   ├── README.md
 │   ├── archlinuxarm/
@@ -85,4 +95,10 @@ Current kernel baseline:
 - Raspberry Pi `rpi-6.18.y`
 - commit `0b41724521c9adf5399409d02aece6c1df0a4432`
 
-Next: Stage 2 — dry-port the modern CWU50 panel driver against this exact baseline.
+Stage 2 CWU50 dry-port candidate is prepared. The panel source is pinned to
+AK-Rex commit `0234e320bec7748fc6f1fb6904a055de10f0a727`, integrated by a small
+Kconfig/Kbuild patch, and validated by `scripts/validate-cwu50-port.sh` plus
+GitHub Actions.
+
+Stage 2 becomes complete after that CI validation passes. Next after validation:
+Stage 3 — OCP8178 backlight.

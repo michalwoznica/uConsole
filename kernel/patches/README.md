@@ -1,11 +1,19 @@
 # Patch series
 
-No patches exist yet.
+The patch series is applied to the exact Raspberry Pi Linux baseline recorded
+in `../source.lock`.
 
-Each patch added here must be:
+## Current series
 
-- narrowly scoped;
-- based on the pinned Raspberry Pi Linux 6.18 source;
-- independently reviewable;
-- documented with source provenance;
-- compile-validated before the next hardware-support patch is introduced.
+1. `0001-drm-panel-integrate-cwu50.patch`
+   - registers the ClockworkPi CWU50 panel driver in DRM Kconfig/Kbuild;
+   - the third-party GPL-2.0+ driver source is fetched from the immutable
+     AK-Rex commit recorded in `../sources/cwu50.lock` before the patch is
+     applied.
+
+This separation is intentional: the repository remains a reproducible build
+recipe and provenance record rather than vendoring copies of third-party
+kernel source files.
+
+Every patch must remain narrowly scoped, independently reviewable, and tested
+against the pinned kernel baseline.

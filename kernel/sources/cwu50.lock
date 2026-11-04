@@ -1,0 +1,8 @@
+# Pinned third-party source input for the CWU50 panel driver.
+# The project repository does not vendor this GPL-2.0+ source file.
+
+CWU50_SOURCE_REPOSITORY=https://github.com/ak-rex/rpi-linux.git
+CWU50_SOURCE_COMMIT=0234e320bec7748fc6f1fb6904a055de10f0a727
+CWU50_SOURCE_KERNEL_RELEASE=6.12.94-v8+
+CWU50_SOURCE_PATH=drivers/gpu/drm/panel/panel-cwu50.c
+CWU50_SOURCE_URL=https://raw.githubusercontent.com/ak-rex/rpi-linux/0234e320bec7748fc6f1fb6904a055de10f0a727/drivers/gpu/drm/panel/panel-cwu50.c

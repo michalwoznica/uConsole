@@ -1,0 +1,51 @@
+From: uConsole Linux project
+Subject: [PATCH 1/1] drm/panel: integrate ClockworkPi CWU50 panel driver
+
+Register the externally pinned ClockworkPi CWU50 panel driver with Kconfig
+and Kbuild. The GPL-2.0+ driver source itself is materialized from the exact
+AK-Rex commit recorded in kernel/sources/cwu50.lock before this patch is
+applied.
+
+This keeps the project repository small and preserves clear third-party
+provenance while still producing a deterministic kernel source tree.
+
+---
+ drivers/gpu/drm/panel/Kconfig  | 13 +++++++++++++
+ drivers/gpu/drm/panel/Makefile |  1 +
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -94,5 +94,18 @@ config DRM_PANEL_BOE_TV101WUM_LL2
+ 	  Say Y here if you want to support for BOE TV101WUM-LL2
+ 	  WUXGA PANEL DSI Video Mode panel
++
++config DRM_PANEL_CWU50
++	tristate "ClockworkPi CWU50 panel"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here to enable support for the ClockworkPi CWU50 MIPI DSI
++	  panel used by the uConsole. The panel has a native resolution of
++	  720x1280 and uses 24-bit RGB pixels.
++
++	  To compile this driver as a module, choose M here. The module will
++	  be called panel-cwu50.
+ config DRM_PANEL_EBBG_FT8719
+ 	tristate "EBBG FT8719 panel driver"
+ 	depends on GPIOLIB
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_DRM_PANEL_BOE_TD4320) += panel-boe-td4320.o
+ obj-$(CONFIG_DRM_PANEL_BOE_TH101MB31UIG002_28A) += panel-boe-th101mb31ig002-28a.o
+ obj-$(CONFIG_DRM_PANEL_BOE_TV101WUM_LL2) += panel-boe-tv101wum-ll2.o
+ obj-$(CONFIG_DRM_PANEL_BOE_TV101WUM_NL6) += panel-boe-tv101wum-nl6.o
++obj-$(CONFIG_DRM_PANEL_CWU50) += panel-cwu50.o
+ obj-$(CONFIG_DRM_PANEL_DSI_CM) += panel-dsi-cm.o
+ obj-$(CONFIG_DRM_PANEL_LVDS) += panel-lvds.o
+ obj-$(CONFIG_DRM_PANEL_SIMPLE) += panel-simple.o
+-- 
+2.51.0

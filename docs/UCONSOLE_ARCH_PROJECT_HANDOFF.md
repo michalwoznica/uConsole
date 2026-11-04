@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 0.4  
-**Current phase:** Stage 1 baseline pinning complete; Stage 2 CWU50 dry-port is next
+**Document revision:** 0.5  
+**Current phase:** Stage 2 CWU50 dry-port implemented; compile validation pending
 
 ---
 
@@ -359,8 +359,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Not yet proven by this project
 
-- Exact 6.18 baseline.
-- CWU50 port against that baseline.
+- CWU50 compile compatibility against the pinned 6.18.60 baseline.
 - OCP8178 port against that baseline.
 - cleaned DT overlay.
 - minimum AXP patch.
@@ -376,51 +375,52 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 0 — repository bootstrap: COMPLETE
 
-The user imported the Stage 0 project tree into the Git repository, committed
-it, and pushed it to the remote repository.
+The initial project checkpoint was committed and pushed.
 
 ### Stage 1 — pin exact Raspberry Pi 6.18 baseline: COMPLETE
 
-Selected canonical kernel source:
+Canonical kernel baseline remains:
 
-- Repository: `https://github.com/raspberrypi/linux.git`
-- Branch family: `rpi-6.18.y`
-- Exact commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
-- Kernel version: `6.18.60`
-- Commit purpose: merge Linux stable `6.18.60` into Raspberry Pi `rpi-6.18.y`
+- Raspberry Pi Linux `rpi-6.18.y`
+- kernel `6.18.60`
+- commit `0b41724521c9adf5399409d02aece6c1df0a4432`
 
-Selection rationale:
+### Stage 2 — CWU50 panel dry-port: IMPLEMENTED, VALIDATION PENDING
 
-- choose a clean stable-version boundary rather than an arbitrary moving
-  branch tip;
-- Linux 6.18 is the chosen LTS family;
-- 6.18.60 was the current longterm 6.18 point release at selection time;
-- Raspberry Pi device-tree overlay CI passed for the selected merge;
-- independent downstream packaging (LibreELEC) pinned the same exact
-  Raspberry Pi commit.
+Selected immutable driver source:
 
-Files introduced/updated by Stage 1:
+- repository: `https://github.com/ak-rex/rpi-linux.git`
+- commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- recorded source release: `6.12.94-v8+`
+- source path: `drivers/gpu/drm/panel/panel-cwu50.c`
 
-- `kernel/BASELINE.md`
-- `kernel/source.lock`
-- `kernel/README.md`
-- `docs/PROVENANCE.md`
-- `docs/UCONSOLE_ARCH_PROJECT_HANDOFF.md`
-- `README.md`
+Reasons for this selection:
 
-No uConsole-specific kernel source has been changed yet.
+- the revision has an independent physical-hardware verification record;
+- it is the unified driver supporting original and newer uConsole panels;
+- using an immutable known-good revision is safer than following an EOL/moving
+  7.x branch;
+- the user's original 2024 display follows the driver's old-panel path.
 
-### NEXT: Stage 2 — dry-port CWU50 panel support
+Implementation model:
 
-Stage 2 should:
+- third-party GPL driver source is not vendored in the MIT project repository;
+- `kernel/sources/cwu50.lock` pins its immutable provenance;
+- `0001-drm-panel-integrate-cwu50.patch` adds only Kconfig/Kbuild integration;
+- `scripts/validate-cwu50-port.sh` materializes both exact sources and
+  cross-compiles the panel object;
+- `.github/workflows/validate-cwu50.yml` runs the same validation in CI.
 
-1. select and pin the exact modern AK-Rex CWU50 source commit;
-2. compare it against the Raspberry Pi 6.18 DRM panel APIs;
-3. create one narrowly scoped CWU50 patch against the Stage 1 baseline;
-4. include Kconfig/Makefile integration;
-5. validate that the patch applies cleanly;
-6. perform compile-level validation without flashing hardware;
-7. update provenance and this handoff before committing the stage.
+Source/API review found no required 6.18 API adaptation before compilation.
+The existing generic JD9365DA-H3 driver was considered but rejected for the
+first port because CWU50 has uConsole-specific runtime panel detection, reset
+GPIO behavior, regulator sequencing, and two initialization paths.
+
+Stage 2 is not marked complete until GitHub Actions reports PASS.
+
+### NEXT AFTER STAGE 2 VALIDATION: Stage 3 — OCP8178 backlight
+
+Do not begin Stage 3 until the CWU50 compile-validation workflow passes.
 
 ---
 
@@ -439,6 +439,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 0.5 / Stage 2 candidate
+
+- Pinned AK-Rex CWU50 source commit
+  `0234e320bec7748fc6f1fb6904a055de10f0a727`.
+- Chose the independently hardware-verified 6.12.94 unified driver rather than
+  a moving/EOL 7.x source branch.
+- Added immutable source lock for the GPL-2.0+ third-party driver.
+- Added a narrow 6.18 Kconfig/Kbuild integration patch.
+- Added reproducible ARM64 compile-validation script and GitHub Actions job.
+- Reviewed Raspberry Pi 6.18 panel APIs; no speculative driver rewrite was
+  introduced before compilation.
+- Investigated but deferred merging CWU50 into the generic JD9365DA-H3 driver.
+- Kept all repository paths relative/neutral and added no user-identifying
+  information.
+
 
 ### 2026-11-04 — Revision 0.4 / Stage 1
 

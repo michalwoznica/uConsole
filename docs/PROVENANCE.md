@@ -28,7 +28,17 @@ Reasons:
 - includes useful DSI-state diagnostics;
 - avoids depending on an entire community kernel fork.
 
-Exact source commit: **to be selected during Stage 2**.
+Exact source selected for Stage 2:
+
+- Repository: `https://github.com/ak-rex/rpi-linux.git`
+- Commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- Recorded source release: `6.12.94-v8+`
+- Path: `drivers/gpu/drm/panel/panel-cwu50.c`
+- Lock file: `kernel/sources/cwu50.lock`
+
+The source file is fetched from that immutable commit rather than vendored.
+Stage 2 intentionally preserves its behavior unchanged while testing API
+compatibility with Raspberry Pi Linux 6.18.60.
 
 ## OCP8178 backlight
 
