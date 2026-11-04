@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 0.8  
-**Current phase:** Stage 3 OCP8178 dry-port implemented; ARM64 CI validation pending
+**Document revision:** 0.9  
+**Current phase:** Stage 3 OCP8178 dry-port implemented; CI permission regression fixed; ARM64 validation pending
 
 ---
 
@@ -443,6 +443,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 0.9 / CI executable-bit regression fix
+
+- Diagnosed repeated GitHub Actions `Permission denied` failures for
+  `scripts/validate-cwu50-port.sh`.
+- Root cause: an internal ZIP extract/repack step used during checkpoint
+  generation dropped the shell script executable bit, causing Git to record
+  `100755 -> 100644` in the Stage 2 completion checkpoint; Stage 3 inherited
+  that mode regression.
+- Restored executable mode on all project shell scripts.
+- Changed both CWU50 and OCP8178 GitHub Actions workflows to invoke validators
+  explicitly with `bash`, so CI correctness no longer depends on ZIP-preserved
+  Unix mode bits.
+- Added the executable-bit/checkpoint policy to `scripts/README.md`.
+- Stage 3 remains pending until the OCP8178 ARM64 validation workflow passes.
+
 
 ### 2026-11-04 — Revision 0.8 / Stage 3 candidate
 

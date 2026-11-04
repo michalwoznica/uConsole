@@ -35,4 +35,4 @@ jobs:
           ARCH: arm64
           CROSS_COMPILE: aarch64-linux-gnu-
           JOBS: '2'
-        run: ./scripts/validate-ocp8178-port.sh
+        run: bash ./scripts/validate-ocp8178-port.sh
