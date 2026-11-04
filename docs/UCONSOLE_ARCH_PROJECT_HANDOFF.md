@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 0.7  
-**Current phase:** Stage 2 CWU50 dry-port complete; Stage 3 OCP8178 backlight is next
+**Document revision:** 0.8  
+**Current phase:** Stage 3 OCP8178 dry-port implemented; ARM64 CI validation pending
 
 ---
 
@@ -375,67 +375,56 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 0 — repository bootstrap: COMPLETE
 
-The initial repository checkpoint was committed and pushed.
+### Stage 1 — Raspberry Pi Linux 6.18.60 baseline: COMPLETE
 
-### Stage 1 — pin exact Raspberry Pi 6.18 baseline: COMPLETE
-
-Canonical kernel source:
-
-- Repository: `https://github.com/raspberrypi/linux.git`
-- Branch family: `rpi-6.18.y`
-- Exact commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
-- Kernel version: `6.18.60`
+- commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
 
 ### Stage 2 — CWU50 panel dry-port: COMPLETE
 
-Selected immutable CWU50 source:
+- AK-Rex source commit:
+  `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- ARM64 object compilation: PASS
+- no functional source adaptation required
 
-- Repository: `https://github.com/ak-rex/rpi-linux.git`
-- Exact commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
-- Source path: `drivers/gpu/drm/panel/panel-cwu50.c`
-- Recorded source release: `6.12.94-v8+`
+### Stage 3 — OCP8178 backlight dry-port: IMPLEMENTED, VALIDATION PENDING
 
-Implementation result:
+Selected behavioral source:
 
-- no functional driver modifications were required;
-- a small local patch integrates the driver with 6.18.60 Kconfig/Kbuild;
-- the first CI attempt exposed a local Kconfig patch-context bug before
-  compilation;
-- that integration patch was corrected and validation tightened to
-  `--fuzz=0`;
-- the replacement GitHub Actions run completed successfully;
-- `CONFIG_DRM_PANEL_CWU50=m` resolved correctly;
-- `drivers/gpu/drm/panel/panel-cwu50.o` cross-compiled successfully for ARM64.
+- AK-Rex commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- source: `drivers/video/backlight/ocp8178_bl.c`
 
-What is now proven:
+Selected design:
 
-- the selected modern/hardware-verified CWU50 implementation is source/API
-  compatible with the project's exact Raspberry Pi Linux 6.18.60 baseline;
-- the project's integration patch and validation workflow work with the pinned
-  inputs.
+- preserve AK-Rex one-wire readiness tracking;
+- adopt only ClusterM's 22-entry brightness map;
+- do not import ClusterM's whole driver;
+- do not make ClusterM's moving branch a build dependency.
 
-What is not yet proven:
+Local patch:
 
-- physical panel initialization on the user's uConsole;
-- runtime DSI reliability;
-- backlight behavior;
-- interaction with the later device-tree overlay.
+`kernel/patches/0002-video-backlight-integrate-ocp8178.patch`
 
-Those remain for later hardware validation.
+Validation workflow:
 
-### NEXT: Stage 3 — OCP8178 backlight dry-port
+`.github/workflows/validate-ocp8178.yml`
 
-Stage 3 should:
+The workflow must prove:
 
-1. pin the exact AK-Rex OCP8178 source used as the behavioral base;
-2. pin and review the exact ClusterM source containing the finer brightness
-   mapping;
-3. compare both implementations semantically;
-4. decide whether to carry AK-Rex unchanged first or integrate the narrow
-   ClusterM brightness-map improvement immediately;
-5. create a narrowly scoped 6.18.60 integration patch;
-6. validate patch application and ARM64 compilation;
-7. update provenance and this handoff before marking Stage 3 complete.
+1. exact source materialization;
+2. exact patch application with `--fuzz=0`;
+3. 22-entry brightness map present;
+4. AK-Rex `onewire_ready` behavior preserved;
+5. `CONFIG_BACKLIGHT_OCP8178=m` resolves;
+6. `ocp8178_bl.o` cross-compiles for ARM64.
+
+Physical backlight behavior remains unproven until hardware testing.
+
+### NEXT
+
+Push the Stage 3 candidate and inspect the `Validate OCP8178 port` workflow.
+
+If it passes, mark Stage 3 complete and proceed to Stage 4: cleaned uConsole
+CM4 device-tree overlay.
 
 ---
 
@@ -454,6 +443,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 0.8 / Stage 3 candidate
+
+- Pinned OCP8178 behavioral source to AK-Rex commit
+  `0234e320bec7748fc6f1fb6904a055de10f0a727`.
+- Preserved AK-Rex one-wire readiness handling.
+- Audited ClusterM's 22-entry brightness map and froze only that narrow
+  semantic delta locally.
+- Kept ClusterM outside the build dependency chain.
+- Added OCP8178 integration patch, source lock, validator, CI workflow, and
+  Stage 3 report.
+- Stage 3 remains open until ARM64 CI compilation passes.
+
 
 ### 2026-11-04 — Revision 0.7 / Stage 2 complete
 

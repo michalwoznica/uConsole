@@ -10,3 +10,6 @@ moving branch name.
 Current inputs:
 
 - `cwu50.lock` — AK-Rex CWU50 DRM panel driver used by Stage 2.
+
+- `ocp8178.lock` — immutable AK-Rex OCP8178 build input plus frozen metadata
+  for the ClusterM brightness-map design reference.

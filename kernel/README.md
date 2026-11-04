@@ -48,3 +48,13 @@ Linux 6.18.60 baseline. No functional driver adaptation was required.
 3. uConsole CM4 device-tree overlay
 4. minimal AXP20x battery changes, if required
 5. headphone/speaker amplifier switching
+
+## OCP8178 source port
+
+Stage 3 materializes the exact AK-Rex OCP8178 driver pinned in
+`kernel/sources/ocp8178.lock`, then applies
+`0002-video-backlight-integrate-ocp8178.patch`.
+
+The local patch preserves AK-Rex's one-wire state handling and incorporates
+only the selected 22-entry brightness map. Validation is performed by
+`scripts/validate-ocp8178-port.sh`.

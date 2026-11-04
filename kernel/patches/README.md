@@ -17,3 +17,9 @@ kernel source files.
 
 Every patch must remain narrowly scoped, independently reviewable, and tested
 against the pinned kernel baseline.
+
+## Current series
+
+1. `0001-drm-panel-integrate-cwu50.patch` — CWU50 panel integration.
+2. `0002-video-backlight-integrate-ocp8178.patch` — OCP8178 integration plus
+   the selected 22-entry brightness map.

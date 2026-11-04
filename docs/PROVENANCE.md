@@ -46,12 +46,31 @@ functional source adaptation.
 
 ## OCP8178 backlight
 
-Preferred design:
+Selected behavioral source:
 
-- AK-Rex behavior as the base, particularly one-wire state handling;
-- evaluate ClusterM's finer 22-level brightness map as a narrowly auditable improvement.
+- repository: `https://github.com/ak-rex/rpi-linux.git`
+- exact commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- recorded release: `6.12.94-v8+`
+- path: `drivers/video/backlight/ocp8178_bl.c`
 
-Exact source commits: **to be selected during Stage 3**.
+AK-Rex is retained as the behavioral base because its implementation tracks
+one-wire readiness and avoids repeating the reset/detect sequence on ordinary
+brightness changes.
+
+Selected local refinement:
+
+- ClusterM repository: `https://github.com/ClusterM/ClockworkPi-linux.git`
+- audited branch: `clockworkpi-7.2.y-live`
+- audited date: 2026-11-04
+- adopted delta: 22-entry brightness range/map only
+
+ClusterM is intentionally not a build dependency. The selected semantic delta
+is frozen in `0002-video-backlight-integrate-ocp8178.patch`, so later movement
+of that branch cannot change our build.
+
+Build-time metadata is recorded in `kernel/sources/ocp8178.lock`.
+
+Stage 3 compile validation is **pending** until GitHub Actions passes.
 
 ## uConsole CM4 device tree
 

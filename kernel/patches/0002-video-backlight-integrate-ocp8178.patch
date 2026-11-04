@@ -1,0 +1,68 @@
+From: uConsole Linux project
+Subject: [PATCH 2/2] video: backlight: integrate OCP8178 uConsole driver
+
+License: GPL-2.0-only
+
+Register the externally pinned AK-Rex OCP8178 backlight driver with Kconfig
+and Kbuild, then apply one deliberately narrow local refinement: expose the
+22-level brightness map documented by ClusterM.
+
+AK-Rex remains the behavioral base because it tracks one-wire mode state and
+does not repeat the reset/detect sequence for every steady-state brightness
+change. Only the brightness range and lookup table are changed.
+
+The GPL driver source is materialized from the exact AK-Rex commit recorded in
+kernel/sources/ocp8178.lock before this patch is applied. ClusterM is a design
+reference only and is not a build-time dependency.
+
+---
+diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -5,6 +5,16 @@
+ 	help
+ 	  If you have a Sharp Zaurus SL-5500 (Collie) or SL-5600 (Poodle) say y to
+ 	  enable the LCD/backlight driver.
++
++config BACKLIGHT_OCP8178
++	tristate "OCP8178 one-wire backlight driver"
++	depends on GPIOLIB || COMPILE_TEST
++	help
++	  Say Y here to enable support for the OCP8178 one-wire GPIO-controlled
++	  backlight controller used by ClockworkPi devices including the uConsole.
++
++	  To compile this driver as a module, choose M here.
++
+ config BACKLIGHT_OMAP1
+ 	tristate "OMAP1 PWL-based LCD Backlight"
+ 	depends on ARCH_OMAP1 || COMPILE_TEST
+diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
+@@ -1,4 +1,5 @@
+ obj-$(CONFIG_BACKLIGHT_MP3309C)		+= mp3309c.o
+ obj-$(CONFIG_BACKLIGHT_MT6370)		+= mt6370-backlight.o
++obj-$(CONFIG_BACKLIGHT_OCP8178)		+= ocp8178_bl.o
+ obj-$(CONFIG_BACKLIGHT_OMAP1)		+= omap1_bl.o
+ obj-$(CONFIG_BACKLIGHT_PANDORA)		+= pandora_bl.o
+diff --git a/drivers/video/backlight/ocp8178_bl.c b/drivers/video/backlight/ocp8178_bl.c
+--- a/drivers/video/backlight/ocp8178_bl.c
++++ b/drivers/video/backlight/ocp8178_bl.c
+@@ -1,7 +1,7 @@
+ #define LOW_BIT_LOW_TIME 50
+ #define HIGH_BIT_HIGH_TIME 50
+ #define HIGH_BIT_LOW_TIME 10
+-#define MAX_BRIGHTNESS_VALUE 9
++#define MAX_BRIGHTNESS_VALUE 21
+ static void entry_1wire_mode(struct ocp8178_backlight *gbl)
+ {
+ 	unsigned long flags = 0;
+@@ -12,7 +12,7 @@
+ 	local_irq_restore(flags);
+ }
+ 
+-unsigned char ocp8178_bl_table[MAX_BRIGHTNESS_VALUE+1] = {0, 1, 4, 8, 12, 16, 20, 24, 28, 31};
++unsigned char ocp8178_bl_table[MAX_BRIGHTNESS_VALUE+1] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 25, 28, 31};
+ static int ocp8178_update_status(struct backlight_device *bl)
+ {
+ 	struct ocp8178_backlight *gbl = bl_get_data(bl);
