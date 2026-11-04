@@ -1,10 +1,20 @@
 # Kernel package
 
-This directory will contain the reproducible, distro-neutral uConsole kernel package.
+This directory contains the distro-neutral uConsole kernel work.
 
-The project will not vendor a complete Linux source tree. The future build recipe will fetch an exact pinned Raspberry Pi Linux 6.18 source revision and apply the patch series in `patches/`.
+The project does not vendor a complete Linux source tree. Build tooling will
+fetch the exact Raspberry Pi Linux source revision pinned in `source.lock` and
+apply the patch series in `patches/`.
 
-Planned order:
+## Current baseline
+
+- Raspberry Pi Linux branch family: `rpi-6.18.y`
+- Kernel version: `6.18.60`
+- Commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
+
+See `BASELINE.md` for the selection rationale and provenance.
+
+## Planned patch order
 
 1. CWU50 panel
 2. OCP8178 backlight
@@ -12,4 +22,4 @@ Planned order:
 4. minimal AXP20x battery changes, if required
 5. headphone/speaker amplifier switching
 
-Stage 1 will pin the exact Raspberry Pi Linux 6.18 baseline before any patch is added.
+No uConsole-specific kernel patch has been added yet.

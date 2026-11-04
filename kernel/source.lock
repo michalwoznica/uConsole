@@ -1,0 +1,7 @@
+# Machine-readable-ish source lock for project scripts.
+# Keep values literal and update only as an explicit baseline-update stage.
+
+RPI_LINUX_REPOSITORY=https://github.com/raspberrypi/linux.git
+RPI_LINUX_BRANCH_FAMILY=rpi-6.18.y
+RPI_LINUX_COMMIT=0b41724521c9adf5399409d02aece6c1df0a4432
+RPI_LINUX_VERSION=6.18.60

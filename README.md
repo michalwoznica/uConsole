@@ -77,6 +77,12 @@ A later ARMtix/OpenRC target is explicitly planned, so the project keeps:
 
 ## Current status
 
-Stage 0: repository bootstrap.
+Stage 1: Raspberry Pi Linux baseline pinned.
 
-Next: Stage 1 — pin an exact Raspberry Pi Linux `rpi-6.18.y` commit before introducing any uConsole patches.
+Current kernel baseline:
+
+- Linux `6.18.60`
+- Raspberry Pi `rpi-6.18.y`
+- commit `0b41724521c9adf5399409d02aece6c1df0a4432`
+
+Next: Stage 2 — dry-port the modern CWU50 panel driver against this exact baseline.

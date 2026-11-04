@@ -10,8 +10,10 @@ Planned canonical source:
 
 - Repository: https://github.com/raspberrypi/linux
 - Branch family: `rpi-6.18.y`
-- Exact commit: **not pinned yet**
-- Selection stage: Stage 1
+- Exact commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
+- Kernel version: `6.18.60`
+- Selection stage: Stage 1 — complete
+- Detailed rationale: `kernel/BASELINE.md`
 
 ## CWU50 panel driver
 

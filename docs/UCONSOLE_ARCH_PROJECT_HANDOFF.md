@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 0.3  
-**Current phase:** Stage 0 repository bootstrap prepared; Stage 1 baseline pinning is next
+**Document revision:** 0.4  
+**Current phase:** Stage 1 baseline pinning complete; Stage 2 CWU50 dry-port is next
 
 ---
 
@@ -374,36 +374,53 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ## 12. Current step
 
-### Stage 0 — repository bootstrap: PREPARED
+### Stage 0 — repository bootstrap: COMPLETE
 
-The checkpoint contains:
+The user imported the Stage 0 project tree into the Git repository, committed
+it, and pushed it to the remote repository.
 
-- project README;
-- GPL-2.0-only license;
-- `.gitignore`;
-- `docs/UCONSOLE_ARCH_PROJECT_HANDOFF.md`;
-- `docs/PROVENANCE.md`;
-- kernel patch/config placeholders;
-- distro-neutral shared kernel/hardware structure;
-- `image/archlinuxarm/`;
-- reserved `image/armtix-openrc/`;
-- scripts placeholder.
+### Stage 1 — pin exact Raspberry Pi 6.18 baseline: COMPLETE
 
-Stage 0 becomes complete once the user:
+Selected canonical kernel source:
 
-1. extracts the checkpoint;
-2. initializes or places it into the local Git repository;
-3. reviews the tree;
-4. creates the first commit;
-5. optionally pushes to GitHub.
+- Repository: `https://github.com/raspberrypi/linux.git`
+- Branch family: `rpi-6.18.y`
+- Exact commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
+- Kernel version: `6.18.60`
+- Commit purpose: merge Linux stable `6.18.60` into Raspberry Pi `rpi-6.18.y`
 
-Suggested commit message:
+Selection rationale:
 
-`chore: bootstrap uConsole Linux project`
+- choose a clean stable-version boundary rather than an arbitrary moving
+  branch tip;
+- Linux 6.18 is the chosen LTS family;
+- 6.18.60 was the current longterm 6.18 point release at selection time;
+- Raspberry Pi device-tree overlay CI passed for the selected merge;
+- independent downstream packaging (LibreELEC) pinned the same exact
+  Raspberry Pi commit.
 
-### NEXT: Stage 1 — pin an exact Raspberry Pi `rpi-6.18.y` commit
+Files introduced/updated by Stage 1:
 
-No uConsole kernel patches should be written before this baseline is pinned.
+- `kernel/BASELINE.md`
+- `kernel/source.lock`
+- `kernel/README.md`
+- `docs/PROVENANCE.md`
+- `docs/UCONSOLE_ARCH_PROJECT_HANDOFF.md`
+- `README.md`
+
+No uConsole-specific kernel source has been changed yet.
+
+### NEXT: Stage 2 — dry-port CWU50 panel support
+
+Stage 2 should:
+
+1. select and pin the exact modern AK-Rex CWU50 source commit;
+2. compare it against the Raspberry Pi 6.18 DRM panel APIs;
+3. create one narrowly scoped CWU50 patch against the Stage 1 baseline;
+4. include Kconfig/Makefile integration;
+5. validate that the patch applies cleanly;
+6. perform compile-level validation without flashing hardware;
+7. update provenance and this handoff before committing the stage.
 
 ---
 
@@ -422,6 +439,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 0.4 / Stage 1
+
+- Marked Stage 0 complete after the initial repository checkpoint was committed
+  and pushed.
+- Pinned Raspberry Pi Linux `rpi-6.18.y` at
+  `0b41724521c9adf5399409d02aece6c1df0a4432`.
+- Recorded kernel version `6.18.60`.
+- Added `kernel/BASELINE.md` with selection rationale and source policy.
+- Added `kernel/source.lock` as the canonical machine-readable baseline input.
+- Recorded independent source provenance and CI evidence.
+- Set Stage 2 CWU50 dry-port as the next project step.
+- Reaffirmed privacy policy: project files use only neutral/relative paths and
+  contain no user-identifying information unless explicitly approved first.
+
 
 ### 2026-11-04 — Revision 0.3
 
