@@ -58,3 +58,7 @@ Stage 3 materializes the exact AK-Rex OCP8178 driver pinned in
 The local patch preserves AK-Rex's one-wire state handling and incorporates
 only the selected 22-entry brightness map. Validation is performed by
 `scripts/validate-ocp8178-port.sh`.
+
+Stage 3 result: **PASS**. The GitHub Actions workflow successfully applied the
+OCP8178 integration/refinement patch and cross-compiled `ocp8178_bl.o` for
+ARM64 against the pinned Raspberry Pi Linux 6.18.60 baseline.

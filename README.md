@@ -117,6 +117,10 @@ Next: Stage 3 — OCP8178 backlight.
 
 Stage 2 (CWU50 panel dry-port) is complete.
 
-Stage 3 (OCP8178 backlight dry-port) is implemented and awaiting ARM64 CI
-validation. The design retains AK-Rex's one-wire state handling and adds only
-the selected 22-entry brightness map.
+Stage 3 (OCP8178 backlight dry-port) is complete. The selected AK-Rex
+behavioral base plus the local 22-entry brightness refinement successfully
+cross-compiles for ARM64 against the pinned Raspberry Pi Linux 6.18.60
+baseline.
+
+Next: Stage 4 — create and validate a cleaned uConsole CM4 device-tree
+overlay.

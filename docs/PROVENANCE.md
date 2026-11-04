@@ -70,7 +70,7 @@ of that branch cannot change our build.
 
 Build-time metadata is recorded in `kernel/sources/ocp8178.lock`.
 
-Stage 3 compile validation is **pending** until GitHub Actions passes.
+Stage 3 compile validation: **PASS**. The selected AK-Rex OCP8178 source plus the local 22-entry brightness refinement cross-compiles for ARM64 against the pinned Raspberry Pi Linux 6.18.60 baseline.
 
 ## uConsole CM4 device tree
 
