@@ -32,6 +32,12 @@ grep -q 'AXP288_FG_DES_CAP1_REG' "$patch_file"
 grep -q 'charge_full_design_uah > 0' "$patch_file"
 grep -q '"x-powers,axp221-battery-power-supply"' "$patch_file"
 
+hunk_count="$(grep -c '^@@ ' "$patch_file")"
+if [[ "$hunk_count" -ne 1 ]]; then
+    printf 'ERROR: Stage 5 patch must contain exactly one hunk; found %s.\n' "$hunk_count" >&2
+    exit 1
+fi
+
 printf 'Fetching Raspberry Pi Linux %s (%s)...\n' \
     "$RPI_LINUX_VERSION" "$RPI_LINUX_COMMIT"
 curl --fail --location --silent --show-error \
@@ -45,11 +51,8 @@ printf 'Checking minimal AXP20x patch against exact pinned source...\n'
 if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 --dry-run \
     < "$patch_file"; then
     printf 'ERROR: Stage 5 patch does not apply to the pinned source.\n' >&2
-    printf 'AXP22x helper anchor:\n' >&2
-    grep -n -A8 -B8 '^static int axp717_battery_get_max_voltage' \
-        "$linux_src/drivers/power/supply/axp20x_battery.c" >&2 || true
-    printf 'Probe battery-info anchor:\n' >&2
-    grep -n -A8 -B5 'power_supply_get_battery_info' \
+    printf 'Single Stage 5 anchor region:\n' >&2
+    grep -n -A75 -B10 'MODULE_DEVICE_TABLE(of, axp20x_battery_ps_id)' \
         "$linux_src/drivers/power/supply/axp20x_battery.c" >&2 || true
     exit 1
 fi

@@ -74,3 +74,10 @@ source positions:
 
 The Stage 5 code and scope are unchanged; only patch placement metadata and
 failure diagnostics were corrected.
+
+## Single-hunk correction
+
+The final Stage 5 candidate colocates the design-capacity helper immediately
+above `axp20x_power_probe()` and represents the helper plus probe call as one
+contiguous patch hunk. This removes all cross-hunk offset dependence while
+leaving functional scope unchanged.

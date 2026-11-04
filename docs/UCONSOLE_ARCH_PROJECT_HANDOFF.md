@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.7  
-**Current phase:** Stage 5 final probe-hunk placement correction prepared; ARM64 CI validation pending
+**Document revision:** 1.8  
+**Current phase:** Stage 5 rebuilt as one contiguous exact-context hunk; ARM64 CI validation pending
 
 ---
 
@@ -383,38 +383,29 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-### Stage 5 — minimal AXP20x/AXP221 battery delta: FINAL PATCH CORRECTION, VALIDATION PENDING
+### Stage 5 — minimal AXP20x/AXP221 battery delta: SINGLE-HUNK CORRECTION, VALIDATION PENDING
 
-Latest CI result:
+Latest CI evidence confirms both intended source regions exist, but the
+two-hunk patch still failed before compilation because hunk placement remained
+fragile.
 
-- `Validate uConsole CM4 overlay`: PASS;
-- `Validate AXP20x battery delta`: helper hunk PASS, probe hunk FAIL before
-  compilation.
+Final patch-mechanics correction:
 
-Diagnosis:
-
-The helper hunk's content and placement were correct. The probe hunk's content
-was also correct, but its line-location metadata still came from a shortened
-surrogate source. GNU patch therefore did not find the second hunk at the real
-probe location after applying the first hunk.
-
-Correction:
-
-- regenerate the Stage 5 patch with real 6.18.60 line-scale positions;
-- helper hunk now starts around real source line 166;
-- probe hunk now starts around real source line 1057;
-- no Stage 5 functional scope changed;
+- move the design-capacity helper immediately above `axp20x_power_probe()`;
+- include the helper definition, unchanged probe body context, and the new
+  probe call in one contiguous hunk;
+- validator requires exactly one hunk;
+- strict `--fuzz=0` remains;
 - no MFD change;
-- Stage 4 overlay remains proven and unchanged;
-- validator now prints the exact helper/probe neighborhoods on any future
-  mismatch.
+- no Stage 5 functional-scope expansion;
+- Stage 4 overlay remains green.
 
 ### NEXT
 
 Push this correction and inspect `Validate AXP20x battery delta`.
 
-Stage 5 closes only when the workflow reaches and passes compilation of
-`drivers/power/supply/axp20x_battery.o`.
+Stage 5 closes only when the single hunk applies and
+`drivers/power/supply/axp20x_battery.o` compiles successfully.
 
 ---
 
@@ -433,6 +424,15 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.8 / Stage 5 single-hunk correction
+
+- Removed cross-hunk offset dependence entirely.
+- Colocated the design-capacity helper with the probe function.
+- Rebuilt Stage 5 as exactly one contiguous patch hunk.
+- Added validator enforcement that the patch contains exactly one hunk.
+- Functional scope is unchanged; validation remains pending.
+
 
 ### 2026-11-04 — Revision 1.7 / Stage 5 probe-hunk correction
 
