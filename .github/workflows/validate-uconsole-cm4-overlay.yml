@@ -1,0 +1,44 @@
+name: Validate uConsole CM4 overlay
+
+on:
+  push:
+    paths:
+      - 'kernel/source.lock'
+      - 'kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts'
+      - 'kernel/sources/uconsole-cm4-overlay.lock'
+      - 'kernel/patches/0003-arm-dts-build-uconsole-cm4-overlay.patch'
+      - 'scripts/validate-uconsole-cm4-overlay.sh'
+      - '.github/workflows/validate-uconsole-cm4-overlay.yml'
+  pull_request:
+    paths:
+      - 'kernel/source.lock'
+      - 'kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts'
+      - 'kernel/sources/uconsole-cm4-overlay.lock'
+      - 'kernel/patches/0003-arm-dts-build-uconsole-cm4-overlay.patch'
+      - 'scripts/validate-uconsole-cm4-overlay.sh'
+      - '.github/workflows/validate-uconsole-cm4-overlay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-overlay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 device-tree build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends             bc bison flex gcc-aarch64-linux-gnu libssl-dev make patch curl             device-tree-compiler
+
+      - name: Validate uConsole CM4 overlay
+        env:
+          ARCH: arm64
+          CROSS_COMPILE: aarch64-linux-gnu-
+          JOBS: '2'
+        run: bash ./scripts/validate-uconsole-cm4-overlay.sh

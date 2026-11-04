@@ -74,13 +74,40 @@ Stage 3 compile validation: **PASS** after rebuilding the local patch around exa
 
 ## uConsole CM4 device tree
 
-Planned approach:
+Project build input:
 
-- conservative structural base from AK-Rex;
-- selected useful modern properties from OuinOuin74;
-- no blind inheritance of unrelated policy such as forced PCIe/Ethernet disablement or SD overclocking.
+- `kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts`
+- file SPDX: `GPL-2.0-only`
 
-Exact source commits: **to be selected during Stage 4**.
+Primary structural provenance:
+
+- AK-Rex repository: `https://github.com/ak-rex/rpi-linux.git`
+- exact commit: `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- source path:
+  `arch/arm/boot/dts/overlays/clockworkpi-uconsole-cm4-overlay.dts`
+
+Additional immutable reference:
+
+- postmarketOS/pmaports commit:
+  `5cf4d21c7e55945a8256c3edceac9341660f1b29`
+- selected evidence: DCDC3 1.8 V as panel IOVCC and ALDO2 3.3 V as
+  panel VCI.
+
+OuinOuin74 `main` was audited on 2026-11-04 as a design reference only and is
+not a build dependency.
+
+Selected cleanup policy:
+
+- modern GPIO flags and `reset-gpios`;
+- standard `simple-battery` properties with configurable `batt_uah`,
+  `batt_uwh` and `vmin_uv` overrides;
+- startup brightness adjusted for the Stage 3 22-level map;
+- exclude PCIe/Ethernet disablement, SD overclock, deferred audio switching,
+  `/chosen/bootargs` mutation and non-standard battery/PMIC properties.
+
+Detailed rationale: `docs/STAGE4_CM4_OVERLAY.md`.
+
+Stage 4 CI validation is **pending**.
 
 ## AXP20x battery/fuel gauge
 

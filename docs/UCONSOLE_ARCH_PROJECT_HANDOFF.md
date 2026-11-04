@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.2  
-**Current phase:** Stage 3 OCP8178 dry-port complete; Stage 4 cleaned CM4 device-tree overlay is next
+**Document revision:** 1.3  
+**Current phase:** Stage 4 cleaned CM4 device-tree overlay implemented; CI validation pending
 
 ---
 
@@ -377,67 +377,64 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 1 — Raspberry Pi Linux 6.18.60 baseline: COMPLETE
 
-- commit: `0b41724521c9adf5399409d02aece6c1df0a4432`
-
 ### Stage 2 — CWU50 panel dry-port: COMPLETE
-
-- AK-Rex source commit:
-  `0234e320bec7748fc6f1fb6904a055de10f0a727`
-- ARM64 object compilation: PASS
-- no functional source adaptation required
 
 ### Stage 3 — OCP8178 backlight dry-port: COMPLETE
 
-Selected behavioral source:
+### Stage 4 — cleaned uConsole CM4 device-tree overlay: IMPLEMENTED, VALIDATION PENDING
+
+Project-owned build input:
+
+`kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts`
+
+Primary structural provenance:
 
 - AK-Rex commit:
   `0234e320bec7748fc6f1fb6904a055de10f0a727`
-- source:
-  `drivers/video/backlight/ocp8178_bl.c`
 
-Selected local refinement:
+Additional evidence/reference:
 
-- preserve AK-Rex one-wire readiness tracking;
-- adopt only the audited 22-entry brightness map;
-- keep ClusterM out of the build dependency chain.
+- postmarketOS/pmaports commit
+  `5cf4d21c7e55945a8256c3edceac9341660f1b29` for panel regulator mapping;
+- OuinOuin74 current overlay audited as a design reference only.
 
-The first Stage 3 patch attempt was invalid because its hunks were generated
-against synthetic source neighborhoods. That failure was corrected before
-Stage 3 closure.
+Key decisions:
 
-Final validation result:
+- modern `reset-gpios` and symbolic GPIO active-level constants;
+- DCDC3 fixed at 1.8 V;
+- CWU50 IOVCC = DCDC3/1.8 V;
+- CWU50 VCI = ALDO2/3.3 V;
+- retain the established PMIC/ADC/SPI/UART/DSI/backlight structure;
+- standard battery overrides: `batt_uah`, `batt_uwh`, `vmin_uv`;
+- no non-standard `nominal-microvolt`;
+- OCP8178 `default-brightness = <15>` to preserve the old startup hardware
+  index after the Stage 3 22-level map;
+- no forced PCIe disablement;
+- no forced Ethernet/GENET disablement;
+- no SD UHS/100 MHz overclock policy;
+- no headphone amplifier nodes until Stage 6;
+- no `/chosen/bootargs` mutation;
+- no non-standard PMIC `irq-gpios`.
 
-- exact Raspberry Pi source fetch: PASS;
-- exact AK-Rex OCP8178 source fetch: PASS;
-- patch dry-run with `--fuzz=0`: PASS;
-- patch apply with `--fuzz=0`: PASS;
-- 22-entry brightness-map verification: PASS;
-- `onewire_ready` preservation check: PASS;
-- `CONFIG_BACKLIGHT_OCP8178=m`: PASS;
-- ARM64 `ocp8178_bl.o` compilation: PASS.
+Validation workflow:
 
-CI trigger cleanup is also complete:
+`.github/workflows/validate-uconsole-cm4-overlay.yml`
 
-- CWU50 workflow watches only its own inputs plus the shared kernel baseline;
-- OCP8178 workflow watches only its own inputs plus the shared kernel baseline;
-- documentation-only changes no longer trigger both kernel jobs.
+It must prove:
 
-Physical backlight behavior remains unproven until hardware testing.
+1. overlay policy assertions pass;
+2. Makefile integration patch dry-runs/applies with `--fuzz=0`;
+3. the overlay compiles in pinned Raspberry Pi Linux 6.18.60;
+4. the CM4 base DTB builds;
+5. `fdtoverlay` applies the compiled uConsole DTBO to the compiled CM4 DTB.
 
-### NEXT: Stage 4 — cleaned uConsole CM4 device-tree overlay
+Physical hardware behavior remains unproven.
 
-Stage 4 should:
+### NEXT
 
-1. pin exact AK-Rex and OuinOuin74 overlay source references;
-2. compare nodes and properties semantically;
-3. retain only justified CM4/uConsole hardware description;
-4. exclude unrelated policy such as forced PCIe/Ethernet disablement and SD
-   overclocking unless separately justified;
-5. make battery capacity configurable where practical;
-6. integrate CWU50 and OCP8178 nodes against the already-proven drivers;
-7. compile the overlay against the pinned Raspberry Pi Linux 6.18.60 tree;
-8. add CI validation and provenance;
-9. defer physical boot validation to the later hardware stage.
+Push the Stage 4 candidate and inspect `Validate uConsole CM4 overlay`.
+
+Stage 4 becomes complete only after that workflow passes.
 
 ---
 
@@ -456,6 +453,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.3 / Stage 4 candidate
+
+- Added a project-owned cleaned CM4 uConsole device-tree overlay.
+- Pinned AK-Rex structural provenance and an immutable postmarketOS regulator
+  mapping reference.
+- Kept OuinOuin74 as a design reference rather than a build dependency.
+- Selected panel supply semantics IOVCC=1.8 V DCDC3 and VCI=3.3 V ALDO2.
+- Rejected non-standard `nominal-microvolt` and exposed only standard battery
+  property overrides.
+- Adjusted default OCP8178 brightness to preserve the pre-Stage-3 startup
+  hardware index.
+- Excluded PCIe/Ethernet disablement, SD overclock, deferred audio switching
+  and boot-command-line policy from the hardware overlay.
+- Added overlay Makefile integration, CI validation and design documentation.
+- Stage 4 remains open until the compiled overlay applies successfully to the
+  compiled CM4 base DTB.
+
 
 ### 2026-11-04 — Revision 1.2 / Stage 3 complete
 

@@ -13,3 +13,6 @@ Current inputs:
 
 - `ocp8178.lock` — immutable AK-Rex OCP8178 build input plus frozen metadata
   for the ClusterM brightness-map design reference.
+
+- `uconsole-cm4-overlay.lock` — immutable AK-Rex/postmarketOS provenance plus
+  OuinOuin74 design-reference metadata for Stage 4.

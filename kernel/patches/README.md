@@ -23,3 +23,6 @@ against the pinned kernel baseline.
 1. `0001-drm-panel-integrate-cwu50.patch` — CWU50 panel integration.
 2. `0002-video-backlight-integrate-ocp8178.patch` — OCP8178 integration plus
    the selected 22-entry brightness map.
+
+3. `0003-arm-dts-build-uconsole-cm4-overlay.patch` — register the project-owned
+   CM4 uConsole overlay in Raspberry Pi's overlay Makefile.

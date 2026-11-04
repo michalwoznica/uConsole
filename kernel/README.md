@@ -62,3 +62,13 @@ only the selected 22-entry brightness map. Validation is performed by
 Stage 3 result: **PASS**. The corrected OCP8178 patch now dry-runs and
 applies exactly against the pinned real source files, and `ocp8178_bl.o`
 cross-compiles successfully for ARM64 against Raspberry Pi Linux 6.18.60.
+
+## uConsole CM4 device-tree overlay
+
+Stage 4 introduces the project-owned cleaned overlay at
+`kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts`.
+
+The overlay is copied into the pinned Raspberry Pi kernel tree and registered
+by `0003-arm-dts-build-uconsole-cm4-overlay.patch`.
+
+Validation is performed by `scripts/validate-uconsole-cm4-overlay.sh`.

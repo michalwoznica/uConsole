@@ -1,0 +1,20 @@
+# uConsole CM4 overlay provenance and design references.
+#
+# The project-owned overlay is the deterministic build input.
+# External revisions below are provenance/design references only.
+
+UCONSOLE_OVERLAY_BUILD_PATH=kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts
+
+AK_REX_OVERLAY_REPOSITORY=https://github.com/ak-rex/rpi-linux.git
+AK_REX_OVERLAY_COMMIT=0234e320bec7748fc6f1fb6904a055de10f0a727
+AK_REX_OVERLAY_PATH=arch/arm/boot/dts/overlays/clockworkpi-uconsole-cm4-overlay.dts
+AK_REX_OVERLAY_URL=https://raw.githubusercontent.com/ak-rex/rpi-linux/0234e320bec7748fc6f1fb6904a055de10f0a727/arch/arm/boot/dts/overlays/clockworkpi-uconsole-cm4-overlay.dts
+
+POSTMARKETOS_REFERENCE_COMMIT=5cf4d21c7e55945a8256c3edceac9341660f1b29
+POSTMARKETOS_REFERENCE_URL=https://git.mrlokop.dev/MRLokop/pmaports/commit/5cf4d21c7e55945a8256c3edceac9341660f1b29
+
+# Design reference only; never fetched by project builds.
+OUINOUIN_REFERENCE_REPOSITORY=https://github.com/OuinOuin74/linux-clockwork-arch.git
+OUINOUIN_REFERENCE_BRANCH=main
+OUINOUIN_REFERENCE_PATH=overlays/clockworkpi-uconsole-cm4-overlay.dts
+OUINOUIN_REFERENCE_AUDITED_DATE=2026-11-04

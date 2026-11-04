@@ -1,0 +1,19 @@
+From: uConsole Linux project
+Subject: [PATCH 3/3] arm: dts: build uConsole CM4 overlay
+
+License: GPL-2.0-only
+
+Build the project-owned ClockworkPi uConsole CM4 overlay after it is copied
+into the Raspberry Pi overlay source directory.
+
+---
+ arch/arm/boot/dts/overlays/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -44,2 +44,3 @@
+ 	cma.dtbo \
++	clockworkpi-uconsole-cm4.dtbo \
+ 	crystalfontz-cfa050_pi_m.dtbo \
