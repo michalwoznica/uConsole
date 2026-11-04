@@ -124,8 +124,9 @@ successfully for ARM64 against Raspberry Pi Linux 6.18.60.
 Next: Stage 4 — create and validate a cleaned uConsole CM4 device-tree
 overlay.
 
-Stage 4 (cleaned uConsole CM4 device-tree overlay) is implemented and awaiting
-CI compilation/application validation.
+Stage 4 (cleaned uConsole CM4 device-tree overlay) is complete. The
+project-owned overlay compiles successfully against the pinned Raspberry Pi
+Linux 6.18.60 tree and applies successfully to the compiled CM4 base DTB.
 
-The project now owns its deterministic CM4 overlay rather than fetching a
-moving community overlay during builds.
+Next: Stage 5 — determine and implement the minimum justified AXP20x
+battery/fuel-gauge delta.

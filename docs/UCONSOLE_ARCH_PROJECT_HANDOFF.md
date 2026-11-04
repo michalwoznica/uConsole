@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.3  
-**Current phase:** Stage 4 cleaned CM4 device-tree overlay implemented; CI validation pending
+**Document revision:** 1.4  
+**Current phase:** Stage 4 cleaned CM4 device-tree overlay complete; Stage 5 minimal AXP20x battery/fuel-gauge work is next
 
 ---
 
@@ -381,60 +381,49 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 3 — OCP8178 backlight dry-port: COMPLETE
 
-### Stage 4 — cleaned uConsole CM4 device-tree overlay: IMPLEMENTED, VALIDATION PENDING
+### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-Project-owned build input:
+Final validation result:
 
-`kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts`
+- source-policy assertions: PASS;
+- Makefile integration patch dry-run with `--fuzz=0`: PASS;
+- Makefile integration patch apply with `--fuzz=0`: PASS;
+- Raspberry Pi DT build for ARM64: PASS;
+- uConsole DTBO produced: PASS;
+- CM4 base DTB produced: PASS;
+- `fdtoverlay` application of uConsole DTBO to CM4 DTB: PASS;
+- compiled overlay structural sanity check: PASS.
 
-Primary structural provenance:
+Key retained decisions:
 
-- AK-Rex commit:
-  `0234e320bec7748fc6f1fb6904a055de10f0a727`
-
-Additional evidence/reference:
-
-- postmarketOS/pmaports commit
-  `5cf4d21c7e55945a8256c3edceac9341660f1b29` for panel regulator mapping;
-- OuinOuin74 current overlay audited as a design reference only.
-
-Key decisions:
-
-- modern `reset-gpios` and symbolic GPIO active-level constants;
-- DCDC3 fixed at 1.8 V;
 - CWU50 IOVCC = DCDC3/1.8 V;
 - CWU50 VCI = ALDO2/3.3 V;
-- retain the established PMIC/ADC/SPI/UART/DSI/backlight structure;
-- standard battery overrides: `batt_uah`, `batt_uwh`, `vmin_uv`;
-- no non-standard `nominal-microvolt`;
-- OCP8178 `default-brightness = <15>` to preserve the old startup hardware
-  index after the Stage 3 22-level map;
-- no forced PCIe disablement;
-- no forced Ethernet/GENET disablement;
-- no SD UHS/100 MHz overclock policy;
-- no headphone amplifier nodes until Stage 6;
-- no `/chosen/bootargs` mutation;
-- no non-standard PMIC `irq-gpios`.
+- standard battery properties and configurable `batt_uah`, `batt_uwh`,
+  `vmin_uv` overrides;
+- OCP8178 default brightness adjusted to preserve the prior startup hardware
+  index;
+- no forced PCIe/Ethernet disablement;
+- no SD overclock policy;
+- no deferred audio switch;
+- no boot-command-line policy in the overlay;
+- no non-standard `nominal-microvolt` or PMIC `irq-gpios`.
 
-Validation workflow:
+Physical hardware behavior remains unproven until hardware testing.
 
-`.github/workflows/validate-uconsole-cm4-overlay.yml`
+### NEXT: Stage 5 — minimal AXP20x battery/fuel-gauge delta
 
-It must prove:
+Stage 5 should:
 
-1. overlay policy assertions pass;
-2. Makefile integration patch dry-runs/applies with `--fuzz=0`;
-3. the overlay compiles in pinned Raspberry Pi Linux 6.18.60;
-4. the CM4 base DTB builds;
-5. `fdtoverlay` applies the compiled uConsole DTBO to the compiled CM4 DTB.
-
-Physical hardware behavior remains unproven.
-
-### NEXT
-
-Push the Stage 4 candidate and inspect `Validate uConsole CM4 overlay`.
-
-Stage 4 becomes complete only after that workflow passes.
+1. compare pinned Raspberry Pi Linux 6.18.60 AXP20x battery/MFD code with
+   relevant AK-Rex, ClusterM, PotatoMania and postmarketOS changes;
+2. identify behavior already present upstream;
+3. separate true uConsole requirements from historical/calibration
+   conveniences;
+4. prefer the smallest possible patch to stock 6.18.60;
+5. avoid importing a wholesale alternate AXP20x driver stack;
+6. compile-validate every changed driver object;
+7. keep calibration logic out unless clearly required;
+8. update provenance and this handoff before closing Stage 5.
 
 ---
 
@@ -453,6 +442,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.4 / Stage 4 complete
+
+- Recorded successful `Validate uConsole CM4 overlay` workflow.
+- Confirmed the project-owned overlay compiles to a DTBO against the pinned
+  Raspberry Pi Linux 6.18.60 tree.
+- Confirmed the compiled overlay applies successfully to the compiled CM4 base
+  DTB using `fdtoverlay`.
+- Confirmed the compiled overlay retains the expected CWU50 and OCP8178
+  structure.
+- Marked Stage 4 complete.
+- Set Stage 5 minimal AXP20x battery/fuel-gauge work as the next step.
+
 
 ### 2026-11-04 — Revision 1.3 / Stage 4 candidate
 

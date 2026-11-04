@@ -1,6 +1,6 @@
 # Stage 4 — cleaned uConsole CM4 device-tree overlay
 
-**Status:** implemented; CI compile/application validation pending.
+**Status:** complete; CI compile/application validation passed.
 
 ## Goal
 
@@ -109,3 +109,23 @@ The Stage 4 validator:
 8. decompiles the DTBO for a final structural sanity check.
 
 Physical behavior remains for later hardware validation.
+
+## Final validation result
+
+The GitHub Actions `Validate uConsole CM4 overlay` workflow completed
+successfully against the pinned Raspberry Pi Linux 6.18.60 baseline.
+
+This proves:
+
+1. the project overlay passes its source-policy assertions;
+2. the overlay Makefile integration patch dry-runs with `--fuzz=0`;
+3. the patch applies with `--fuzz=0`;
+4. Raspberry Pi DTBs/DTBOs build successfully for ARM64;
+5. `clockworkpi-uconsole-cm4.dtbo` is produced;
+6. the CM4 base DTB is produced;
+7. `fdtoverlay` successfully applies the compiled uConsole overlay to the
+   compiled CM4 base DTB;
+8. the compiled overlay contains the expected CWU50 and OCP8178 structure.
+
+Stage 4 is complete at source/structure/compile-validation level. Physical
+hardware behavior remains deferred to later validation.

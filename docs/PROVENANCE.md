@@ -107,7 +107,7 @@ Selected cleanup policy:
 
 Detailed rationale: `docs/STAGE4_CM4_OVERLAY.md`.
 
-Stage 4 CI validation is **pending**.
+Stage 4 CI validation: **PASS**. The project-owned overlay builds as a DTBO against the pinned Raspberry Pi Linux 6.18.60 tree and successfully applies to the compiled CM4 base DTB with `fdtoverlay`.
 
 ## AXP20x battery/fuel gauge
 

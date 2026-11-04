@@ -72,3 +72,7 @@ The overlay is copied into the pinned Raspberry Pi kernel tree and registered
 by `0003-arm-dts-build-uconsole-cm4-overlay.patch`.
 
 Validation is performed by `scripts/validate-uconsole-cm4-overlay.sh`.
+
+Stage 4 result: **PASS**. The cleaned uConsole CM4 overlay compiles against
+the pinned Raspberry Pi Linux 6.18.60 tree and successfully applies to the
+compiled CM4 base DTB with `fdtoverlay`.
