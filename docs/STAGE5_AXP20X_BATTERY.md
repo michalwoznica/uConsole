@@ -1,6 +1,6 @@
 # Stage 5 — minimal AXP20x battery/fuel-gauge delta
 
-**Status:** implemented; ARM64 CI validation pending.
+**Status:** complete; ARM64 CI validation passed.
 
 ## Audit conclusion
 
@@ -91,3 +91,26 @@ pinned source.
 The final candidate patches only that exact block. The design-capacity
 conversion and E0/E1 write are inline, so no helper function or distant source
 context remains.
+
+## Final validation result
+
+The GitHub Actions `Validate AXP20x battery delta` workflow completed
+successfully against the pinned Raspberry Pi Linux 6.18.60 source.
+
+This proves:
+
+1. the final Stage 5 exact-block patch applies with `--fuzz=0`;
+2. the patch remains limited to `drivers/power/supply/axp20x_battery.c`;
+3. zero replaceable-pack defaults remain enforced;
+4. the inline 1456-uAh/LSB design-capacity conversion is present;
+5. the AXP221 path writes the encoded value to the E0/E1 register pair only
+   when `charge-full-design-microamp-hours` is positive;
+6. `drivers/power/supply/axp20x_battery.o` cross-compiles successfully for
+   ARM64.
+
+The Stage 4 overlay validation had already remained green after the zero
+battery-capacity default refinement.
+
+Stage 5 is therefore complete at source/integration/compile-validation level.
+Physical fuel-gauge accuracy and persistence remain for later hardware
+validation.

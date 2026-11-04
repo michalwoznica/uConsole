@@ -161,4 +161,4 @@ fuel gauge. Calibration and unrelated PMIC policy writes remain excluded.
 
 Detailed rationale: `docs/STAGE5_AXP20X_BATTERY.md`.
 
-Stage 5 CI validation is **pending**.
+Stage 5 CI validation: **PASS**. The exact-block AXP221 design-capacity patch applies with `--fuzz=0` to the pinned Raspberry Pi Linux 6.18.60 source and `axp20x_battery.o` cross-compiles successfully for ARM64.

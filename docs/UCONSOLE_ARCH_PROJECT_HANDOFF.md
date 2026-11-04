@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.9  
-**Current phase:** Stage 5 reduced to exact CI battery-info block; ARM64 CI validation pending
+**Document revision:** 2.0  
+**Current phase:** Stage 5 minimal AXP221 fuel-gauge delta complete; Stage 6 audio/headphone switching is next
 
 ---
 
@@ -383,32 +383,53 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-### Stage 5 — minimal AXP20x/AXP221 battery delta: EXACT-BLOCK CORRECTION, VALIDATION PENDING
+### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
 
-Latest CI proved the remaining mismatch came from hand-reconstructed
-surrounding probe context.
+Final selected kernel delta:
 
-Final correction:
-
-- use the exact four-line battery-info block printed by CI as the only patch
-  anchor;
-- perform the 1456-uAh/LSB conversion inline inside that block;
-- write the 15-bit value to E0/E1 with the valid bit;
+- no MFD/regmap change;
 - no helper function;
-- no MFD change;
-- no distant context;
-- exactly one patch hunk;
-- strict `--fuzz=0` remains.
+- one exact-block patch inside the existing
+  `power_supply_get_battery_info()` block;
+- positive `charge-full-design-microamp-hours` values are converted at
+  1456 uAh/LSB and written to the AXP221/AXP228 E0/E1 design-capacity
+  registers;
+- zero remains the replaceable-pack default and causes no programming.
 
-The pinned MFD source confirms the stock AXP22x writable range already extends
-through 0xe6, covering E0/E1 at 0xe0/0xe1.
+Explicitly excluded:
 
-### NEXT
+- calibration controls;
+- writable charge-full;
+- added charge-now/energy properties;
+- synthetic energy calculations;
+- historical percentage remapping;
+- VBUS/LED/PEK/GPIO policy writes;
+- wholesale community battery-driver replacement.
 
-Push this correction and inspect `Validate AXP20x battery delta`.
+Final validation result:
 
-Stage 5 closes only when the exact-block patch applies and
-`drivers/power/supply/axp20x_battery.o` compiles successfully.
+- Stage 4 overlay workflow after zero-default refinement: PASS;
+- Stage 5 exact-block patch dry-run/apply with `--fuzz=0`: PASS;
+- Stage 5 scope assertions: PASS;
+- `drivers/power/supply/axp20x_battery.o` ARM64 compilation: PASS.
+
+Physical fuel-gauge accuracy and persistence remain unproven until hardware
+testing.
+
+### NEXT: Stage 6 — audio/headphone switching
+
+Stage 6 should:
+
+1. audit the uConsole speaker/headphone routing hardware and current community
+   implementations, prioritising PotatoMania's simple amplifier-switch design;
+2. compare against stock Raspberry Pi Linux 6.18 audio support;
+3. identify the minimum kernel/device-tree delta needed for reliable
+   speaker/headphone switching;
+4. keep audio routing policy separate from unrelated mixer/userspace policy;
+5. avoid importing a large out-of-tree audio stack unless technically
+   necessary;
+6. compile-validate the exact changed object(s) and any DT changes;
+7. update provenance and this handoff before Stage 6 closure.
 
 ---
 
@@ -427,6 +448,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 2.0 / Stage 5 complete
+
+- Recorded successful `Validate AXP20x battery delta` workflow.
+- Confirmed the final exact-block patch applies with `--fuzz=0` to the pinned
+  Raspberry Pi Linux 6.18.60 source.
+- Confirmed the minimal inline AXP221 design-capacity logic compiles for ARM64.
+- Retained the zero replaceable-pack defaults and narrow Stage 5 scope.
+- Marked Stage 5 complete.
+- Set Stage 6 audio/headphone switching as the next step.
+
 
 ### 2026-11-04 — Revision 1.9 / Stage 5 exact-block correction
 

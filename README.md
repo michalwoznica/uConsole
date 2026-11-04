@@ -131,6 +131,8 @@ Linux 6.18.60 tree and applies successfully to the compiled CM4 base DTB.
 Next: Stage 5 — determine and implement the minimum justified AXP20x
 battery/fuel-gauge delta.
 
-Stage 5 (minimal AXP20x/AXP221 battery delta) is implemented and awaiting CI
-validation. It keeps stock 6.18 battery behavior and adds only documented
-fuel-gauge design-capacity programming.
+Stage 5 (minimal AXP20x/AXP221 battery delta) is complete. The final
+exact-block patch applies cleanly to the pinned 6.18.60 source and the changed
+battery object cross-compiles successfully for ARM64.
+
+Next: Stage 6 — audio/headphone switching.

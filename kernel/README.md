@@ -89,3 +89,7 @@ Validation: `scripts/validate-axp20x-battery.sh`
 Stage 5 correction: no MFD change is required. The stock AXP22x writable
 regmap range already includes E0/E1, so the final Stage 5 delta changes only
 `drivers/power/supply/axp20x_battery.c`.
+
+Stage 5 result: **PASS**. The exact-block AXP221 design-capacity patch applies
+cleanly to the pinned Raspberry Pi Linux 6.18.60 source and
+`axp20x_battery.o` cross-compiles successfully for ARM64.
