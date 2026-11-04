@@ -1,0 +1,24 @@
+# Build/output trees
+build/
+out/
+pkg/
+src/
+
+# Arch packaging
+*.pkg.tar.*
+*.log
+
+# Downloaded kernel/source trees
+kernel/linux/
+kernel/src/
+
+# Disk images
+*.img
+*.img.xz
+*.img.zst
+
+# Editor/OS files
+*.swp
+*.swo
+*~
+.DS_Store

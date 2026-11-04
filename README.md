@@ -1,0 +1,82 @@
+# uConsole Arch Linux CM4
+
+Reproducible Linux build project for the ClockworkPi uConsole with a Raspberry Pi Compute Module 4 Lite.
+
+## Target hardware
+
+- ClockworkPi uConsole
+- Raspberry Pi CM4 Lite (`104000`, no eMMC)
+- Original/2024 uConsole display revision
+- microSD boot/storage
+
+## Project direction
+
+The shared kernel/hardware layer is distro-neutral.
+
+The first userspace target is **Arch Linux ARM**. A later **ARMtix / Artix OpenRC** target is planned.
+
+The kernel will be based on the official Raspberry Pi `rpi-6.18.y` branch plus a small, auditable uConsole-specific patch series.
+
+Expected custom delta:
+
+1. CWU50 display panel
+2. OCP8178 backlight
+3. uConsole CM4 device-tree overlay
+4. minimal AXP20x battery/fuel-gauge changes, if required
+5. headphone/speaker amplifier switching
+
+Historical VC4/DSI workarounds will not be carried unless physical testing proves they are still required.
+
+## Repository layout
+
+```text
+.
+├── README.md
+├── LICENSE
+├── docs/
+│   ├── PROVENANCE.md
+│   └── UCONSOLE_ARCH_PROJECT_HANDOFF.md
+├── kernel/
+│   ├── README.md
+│   ├── config/
+│   │   └── README.md
+│   └── patches/
+│       └── README.md
+├── image/
+│   ├── README.md
+│   ├── archlinuxarm/
+│   │   └── README.md
+│   └── armtix-openrc/
+│       └── README.md
+└── scripts/
+    └── README.md
+```
+
+## Reproducibility policy
+
+The repository is a build recipe, not a permanently forked Linux source tree.
+
+Each completed stage should:
+
+- have a narrow goal;
+- be independently reviewable;
+- be validated before moving on;
+- be committed to Git;
+- update `docs/UCONSOLE_ARCH_PROJECT_HANDOFF.md`;
+- record what is proven and what remains unverified.
+
+## Multi-distro design
+
+Arch Linux ARM is the first implementation target.
+
+A later ARMtix/OpenRC target is explicitly planned, so the project keeps:
+
+- kernel and hardware support distro-neutral;
+- shared build logic outside distro-specific image directories;
+- init-system-specific service integration inside each image target.
+
+## Current status
+
+Stage 0: repository bootstrap.
+
+Next: Stage 1 — pin an exact Raspberry Pi Linux `rpi-6.18.y` commit before introducing any uConsole patches.
