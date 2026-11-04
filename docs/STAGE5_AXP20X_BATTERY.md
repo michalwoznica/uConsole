@@ -59,3 +59,18 @@ source and cross-compiles the only changed object:
 - `drivers/power/supply/axp20x_battery.o`
 
 Physical fuel-gauge behavior remains for hardware validation.
+
+## Probe-hunk correction
+
+The second Stage 5 CI run proved that the helper insertion hunk was correct,
+but the probe insertion hunk still carried line-location metadata derived
+from a shortened surrogate file.
+
+The final candidate regenerates the patch with the actual pinned 6.18.60
+source positions:
+
+- AXP22x helper neighborhood: around line 166;
+- battery-info probe neighborhood: around line 1057.
+
+The Stage 5 code and scope are unchanged; only patch placement metadata and
+failure diagnostics were corrected.

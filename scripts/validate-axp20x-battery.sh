@@ -42,8 +42,17 @@ mkdir "$linux_src"
 tar -xzf "$linux_tar" --strip-components=1 -C "$linux_src"
 
 printf 'Checking minimal AXP20x patch against exact pinned source...\n'
-patch --directory="$linux_src" --strip=1 --forward --fuzz=0 --dry-run \
-    < "$patch_file"
+if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 --dry-run \
+    < "$patch_file"; then
+    printf 'ERROR: Stage 5 patch does not apply to the pinned source.\n' >&2
+    printf 'AXP22x helper anchor:\n' >&2
+    grep -n -A8 -B8 '^static int axp717_battery_get_max_voltage' \
+        "$linux_src/drivers/power/supply/axp20x_battery.c" >&2 || true
+    printf 'Probe battery-info anchor:\n' >&2
+    grep -n -A8 -B5 'power_supply_get_battery_info' \
+        "$linux_src/drivers/power/supply/axp20x_battery.c" >&2 || true
+    exit 1
+fi
 
 printf 'Applying minimal AXP20x patch...\n'
 patch --directory="$linux_src" --strip=1 --forward --fuzz=0 \

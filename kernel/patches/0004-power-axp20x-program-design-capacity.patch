@@ -22,7 +22,7 @@ behavior, VBUS policy, or GPIO side effects.
 diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x_battery.c
 --- a/drivers/power/supply/axp20x_battery.c
 +++ b/drivers/power/supply/axp20x_battery.c
-@@ -24,6 +24,30 @@
+@@ -166,6 +166,30 @@
  	}
  
  	return 0;
@@ -53,7 +53,7 @@ diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x
  }
  
  static int axp717_battery_get_max_voltage(struct axp20x_batt_ps *axp20x_batt,
-@@ -146,6 +170,18 @@
+@@ -1057,6 +1081,17 @@
  
  	if (!power_supply_get_battery_info(axp20x_batt->batt, &info)) {
  		axp20x_batt->data->set_bat_info(pdev, axp20x_batt, info);
@@ -68,7 +68,6 @@ diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x
 +					 "failed to set fuel-gauge design capacity: %d\n",
 +					 ret);
 +		}
-+
  		power_supply_put_battery_info(axp20x_batt->batt, info);
  	}
  	/*

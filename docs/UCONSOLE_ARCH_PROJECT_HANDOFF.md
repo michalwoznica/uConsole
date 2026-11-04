@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.6  
-**Current phase:** Stage 5 validators/patch corrected against real 6.18.60 source; ARM64 CI validation pending
+**Document revision:** 1.7  
+**Current phase:** Stage 5 final probe-hunk placement correction prepared; ARM64 CI validation pending
 
 ---
 
@@ -383,47 +383,38 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-### Stage 5 — minimal AXP20x/AXP221 battery delta: CORRECTED, VALIDATION PENDING
+### Stage 5 — minimal AXP20x/AXP221 battery delta: FINAL PATCH CORRECTION, VALIDATION PENDING
 
-The first Stage 5 CI run exposed two project-side validation errors:
+Latest CI result:
 
-1. the Stage 4 overlay validator still asserted the old fixed
-   6,700,000-uAh / 24,790,000-uWh defaults even though the shared overlay had
-   correctly changed them to zero;
-2. the Stage 5 kernel patch was generated against synthetic neighborhoods and
-   failed against the actual pinned Raspberry Pi Linux source.
+- `Validate uConsole CM4 overlay`: PASS;
+- `Validate AXP20x battery delta`: helper hunk PASS, probe hunk FAIL before
+  compilation.
 
-Further exact-source audit also showed that the proposed MFD regmap change was
-unnecessary. Stock AXP22x already permits writes from `0x80` through `0xe6`,
-which includes the E0/E1 design-capacity registers at `0xe0/0xe1`.
+Diagnosis:
 
-Corrected Stage 5 scope:
+The helper hunk's content and placement were correct. The probe hunk's content
+was also correct, but its line-location metadata still came from a shortened
+surrogate source. GNU patch therefore did not find the second hunk at the real
+probe location after applying the first hunk.
 
-- no `drivers/mfd/axp20x.c` change;
-- only `drivers/power/supply/axp20x_battery.c` changes;
-- add the documented 1456-uAh/LSB design-capacity encoder;
-- program E0/E1 only when `charge-full-design-microamp-hours` is positive;
-- keep zero as the replaceable-pack default;
-- retain all previous exclusions for calibration, synthetic energy reporting,
-  writable charge-full and unrelated PMIC policy.
+Correction:
 
-Corrected validation:
-
-- Stage 4 overlay validator now expects zero design-capacity/energy defaults;
-- Stage 5 patch is constructed from exact pinned 6.18.60 source
-  neighborhoods;
-- Stage 5 CI dry-runs/applies with `--fuzz=0`;
-- only `drivers/power/supply/axp20x_battery.o` is compiled because it is now
-  the only changed kernel object.
+- regenerate the Stage 5 patch with real 6.18.60 line-scale positions;
+- helper hunk now starts around real source line 166;
+- probe hunk now starts around real source line 1057;
+- no Stage 5 functional scope changed;
+- no MFD change;
+- Stage 4 overlay remains proven and unchanged;
+- validator now prints the exact helper/probe neighborhoods on any future
+  mismatch.
 
 ### NEXT
 
-Push the correction and rerun:
+Push this correction and inspect `Validate AXP20x battery delta`.
 
-- `Validate uConsole CM4 overlay`
-- `Validate AXP20x battery delta`
-
-Stage 5 closes only when both pass.
+Stage 5 closes only when the workflow reaches and passes compilation of
+`drivers/power/supply/axp20x_battery.o`.
 
 ---
 
@@ -442,6 +433,16 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.7 / Stage 5 probe-hunk correction
+
+- Recorded that the Stage 4 overlay workflow remains green.
+- Isolated the remaining Stage 5 failure to line-location metadata for the
+  probe insertion hunk.
+- Regenerated both hunks using real pinned 6.18.60 source-scale positions.
+- Added exact helper/probe diagnostics to the validator.
+- Stage 5 functional scope is unchanged and remains validation-pending.
+
 
 ### 2026-11-04 — Revision 1.6 / Stage 5 CI correction
 
