@@ -15,15 +15,14 @@ The GPL driver source is materialized from the exact AK-Rex commit recorded in
 kernel/sources/ocp8178.lock before this patch is applied. ClusterM is a design
 reference only and is not a build-time dependency.
 
+The hunks intentionally use minimal exact anchors from the pinned source files
+so validation does not depend on synthetic line neighborhoods.
+
 ---
 diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
 --- a/drivers/video/backlight/Kconfig
 +++ b/drivers/video/backlight/Kconfig
-@@ -5,6 +5,16 @@
- 	help
- 	  If you have a Sharp Zaurus SL-5500 (Collie) or SL-5600 (Poodle) say y to
- 	  enable the LCD/backlight driver.
-+
+@@ -202,1 +202,10 @@
 +config BACKLIGHT_OCP8178
 +	tristate "OCP8178 one-wire backlight driver"
 +	depends on GPIOLIB || COMPILE_TEST
@@ -34,35 +33,18 @@ diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
 +	  To compile this driver as a module, choose M here.
 +
  config BACKLIGHT_OMAP1
- 	tristate "OMAP1 PWL-based LCD Backlight"
- 	depends on ARCH_OMAP1 || COMPILE_TEST
 diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
 --- a/drivers/video/backlight/Makefile
 +++ b/drivers/video/backlight/Makefile
-@@ -1,4 +1,5 @@
- obj-$(CONFIG_BACKLIGHT_MP3309C)		+= mp3309c.o
- obj-$(CONFIG_BACKLIGHT_MT6370)		+= mt6370-backlight.o
+@@ -48,1 +48,2 @@
 +obj-$(CONFIG_BACKLIGHT_OCP8178)		+= ocp8178_bl.o
  obj-$(CONFIG_BACKLIGHT_OMAP1)		+= omap1_bl.o
- obj-$(CONFIG_BACKLIGHT_PANDORA)		+= pandora_bl.o
 diff --git a/drivers/video/backlight/ocp8178_bl.c b/drivers/video/backlight/ocp8178_bl.c
 --- a/drivers/video/backlight/ocp8178_bl.c
 +++ b/drivers/video/backlight/ocp8178_bl.c
-@@ -1,7 +1,7 @@
- #define LOW_BIT_LOW_TIME 50
- #define HIGH_BIT_HIGH_TIME 50
- #define HIGH_BIT_LOW_TIME 10
+@@ -49,1 +49,1 @@
 -#define MAX_BRIGHTNESS_VALUE 9
 +#define MAX_BRIGHTNESS_VALUE 21
- static void entry_1wire_mode(struct ocp8178_backlight *gbl)
- {
- 	unsigned long flags = 0;
-@@ -12,7 +12,7 @@
- 	local_irq_restore(flags);
- }
- 
+@@ -117,1 +117,1 @@
 -unsigned char ocp8178_bl_table[MAX_BRIGHTNESS_VALUE+1] = {0, 1, 4, 8, 12, 16, 20, 24, 28, 31};
 +unsigned char ocp8178_bl_table[MAX_BRIGHTNESS_VALUE+1] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 25, 28, 31};
- static int ocp8178_update_status(struct backlight_device *bl)
- {
- 	struct ocp8178_backlight *gbl = bl_get_data(bl);

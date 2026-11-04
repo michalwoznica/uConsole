@@ -3,12 +3,16 @@ name: Validate OCP8178 port
 on:
   push:
     paths:
-      - 'kernel/**'
+      - 'kernel/source.lock'
+      - 'kernel/sources/ocp8178.lock'
+      - 'kernel/patches/0002-video-backlight-integrate-ocp8178.patch'
       - 'scripts/validate-ocp8178-port.sh'
       - '.github/workflows/validate-ocp8178.yml'
   pull_request:
     paths:
-      - 'kernel/**'
+      - 'kernel/source.lock'
+      - 'kernel/sources/ocp8178.lock'
+      - 'kernel/patches/0002-video-backlight-integrate-ocp8178.patch'
       - 'scripts/validate-ocp8178-port.sh'
       - '.github/workflows/validate-ocp8178.yml'
   workflow_dispatch:
@@ -28,7 +32,9 @@ jobs:
       - name: Install ARM64 kernel build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends             bc bison flex gcc-aarch64-linux-gnu libelf-dev libssl-dev             make patch curl
+          sudo apt-get install --yes --no-install-recommends \
+            bc bison flex gcc-aarch64-linux-gnu libelf-dev libssl-dev \
+            make patch curl
 
       - name: Validate OCP8178 source port
         env:

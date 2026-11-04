@@ -1,6 +1,6 @@
 # Stage 3 — OCP8178 backlight dry-port
 
-**Status:** complete; ARM64 CI validation passed.
+**Status:** implemented; corrected exact-source patch awaiting ARM64 CI validation.
 
 ## Goal
 
@@ -66,24 +66,27 @@ matching.
 Physical brightness quality, absence of flashing on hardware, and
 suspend/resume behavior remain for the physical-validation stage.
 
-## Final validation result
+## Validation correction
 
-The GitHub Actions `Validate OCP8178 port` workflow completed successfully.
+A later CI run against the actual pinned source disproved the earlier Stage 3
+completion claim before compilation.
 
-This proves, for the exact pinned inputs used by the project, that:
+The failure was in the project-generated patch, not in the OCP8178 driver API:
 
-1. Raspberry Pi Linux `6.18.60` at
-   `0b41724521c9adf5399409d02aece6c1df0a4432` can be fetched;
-2. AK-Rex OCP8178 source at
-   `0234e320bec7748fc6f1fb6904a055de10f0a727` can be fetched;
-3. the local OCP8178 integration/refinement patch applies exactly with
-   `--fuzz=0`;
-4. the selected 22-entry brightness map is present;
-5. AK-Rex one-wire readiness handling remains present;
-6. `CONFIG_BACKLIGHT_OCP8178=m` resolves correctly;
-7. `drivers/video/backlight/ocp8178_bl.o` cross-compiles successfully for
-   ARM64 against the pinned Raspberry Pi Linux 6.18.60 baseline.
+- the Kconfig hunk had been generated from a shortened synthetic neighborhood;
+- the driver brightness hunks had also been generated against a shortened
+  mock file rather than the actual pinned AK-Rex source;
+- the Makefile hunk happened to apply because its local context matched.
 
-Physical backlight behavior, brightness quality, absence of flashing, and
-suspend/resume behavior remain intentionally deferred to the later hardware
-validation stage.
+The corrected patch now uses minimal exact anchors from the real pinned files:
+
+- `config BACKLIGHT_OMAP1` in Raspberry Pi Linux 6.18.60 Kconfig;
+- the `CONFIG_BACKLIGHT_OMAP1` Makefile line;
+- `#define MAX_BRIGHTNESS_VALUE 9` in the pinned AK-Rex driver;
+- the exact original 10-entry AK-Rex brightness table.
+
+The validator now performs a `--dry-run --fuzz=0` before applying the patch, so
+a future mismatch cannot partially modify the temporary source tree.
+
+Stage 3 remains open until the corrected GitHub Actions run reaches and passes
+the ARM64 object compilation.

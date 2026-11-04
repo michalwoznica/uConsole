@@ -35,10 +35,10 @@ curl --fail --location --silent --show-error \
     "$OCP8178_SOURCE_URL" \
     --output "$linux_src/drivers/video/backlight/ocp8178_bl.c"
 
-printf 'Applying OCP8178 integration/refinement patch...\n'
-if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 \
+printf 'Checking OCP8178 integration/refinement patch...\n'
+if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 --dry-run \
     < "$repo_root/kernel/patches/0002-video-backlight-integrate-ocp8178.patch"; then
-    printf 'ERROR: OCP8178 patch did not apply to the pinned inputs.\n' >&2
+    printf 'ERROR: OCP8178 patch does not apply to the pinned inputs.\n' >&2
     printf 'Kconfig anchor:\n' >&2
     grep -n -A8 -B5 '^config BACKLIGHT_OMAP1$' \
         "$linux_src/drivers/video/backlight/Kconfig" >&2 || true
@@ -50,6 +50,10 @@ if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 \
         "$linux_src/drivers/video/backlight/ocp8178_bl.c" >&2 || true
     exit 1
 fi
+
+printf 'Applying OCP8178 integration/refinement patch...\n'
+patch --directory="$linux_src" --strip=1 --forward --fuzz=0 \
+    < "$repo_root/kernel/patches/0002-video-backlight-integrate-ocp8178.patch"
 
 printf 'Checking integration and selected behavior...\n'
 grep -q '^config BACKLIGHT_OCP8178$' "$linux_src/drivers/video/backlight/Kconfig"
