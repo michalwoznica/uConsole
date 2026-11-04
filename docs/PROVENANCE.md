@@ -140,3 +140,25 @@ Exact source commit: **to be selected during Stage 6**.
 - https://github.com/fabiiw05/uconsole-archlinux
 - https://github.com/raspberrypi/linux
 - https://pkgs.postmarketos.org/
+
+## AXP20x / AXP221 battery and fuel gauge
+
+Stage 5 starts from the pinned Raspberry Pi Linux 6.18.60 driver and keeps its
+normal battery behavior.
+
+Comparison evidence:
+
+- AK-Rex exact commit
+  `0234e320bec7748fc6f1fb6904a055de10f0a727`;
+- ClusterM `clockworkpi-7.2.y-live`, audited 2026-11-04;
+- original ClockworkPi CM4 patch lineage;
+- AXP228 datasheet E0/E1 definitions;
+- upstream AXP288 fuel-gauge use of the same register family and 1456 uAh
+  resolution.
+
+Selected delta: program positive standard DT design capacity into the AXP221
+fuel gauge. Calibration and unrelated PMIC policy writes remain excluded.
+
+Detailed rationale: `docs/STAGE5_AXP20X_BATTERY.md`.
+
+Stage 5 CI validation is **pending**.

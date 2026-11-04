@@ -16,3 +16,5 @@ Current inputs:
 
 - `uconsole-cm4-overlay.lock` — immutable AK-Rex/postmarketOS provenance plus
   OuinOuin74 design-reference metadata for Stage 4.
+
+- `axp20x-battery.lock` — Stage 5 battery/fuel-gauge provenance.

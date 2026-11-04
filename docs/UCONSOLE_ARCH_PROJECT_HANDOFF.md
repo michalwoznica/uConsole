@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.4  
-**Current phase:** Stage 4 cleaned CM4 device-tree overlay complete; Stage 5 minimal AXP20x battery/fuel-gauge work is next
+**Document revision:** 1.5  
+**Current phase:** Stage 5 minimal AXP221 fuel-gauge delta implemented; ARM64 CI validation pending
 
 ---
 
@@ -383,47 +383,52 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-Final validation result:
+### Stage 5 — minimal AXP20x/AXP221 battery delta: IMPLEMENTED, VALIDATION PENDING
 
-- source-policy assertions: PASS;
-- Makefile integration patch dry-run with `--fuzz=0`: PASS;
-- Makefile integration patch apply with `--fuzz=0`: PASS;
-- Raspberry Pi DT build for ARM64: PASS;
-- uConsole DTBO produced: PASS;
-- CM4 base DTB produced: PASS;
-- `fdtoverlay` application of uConsole DTBO to CM4 DTB: PASS;
-- compiled overlay structural sanity check: PASS.
+Audit conclusion:
 
-Key retained decisions:
+Stock 6.18.60 already provides the core AXP221 battery behavior. Do not import
+the whole AK-Rex/ClusterM battery feature set.
 
-- CWU50 IOVCC = DCDC3/1.8 V;
-- CWU50 VCI = ALDO2/3.3 V;
-- standard battery properties and configurable `batt_uah`, `batt_uwh`,
-  `vmin_uv` overrides;
-- OCP8178 default brightness adjusted to preserve the prior startup hardware
-  index;
-- no forced PCIe/Ethernet disablement;
-- no SD overclock policy;
-- no deferred audio switch;
-- no boot-command-line policy in the overlay;
-- no non-standard `nominal-microvolt` or PMIC `irq-gpios`.
+Selected delta:
 
-Physical hardware behavior remains unproven until hardware testing.
+- permit AXP22x regmap access to E0/E1 design-capacity registers;
+- program positive `charge-full-design-microamp-hours` on the AXP221 path;
+- read back/log the quantized value;
+- use the documented 1.456 mAh per LSB conversion.
 
-### NEXT: Stage 5 — minimal AXP20x battery/fuel-gauge delta
+Replaceable-pack refinement:
 
-Stage 5 should:
+- design charge default changed from 6,700,000 uAh to 0;
+- design energy default changed from 24,790,000 uWh to 0;
+- `batt_uah`, `batt_uwh`, `vmin_uv` overrides remain;
+- zero does not program the PMIC.
 
-1. compare pinned Raspberry Pi Linux 6.18.60 AXP20x battery/MFD code with
-   relevant AK-Rex, ClusterM, PotatoMania and postmarketOS changes;
-2. identify behavior already present upstream;
-3. separate true uConsole requirements from historical/calibration
-   conveniences;
-4. prefer the smallest possible patch to stock 6.18.60;
-5. avoid importing a wholesale alternate AXP20x driver stack;
-6. compile-validate every changed driver object;
-7. keep calibration logic out unless clearly required;
-8. update provenance and this handoff before closing Stage 5.
+Explicitly excluded:
+
+- calibration controls;
+- writable charge-full;
+- added charge-now/energy properties;
+- synthetic energy calculations;
+- historical percentage remapping;
+- VBUS/LED/PEK/GPIO policy writes.
+
+Validation workflow:
+
+`.github/workflows/validate-axp20x-battery.yml`
+
+It must dry-run/apply the patch with `--fuzz=0` and compile:
+
+- `drivers/mfd/axp20x.o`
+- `drivers/power/supply/axp20x_battery.o`
+
+Because the shared overlay changed, `Validate uConsole CM4 overlay` is also
+expected to rerun on this commit. That is intentional and should remain green.
+
+### NEXT
+
+Push this candidate. Stage 5 closes only after the new battery workflow passes
+and the Stage 4 overlay workflow remains green.
 
 ---
 
@@ -442,6 +447,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.5 / Stage 5 candidate
+
+- Audited stock 6.18.60 against AK-Rex, ClusterM, historical ClockworkPi and
+  AXP228 fuel-gauge behavior.
+- Selected only AXP221 design-capacity register programming as the justified
+  kernel delta.
+- Kept calibration, synthetic energy reporting, writable charge controls and
+  unrelated PMIC policy side effects out of scope.
+- Changed replaceable-pack design capacity/energy defaults to zero.
+- Updated the Stage 4 validator for the refined shared-overlay policy.
+- Added Stage 5 provenance, validator, CI workflow and design report.
+- Stage 5 remains open until ARM64 object compilation passes.
+
 
 ### 2026-11-04 — Revision 1.4 / Stage 4 complete
 

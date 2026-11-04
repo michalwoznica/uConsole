@@ -1,0 +1,22 @@
+# Stage 5 AXP20x/AXP22x battery provenance.
+
+RPI_AXP20X_BASE_REPOSITORY=https://github.com/raspberrypi/linux.git
+RPI_AXP20X_BASE_COMMIT=0b41724521c9adf5399409d02aece6c1df0a4432
+RPI_AXP20X_BATTERY_PATH=drivers/power/supply/axp20x_battery.c
+RPI_AXP20X_MFD_PATH=drivers/mfd/axp20x.c
+
+AK_REX_REPOSITORY=https://github.com/ak-rex/rpi-linux.git
+AK_REX_COMMIT=0234e320bec7748fc6f1fb6904a055de10f0a727
+AK_REX_BATTERY_PATH=drivers/power/supply/axp20x_battery.c
+
+# Moving design reference only; never fetched by project builds.
+CLUSTERM_REPOSITORY=https://github.com/ClusterM/ClockworkPi-linux.git
+CLUSTERM_BRANCH=clockworkpi-7.2.y-live
+CLUSTERM_AUDITED_DATE=2026-11-04
+CLUSTERM_BATTERY_PATH=drivers/power/supply/axp20x_battery.c
+CLUSTERM_MFD_PATH=drivers/mfd/axp20x.c
+
+# E0/E1: battery full design capacity; 1.456 mAh per LSB.
+AXP228_DATASHEET_URL=https://datasheet4u.com/pdf/1092482/AXP228.pdf
+
+UPSTREAM_AXP288_FUEL_GAUGE_PATH=drivers/power/supply/axp288_fuel_gauge.c

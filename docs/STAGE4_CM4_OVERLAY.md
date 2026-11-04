@@ -48,11 +48,11 @@ opposite VCI/IOVCC assignment is not adopted.
 The uConsole accepts user-supplied 18650 cells. Inherited 2x3350 mAh values
 are therefore fallbacks rather than immutable board facts.
 
-Only standard Linux `simple-battery` properties are used:
+Only standard Linux `simple-battery` properties are used.
 
-- fallback capacity: 6,700,000 µAh;
-- fallback energy: 24,790,000 µWh;
-- fallback minimum design voltage: 3,300,000 µV.
+Stage 5 refined the replaceable-pack policy: design capacity and energy now
+default to zero (unspecified) rather than assuming 2x3350 mAh cells. Minimum
+design voltage remains 3,300,000 µV.
 
 Firmware overlay overrides:
 
@@ -129,3 +129,10 @@ This proves:
 
 Stage 4 is complete at source/structure/compile-validation level. Physical
 hardware behavior remains deferred to later validation.
+
+## Stage 5 refinement
+
+The battery design capacity and energy defaults are now zero because the cells
+are replaceable. Users can set the installed pack with `batt_uah` and,
+optionally, `batt_uwh`. A positive `batt_uah` is programmed into the AXP221
+fuel-gauge design-capacity registers by the Stage 5 kernel delta.

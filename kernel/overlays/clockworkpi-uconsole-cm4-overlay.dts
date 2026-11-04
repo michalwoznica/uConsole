@@ -195,8 +195,8 @@
 				voltage-max-design-microvolt = <4200000>;
 				re-charge-voltage-microvolt = <4000000>;
 				voltage-min-design-microvolt = <3300000>;
-				energy-full-design-microwatt-hours = <24790000>;
-				charge-full-design-microamp-hours = <6700000>;
+				energy-full-design-microwatt-hours = <0>;
+				charge-full-design-microamp-hours = <0>;
 			};
 		};
 	};
@@ -255,8 +255,8 @@
 	};
 
 	/*
-	 * Standard simple-battery properties only. Users can override fallback
-	 * values to match the installed cells from config.txt.
+	 * Replaceable cells: design capacity/energy default to zero (unspecified).
+	 * Set non-zero values from config.txt to match the installed pack.
 	 */
 	__overrides__ {
 		batt_uah = <&battery>,"charge-full-design-microamp-hours:0";

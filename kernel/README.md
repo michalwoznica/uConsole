@@ -76,3 +76,12 @@ Validation is performed by `scripts/validate-uconsole-cm4-overlay.sh`.
 Stage 4 result: **PASS**. The cleaned uConsole CM4 overlay compiles against
 the pinned Raspberry Pi Linux 6.18.60 tree and successfully applies to the
 compiled CM4 base DTB with `fdtoverlay`.
+
+## Minimal AXP221 fuel-gauge delta
+
+Stage 5 adds only documented design-capacity programming for the uConsole's
+AXP221 PMIC.
+
+Patch: `kernel/patches/0004-power-axp20x-program-design-capacity.patch`
+
+Validation: `scripts/validate-axp20x-battery.sh`

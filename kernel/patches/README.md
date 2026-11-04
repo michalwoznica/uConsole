@@ -26,3 +26,6 @@ against the pinned kernel baseline.
 
 3. `0003-arm-dts-build-uconsole-cm4-overlay.patch` — register the project-owned
    CM4 uConsole overlay in Raspberry Pi's overlay Makefile.
+
+4. `0004-power-axp20x-program-design-capacity.patch` — minimal AXP221
+   fuel-gauge design-capacity programming from standard DT battery data.
