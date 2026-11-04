@@ -17,10 +17,7 @@ provenance while still producing a deterministic kernel source tree.
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
-@@ -94,5 +94,18 @@ config DRM_PANEL_BOE_TV101WUM_LL2
- 	  Say Y here if you want to support for BOE TV101WUM-LL2
- 	  WUXGA PANEL DSI Video Mode panel
-+
+@@ -97,1 +97,14 @@
 +config DRM_PANEL_CWU50
 +	tristate "ClockworkPi CWU50 panel"
 +	depends on OF
@@ -33,9 +30,8 @@ diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
 +
 +	  To compile this driver as a module, choose M here. The module will
 +	  be called panel-cwu50.
++
  config DRM_PANEL_EBBG_FT8719
- 	tristate "EBBG FT8719 panel driver"
- 	depends on GPIOLIB
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile

@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 0.5  
-**Current phase:** Stage 2 CWU50 dry-port implemented; compile validation pending
+**Document revision:** 0.6  
+**Current phase:** Stage 2 CWU50 dry-port corrected after CI patch-context failure; compile validation pending
 
 ---
 
@@ -418,6 +418,20 @@ GPIO behavior, regulator sequencing, and two initialization paths.
 
 Stage 2 is not marked complete until GitHub Actions reports PASS.
 
+First validation attempt:
+
+- GitHub Actions fetched both pinned sources successfully.
+- The Makefile integration hunk applied.
+- The Kconfig hunk failed before compilation.
+- Root cause was overly brittle neighboring Kconfig context in the project
+  integration patch, not a demonstrated driver/API incompatibility.
+- The Kconfig patch now anchors only on the unique following
+  `config DRM_PANEL_EBBG_FT8719` entry.
+- Validation now applies patches with `--fuzz=0` and prints the fetched anchor
+  region if application fails.
+- A synthetic exact-context patch application test passes.
+- ARM64 compilation remains pending until the corrected CI run completes.
+
 ### NEXT AFTER STAGE 2 VALIDATION: Stage 3 — OCP8178 backlight
 
 Do not begin Stage 3 until the CWU50 compile-validation workflow passes.
@@ -439,6 +453,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 0.6 / Stage 2 validation correction
+
+- Recorded the first Stage 2 CI failure before compilation.
+- Confirmed Raspberry Pi and AK-Rex source downloads succeeded.
+- Confirmed the Makefile integration hunk applied.
+- Isolated failure to the Kconfig integration hunk.
+- Rewrote the Kconfig hunk to use the unique following EBBG panel config as a
+  minimal stable anchor.
+- Made patch validation strict with `--fuzz=0` and added failure diagnostics.
+- Passed a synthetic application test against the relevant pinned 6.18.60
+  Kconfig/Makefile context.
+- Kept Stage 2 open pending the corrected ARM64 compile-validation run.
 
 ### 2026-11-04 — Revision 0.5 / Stage 2 candidate
 

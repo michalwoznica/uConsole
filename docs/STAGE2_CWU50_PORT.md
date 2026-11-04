@@ -66,3 +66,23 @@ exact pinned sources. The workflow must demonstrate that:
 
 Physical display behavior is intentionally not part of Stage 2; it remains a
 later hardware-validation milestone.
+## Validation attempt 1 and correction
+
+The first GitHub Actions run stopped before compilation while applying the
+Kconfig integration hunk. The Makefile hunk applied, but the Kconfig hunk was
+too dependent on neighboring BOE-panel help text and did not match the exact
+fetched source in CI.
+
+This was an integration-patch robustness problem, not evidence of a CWU50
+driver/API incompatibility.
+
+The Kconfig hunk was rewritten to anchor only on the unique, stable
+`config DRM_PANEL_EBBG_FT8719` entry immediately following the insertion
+point. Patch application is now run with `--fuzz=0`, so CI requires an exact
+anchor match rather than silently accepting fuzzy context. On failure, the
+validator prints the fetched Kconfig anchor region for diagnosis.
+
+A synthetic application test using the relevant pinned 6.18.60 Kconfig and
+Makefile context passes with the corrected patch. Full ARM64 compile
+validation remains pending until the replacement CI run succeeds.
+

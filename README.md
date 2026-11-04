@@ -97,8 +97,11 @@ Current kernel baseline:
 
 Stage 2 CWU50 dry-port candidate is prepared. The panel source is pinned to
 AK-Rex commit `0234e320bec7748fc6f1fb6904a055de10f0a727`, integrated by a small
-Kconfig/Kbuild patch, and validated by `scripts/validate-cwu50-port.sh` plus
+Kconfig/Kbuild patch, and checked by `scripts/validate-cwu50-port.sh` plus
 GitHub Actions.
 
-Stage 2 becomes complete after that CI validation passes. Next after validation:
-Stage 3 — OCP8178 backlight.
+The first CI run exposed a Kconfig patch-context mismatch before compilation.
+The patch has been tightened to use a stable exact anchor and the validator now
+uses `--fuzz=0`. Stage 2 becomes complete only after the replacement CI run
+passes the ARM64 object compile. Next after validation: Stage 3 — OCP8178
+backlight.

@@ -36,8 +36,14 @@ curl --fail --location --silent --show-error \
     --output "$linux_src/drivers/gpu/drm/panel/panel-cwu50.c"
 
 printf 'Applying CWU50 integration patch...\n'
-patch --directory="$linux_src" --strip=1 --forward \
-    < "$repo_root/kernel/patches/0001-drm-panel-integrate-cwu50.patch"
+if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 \
+    < "$repo_root/kernel/patches/0001-drm-panel-integrate-cwu50.patch"; then
+    printf 'ERROR: CWU50 integration patch did not apply to the pinned baseline.\n' >&2
+    printf 'Kconfig anchor in fetched source:\n' >&2
+    grep -n -A3 -B2 '^config DRM_PANEL_EBBG_FT8719$' \
+        "$linux_src/drivers/gpu/drm/panel/Kconfig" >&2 || true
+    exit 1
+fi
 
 printf 'Checking integration...\n'
 grep -q '^config DRM_PANEL_CWU50$' "$linux_src/drivers/gpu/drm/panel/Kconfig"
