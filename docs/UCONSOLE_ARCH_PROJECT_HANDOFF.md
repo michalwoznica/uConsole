@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.5  
-**Current phase:** Stage 5 minimal AXP221 fuel-gauge delta implemented; ARM64 CI validation pending
+**Document revision:** 1.6  
+**Current phase:** Stage 5 validators/patch corrected against real 6.18.60 source; ARM64 CI validation pending
 
 ---
 
@@ -383,52 +383,47 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-### Stage 5 — minimal AXP20x/AXP221 battery delta: IMPLEMENTED, VALIDATION PENDING
+### Stage 5 — minimal AXP20x/AXP221 battery delta: CORRECTED, VALIDATION PENDING
 
-Audit conclusion:
+The first Stage 5 CI run exposed two project-side validation errors:
 
-Stock 6.18.60 already provides the core AXP221 battery behavior. Do not import
-the whole AK-Rex/ClusterM battery feature set.
+1. the Stage 4 overlay validator still asserted the old fixed
+   6,700,000-uAh / 24,790,000-uWh defaults even though the shared overlay had
+   correctly changed them to zero;
+2. the Stage 5 kernel patch was generated against synthetic neighborhoods and
+   failed against the actual pinned Raspberry Pi Linux source.
 
-Selected delta:
+Further exact-source audit also showed that the proposed MFD regmap change was
+unnecessary. Stock AXP22x already permits writes from `0x80` through `0xe6`,
+which includes the E0/E1 design-capacity registers at `0xe0/0xe1`.
 
-- permit AXP22x regmap access to E0/E1 design-capacity registers;
-- program positive `charge-full-design-microamp-hours` on the AXP221 path;
-- read back/log the quantized value;
-- use the documented 1.456 mAh per LSB conversion.
+Corrected Stage 5 scope:
 
-Replaceable-pack refinement:
+- no `drivers/mfd/axp20x.c` change;
+- only `drivers/power/supply/axp20x_battery.c` changes;
+- add the documented 1456-uAh/LSB design-capacity encoder;
+- program E0/E1 only when `charge-full-design-microamp-hours` is positive;
+- keep zero as the replaceable-pack default;
+- retain all previous exclusions for calibration, synthetic energy reporting,
+  writable charge-full and unrelated PMIC policy.
 
-- design charge default changed from 6,700,000 uAh to 0;
-- design energy default changed from 24,790,000 uWh to 0;
-- `batt_uah`, `batt_uwh`, `vmin_uv` overrides remain;
-- zero does not program the PMIC.
+Corrected validation:
 
-Explicitly excluded:
-
-- calibration controls;
-- writable charge-full;
-- added charge-now/energy properties;
-- synthetic energy calculations;
-- historical percentage remapping;
-- VBUS/LED/PEK/GPIO policy writes.
-
-Validation workflow:
-
-`.github/workflows/validate-axp20x-battery.yml`
-
-It must dry-run/apply the patch with `--fuzz=0` and compile:
-
-- `drivers/mfd/axp20x.o`
-- `drivers/power/supply/axp20x_battery.o`
-
-Because the shared overlay changed, `Validate uConsole CM4 overlay` is also
-expected to rerun on this commit. That is intentional and should remain green.
+- Stage 4 overlay validator now expects zero design-capacity/energy defaults;
+- Stage 5 patch is constructed from exact pinned 6.18.60 source
+  neighborhoods;
+- Stage 5 CI dry-runs/applies with `--fuzz=0`;
+- only `drivers/power/supply/axp20x_battery.o` is compiled because it is now
+  the only changed kernel object.
 
 ### NEXT
 
-Push this candidate. Stage 5 closes only after the new battery workflow passes
-and the Stage 4 overlay workflow remains green.
+Push the correction and rerun:
+
+- `Validate uConsole CM4 overlay`
+- `Validate AXP20x battery delta`
+
+Stage 5 closes only when both pass.
 
 ---
 
@@ -447,6 +442,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.6 / Stage 5 CI correction
+
+- Fixed the Stage 4 overlay validator to expect the Stage 5 zero-capacity
+  defaults.
+- Rebuilt the AXP221 design-capacity patch from exact pinned 6.18.60 source
+  neighborhoods.
+- Removed the unnecessary MFD/regmap modification after confirming stock
+  AXP22x already allows E0/E1 writes.
+- Reduced Stage 5 to a single changed kernel source/object:
+  `drivers/power/supply/axp20x_battery.c`.
+- Stage 5 remains validation-pending until both workflows pass.
+
 
 ### 2026-11-04 — Revision 1.5 / Stage 5 candidate
 

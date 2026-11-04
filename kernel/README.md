@@ -85,3 +85,7 @@ AXP221 PMIC.
 Patch: `kernel/patches/0004-power-axp20x-program-design-capacity.patch`
 
 Validation: `scripts/validate-axp20x-battery.sh`
+
+Stage 5 correction: no MFD change is required. The stock AXP22x writable
+regmap range already includes E0/E1, so the final Stage 5 delta changes only
+`drivers/power/supply/axp20x_battery.c`.

@@ -22,10 +22,11 @@ with 1.456 mAh (1456 uAh) per LSB.
 
 Stage 5 therefore adds only:
 
-1. AXP22x regmap read/write access to E0/E1;
-2. helpers to encode/decode that 15-bit capacity;
-3. AXP221 probe logic that programs a positive DT capacity and logs its
-   quantized read-back value.
+1. a helper in `axp20x_battery.c` to encode the documented 15-bit capacity;
+2. AXP221 probe logic that programs a positive DT capacity into E0/E1.
+
+No MFD/regmap modification is required: the stock AXP22x writable range is
+already `0x80..0xe6`, which includes E0/E1 (`0xe0/0xe1`).
 
 ## Replaceable cells
 
@@ -52,10 +53,9 @@ programmed into E0/E1.
 
 ## Validation
 
-CI dry-runs/applies the patch with `--fuzz=0` against the exact 6.18.60 source
-and cross-compiles both changed objects:
+CI dry-runs/applies the patch with `--fuzz=0` against the exact 6.18.60
+source and cross-compiles the only changed object:
 
-- `drivers/mfd/axp20x.o`
 - `drivers/power/supply/axp20x_battery.o`
 
 Physical fuel-gauge behavior remains for hardware validation.

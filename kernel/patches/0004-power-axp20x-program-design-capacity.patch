@@ -8,41 +8,24 @@ operation. Add only the missing connection between the standard device-tree
 charge-full-design-microamp-hours value and the AXP221/AXP228 fuel-gauge
 design-capacity registers.
 
-The AXP228 datasheet defines E0/E1 as a 15-bit battery full-design-capacity
+The AXP228 register family uses E0/E1 for a 15-bit battery full-design-capacity
 value with 1.456 mAh (1456 uAh) per LSB.
+
+No MFD/regmap change is required: stock AXP22x already allows writes from
+0x80 through 0xe6, which includes E0/E1.
 
 This patch deliberately does not add calibration controls, synthetic energy
 reporting, writable charge-full controls, power-key behavior, charge-LED
 behavior, VBUS policy, or GPIO side effects.
 
 ---
-diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
---- a/drivers/mfd/axp20x.c
-+++ b/drivers/mfd/axp20x.c
-@@ -3,6 +3,7 @@
- 	regmap_reg_range(AXP20X_DATACACHE(0), AXP20X_IRQ5_STATE),
- 	regmap_reg_range(AXP20X_CHRG_CTRL1, AXP22X_CHRG_CTRL3),
- 	regmap_reg_range(AXP20X_DCDC_MODE, AXP22X_BATLOW_THRES1),
-+	regmap_reg_range(AXP288_FG_DES_CAP1_REG, AXP288_FG_DES_CAP0_REG),
- };
- static const struct regmap_range axp22x_volatile_ranges[] = {
- 	regmap_reg_range(AXP20X_PWR_INPUT_STATUS, AXP20X_PWR_OP_MODE),
-@@ -10,5 +11,6 @@
- 	regmap_reg_range(AXP22X_GPIO_STATE, AXP22X_GPIO_STATE),
- 	regmap_reg_range(AXP22X_PMIC_TEMP_H, AXP20X_IPSOUT_V_HIGH_L),
- 	regmap_reg_range(AXP20X_FG_RES, AXP20X_FG_RES),
-+	regmap_reg_range(AXP288_FG_DES_CAP1_REG, AXP288_FG_DES_CAP0_REG),
- };
- static const struct regmap_access_table axp22x_writeable_table = {
 diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x_battery.c
 --- a/drivers/power/supply/axp20x_battery.c
 +++ b/drivers/power/supply/axp20x_battery.c
-@@ -22,6 +22,50 @@
- 	default:
- 		return -EINVAL;
+@@ -24,6 +24,30 @@
  	}
-+
-+	return 0;
+ 
+ 	return 0;
 +}
 +
 +#define AXP22X_FG_DES_CAP_LSB_UAH	1456
@@ -58,7 +41,7 @@ diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x
 +		return -EINVAL;
 +
 +	raw = capacity_uah / AXP22X_FG_DES_CAP_LSB_UAH;
-+	if (raw > AXP22X_FG_DES_CAP_MAX)
++	if (raw <= 0 || raw > AXP22X_FG_DES_CAP_MAX)
 +		return -ERANGE;
 +
 +	value[0] = BIT(7) | ((raw >> 8) & 0x7f);
@@ -67,37 +50,10 @@ diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x
 +	return regmap_bulk_write(axp20x_batt->regmap,
 +				 AXP288_FG_DES_CAP1_REG,
 +				 value, sizeof(value));
-+}
-+
-+static int axp22x_get_design_capacity(struct axp20x_batt_ps *axp20x_batt,
-+				      int *capacity_uah)
-+{
-+	u8 value[2];
-+	int raw, ret;
-+
-+	ret = regmap_bulk_read(axp20x_batt->regmap, AXP288_FG_DES_CAP1_REG,
-+			       value, sizeof(value));
-+	if (ret)
-+		return ret;
-+
-+	if (!(value[0] & BIT(7)))
-+		return -ENODATA;
-+
-+	raw = ((value[0] & 0x7f) << 8) | value[1];
-+	*capacity_uah = raw * AXP22X_FG_DES_CAP_LSB_UAH;
- 
- 	return 0;
  }
-@@ -73,7 +117,7 @@
- 	struct power_supply_config psy_cfg = {};
- 	struct power_supply_battery_info *info;
- 	struct device *dev = &pdev->dev;
--	int ret;
-+	int ret, design_capacity_uah;
  
- 	if (!of_device_is_available(pdev->dev.of_node))
- 
-@@ -118,6 +162,23 @@
+ static int axp717_battery_get_max_voltage(struct axp20x_batt_ps *axp20x_batt,
+@@ -146,6 +170,18 @@
  
  	if (!power_supply_get_battery_info(axp20x_batt->batt, &info)) {
  		axp20x_batt->data->set_bat_info(pdev, axp20x_batt, info);
@@ -107,15 +63,10 @@ diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x
 +		    info->charge_full_design_uah > 0) {
 +			ret = axp22x_set_design_capacity(
 +				axp20x_batt, info->charge_full_design_uah);
-+			if (ret) {
++			if (ret)
 +				dev_warn(dev,
 +					 "failed to set fuel-gauge design capacity: %d\n",
 +					 ret);
-+			} else if (!axp22x_get_design_capacity(
-+					   axp20x_batt, &design_capacity_uah)) {
-+				dev_info(dev, "fuel-gauge design capacity: %d uAh\n",
-+					 design_capacity_uah);
-+			}
 +		}
 +
  		power_supply_put_battery_info(axp20x_batt->batt, info);
