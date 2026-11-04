@@ -1,6 +1,6 @@
 # Stage 3 — OCP8178 backlight dry-port
 
-**Status:** implemented; corrected exact-source patch awaiting ARM64 CI validation.
+**Status:** complete; corrected exact-source patch passed ARM64 CI validation.
 
 ## Goal
 
@@ -90,3 +90,24 @@ a future mismatch cannot partially modify the temporary source tree.
 
 Stage 3 remains open until the corrected GitHub Actions run reaches and passes
 the ARM64 object compilation.
+
+## Final validation result
+
+The corrected GitHub Actions `Validate OCP8178 port` workflow completed
+successfully against the real pinned inputs.
+
+This proves:
+
+1. the exact Raspberry Pi Linux 6.18.60 source is fetched successfully;
+2. the exact AK-Rex OCP8178 source is fetched successfully;
+3. the corrected patch passes `--dry-run --fuzz=0`;
+4. the corrected patch applies with `--fuzz=0`;
+5. the selected 22-entry brightness map is present;
+6. AK-Rex `onewire_ready` behavior remains present;
+7. `CONFIG_BACKLIGHT_OCP8178=m` resolves correctly;
+8. `drivers/video/backlight/ocp8178_bl.o` cross-compiles successfully for
+   ARM64.
+
+Stage 3 is therefore complete at source/integration/compile-validation level.
+Physical backlight behavior remains intentionally deferred to hardware
+validation.

@@ -70,7 +70,7 @@ of that branch cannot change our build.
 
 Build-time metadata is recorded in `kernel/sources/ocp8178.lock`.
 
-Stage 3 compile validation: **PENDING after patch-construction correction**. A later CI run exposed that the local integration/refinement patch had been generated against synthetic source neighborhoods and failed before compilation. The patch has now been rebuilt around exact anchors from the pinned real sources.
+Stage 3 compile validation: **PASS** after rebuilding the local patch around exact anchors from the pinned real sources. The corrected workflow dry-runs and applies the patch with `--fuzz=0`, verifies the selected behavior, and cross-compiles `ocp8178_bl.o` for ARM64 against the pinned Raspberry Pi Linux 6.18.60 baseline.
 
 ## uConsole CM4 device tree
 

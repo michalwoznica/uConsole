@@ -117,10 +117,9 @@ Next: Stage 3 — OCP8178 backlight.
 
 Stage 2 (CWU50 panel dry-port) is complete.
 
-Stage 3 (OCP8178 backlight dry-port) is implemented but validation remains
-open. A later CI run exposed a project-generated patch-context error before
-compilation; the patch has now been rebuilt using exact anchors from the real
-pinned source files.
+Stage 3 (OCP8178 backlight dry-port) is complete. The corrected patch now
+applies exactly to the real pinned sources and the OCP8178 object compiles
+successfully for ARM64 against Raspberry Pi Linux 6.18.60.
 
-Next: rerun Stage 3 CI. Stage 4 begins only after OCP8178 patch application
-and ARM64 compilation both pass.
+Next: Stage 4 — create and validate a cleaned uConsole CM4 device-tree
+overlay.

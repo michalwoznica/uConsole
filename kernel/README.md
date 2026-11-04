@@ -59,7 +59,6 @@ The local patch preserves AK-Rex's one-wire state handling and incorporates
 only the selected 22-entry brightness map. Validation is performed by
 `scripts/validate-ocp8178-port.sh`.
 
-Stage 3 status: **VALIDATION PENDING** after correcting the generated
-OCP8178 patch to use exact anchors from the pinned real source files. The next
-CI run must pass patch application and ARM64 object compilation before Stage 3
-is closed.
+Stage 3 result: **PASS**. The corrected OCP8178 patch now dry-runs and
+applies exactly against the pinned real source files, and `ocp8178_bl.o`
+cross-compiles successfully for ARM64 against Raspberry Pi Linux 6.18.60.

@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.1  
-**Current phase:** Stage 3 OCP8178 patch corrected against real pinned sources; ARM64 CI validation pending
+**Document revision:** 1.2  
+**Current phase:** Stage 3 OCP8178 dry-port complete; Stage 4 cleaned CM4 device-tree overlay is next
 
 ---
 
@@ -386,50 +386,58 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - ARM64 object compilation: PASS
 - no functional source adaptation required
 
-### Stage 3 — OCP8178 backlight dry-port: CORRECTED, VALIDATION PENDING
+### Stage 3 — OCP8178 backlight dry-port: COMPLETE
 
-The behavioral design remains unchanged:
+Selected behavioral source:
 
-- exact AK-Rex OCP8178 source at
-  `0234e320bec7748fc6f1fb6904a055de10f0a727`;
-- preserve AK-Rex `onewire_ready` behavior;
+- AK-Rex commit:
+  `0234e320bec7748fc6f1fb6904a055de10f0a727`
+- source:
+  `drivers/video/backlight/ocp8178_bl.c`
+
+Selected local refinement:
+
+- preserve AK-Rex one-wire readiness tracking;
 - adopt only the audited 22-entry brightness map;
 - keep ClusterM out of the build dependency chain.
 
-A later CI run revealed that the local OCP8178 patch had been generated from
-synthetic source neighborhoods. It failed against the actual pinned inputs
-before compilation:
+The first Stage 3 patch attempt was invalid because its hunks were generated
+against synthetic source neighborhoods. That failure was corrected before
+Stage 3 closure.
 
-- Kconfig hunk: failed;
-- Makefile hunk: applied;
-- both brightness hunks: failed.
+Final validation result:
 
-Therefore the previous Stage 3 completion claim was premature and is
-explicitly superseded by this revision.
+- exact Raspberry Pi source fetch: PASS;
+- exact AK-Rex OCP8178 source fetch: PASS;
+- patch dry-run with `--fuzz=0`: PASS;
+- patch apply with `--fuzz=0`: PASS;
+- 22-entry brightness-map verification: PASS;
+- `onewire_ready` preservation check: PASS;
+- `CONFIG_BACKLIGHT_OCP8178=m`: PASS;
+- ARM64 `ocp8178_bl.o` compilation: PASS.
 
-Correction:
+CI trigger cleanup is also complete:
 
-- Kconfig patch now anchors exactly on `config BACKLIGHT_OMAP1`;
-- Makefile patch anchors exactly on the `CONFIG_BACKLIGHT_OMAP1` line;
-- brightness changes anchor exactly on the original AK-Rex
-  `MAX_BRIGHTNESS_VALUE` definition and brightness-table line;
-- validator performs `patch --dry-run --fuzz=0` before actual application;
-- CI path filters are narrowed so CWU50 and OCP8178 run only when their own
-  inputs or the shared kernel baseline change.
+- CWU50 workflow watches only its own inputs plus the shared kernel baseline;
+- OCP8178 workflow watches only its own inputs plus the shared kernel baseline;
+- documentation-only changes no longer trigger both kernel jobs.
 
-### NEXT
+Physical backlight behavior remains unproven until hardware testing.
 
-Push this correction and inspect `Validate OCP8178 port`.
+### NEXT: Stage 4 — cleaned uConsole CM4 device-tree overlay
 
-Stage 3 becomes complete only if the corrected workflow:
+Stage 4 should:
 
-1. fetches both exact sources;
-2. dry-runs and applies the patch with `--fuzz=0`;
-3. verifies the selected behavior;
-4. resolves `CONFIG_BACKLIGHT_OCP8178=m`;
-5. cross-compiles `ocp8178_bl.o` for ARM64.
-
-Only then proceed to Stage 4.
+1. pin exact AK-Rex and OuinOuin74 overlay source references;
+2. compare nodes and properties semantically;
+3. retain only justified CM4/uConsole hardware description;
+4. exclude unrelated policy such as forced PCIe/Ethernet disablement and SD
+   overclocking unless separately justified;
+5. make battery capacity configurable where practical;
+6. integrate CWU50 and OCP8178 nodes against the already-proven drivers;
+7. compile the overlay against the pinned Raspberry Pi Linux 6.18.60 tree;
+8. add CI validation and provenance;
+9. defer physical boot validation to the later hardware stage.
 
 ---
 
@@ -448,6 +456,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.2 / Stage 3 complete
+
+- Recorded successful corrected `Validate OCP8178 port` workflow.
+- Confirmed the real-source OCP8178 patch dry-runs and applies with
+  `--fuzz=0`.
+- Confirmed the selected 22-entry brightness refinement and AK-Rex
+  `onewire_ready` behavior coexist as intended.
+- Confirmed `CONFIG_BACKLIGHT_OCP8178=m` resolves and `ocp8178_bl.o`
+  cross-compiles successfully for ARM64.
+- Marked Stage 3 complete.
+- Retained narrowed CWU50/OCP8178 workflow path filters.
+- Set Stage 4 cleaned uConsole CM4 device-tree overlay as the next step.
+
 
 ### 2026-11-04 — Revision 1.1 / Stage 3 real-source patch correction
 
