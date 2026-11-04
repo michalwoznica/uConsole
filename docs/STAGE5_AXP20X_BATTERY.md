@@ -81,3 +81,13 @@ The final Stage 5 candidate colocates the design-capacity helper immediately
 above `axp20x_power_probe()` and represents the helper plus probe call as one
 contiguous patch hunk. This removes all cross-hunk offset dependence while
 leaving functional scope unchanged.
+
+## Exact-block correction
+
+The prior single-hunk candidate still included hand-reconstructed surrounding
+probe context. CI printed the exact four-line battery-info block from the
+pinned source.
+
+The final candidate patches only that exact block. The design-capacity
+conversion and E0/E1 write are inline, so no helper function or distant source
+context remains.

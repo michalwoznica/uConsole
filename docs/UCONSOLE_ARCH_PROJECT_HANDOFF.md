@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 1.8  
-**Current phase:** Stage 5 rebuilt as one contiguous exact-context hunk; ARM64 CI validation pending
+**Document revision:** 1.9  
+**Current phase:** Stage 5 reduced to exact CI battery-info block; ARM64 CI validation pending
 
 ---
 
@@ -383,28 +383,31 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
 
-### Stage 5 — minimal AXP20x/AXP221 battery delta: SINGLE-HUNK CORRECTION, VALIDATION PENDING
+### Stage 5 — minimal AXP20x/AXP221 battery delta: EXACT-BLOCK CORRECTION, VALIDATION PENDING
 
-Latest CI evidence confirms both intended source regions exist, but the
-two-hunk patch still failed before compilation because hunk placement remained
-fragile.
+Latest CI proved the remaining mismatch came from hand-reconstructed
+surrounding probe context.
 
-Final patch-mechanics correction:
+Final correction:
 
-- move the design-capacity helper immediately above `axp20x_power_probe()`;
-- include the helper definition, unchanged probe body context, and the new
-  probe call in one contiguous hunk;
-- validator requires exactly one hunk;
-- strict `--fuzz=0` remains;
+- use the exact four-line battery-info block printed by CI as the only patch
+  anchor;
+- perform the 1456-uAh/LSB conversion inline inside that block;
+- write the 15-bit value to E0/E1 with the valid bit;
+- no helper function;
 - no MFD change;
-- no Stage 5 functional-scope expansion;
-- Stage 4 overlay remains green.
+- no distant context;
+- exactly one patch hunk;
+- strict `--fuzz=0` remains.
+
+The pinned MFD source confirms the stock AXP22x writable range already extends
+through 0xe6, covering E0/E1 at 0xe0/0xe1.
 
 ### NEXT
 
 Push this correction and inspect `Validate AXP20x battery delta`.
 
-Stage 5 closes only when the single hunk applies and
+Stage 5 closes only when the exact-block patch applies and
 `drivers/power/supply/axp20x_battery.o` compiles successfully.
 
 ---
@@ -424,6 +427,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 1.9 / Stage 5 exact-block correction
+
+- Replaced reconstructed probe-function context with the exact four-line block
+  emitted by CI from the pinned source.
+- Generated unified-diff line counts programmatically to avoid malformed
+  patch metadata.
+- Removed the helper function and kept the design-capacity write inline.
+- Reconfirmed no MFD change is required.
+- Stage 5 remains validation-pending.
+
 
 ### 2026-11-04 — Revision 1.8 / Stage 5 single-hunk correction
 

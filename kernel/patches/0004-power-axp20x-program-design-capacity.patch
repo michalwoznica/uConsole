@@ -11,114 +11,41 @@ design-capacity registers.
 The AXP228 register family uses E0/E1 for a 15-bit battery full-design-capacity
 value with 1.456 mAh (1456 uAh) per LSB.
 
-No MFD/regmap change is required: stock AXP22x already allows writes from
-0x80 through 0xe6, which includes E0/E1.
+No MFD/regmap change is required: stock AXP22x already permits writes through
+AXP22X_BATLOW_THRES1 (0xe6), covering E0/E1 (0xe0/0xe1).
 
-The helper is intentionally placed immediately above axp20x_power_probe() and
-the entire Stage 5 change is represented by one contiguous hunk.
-
-This patch deliberately does not add calibration controls, synthetic energy
-reporting, writable charge-full controls, power-key behavior, charge-LED
-behavior, VBUS policy, or GPIO side effects.
+The change is intentionally local to the exact four-line battery-info block
+printed by CI from the pinned source.
 
 ---
 diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x_battery.c
 --- a/drivers/power/supply/axp20x_battery.c
 +++ b/drivers/power/supply/axp20x_battery.c
-@@ -1,59 +1,96 @@
- static const struct of_device_id axp20x_battery_ps_id[] = {
- 	{
- 		.compatible = "x-powers,axp209-battery-power-supply",
- 		.data = (void *)&axp209_data,
- 	}, {
- 		.compatible = "x-powers,axp221-battery-power-supply",
- 		.data = (void *)&axp221_data,
- 	}, {
- 		.compatible = "x-powers,axp717-battery-power-supply",
- 		.data = (void *)&axp717_data,
- 	}, {
- 		.compatible = "x-powers,axp813-battery-power-supply",
- 		.data = (void *)&axp813_data,
- 	}, { /* sentinel */ },
- };
- MODULE_DEVICE_TABLE(of, axp20x_battery_ps_id);
-+
-+#define AXP22X_FG_DES_CAP_LSB_UAH	1456
-+#define AXP22X_FG_DES_CAP_MAX		0x7fff
-+
-+static int axp22x_set_design_capacity(struct axp20x_batt_ps *axp20x_batt,
-+				      int capacity_uah)
-+{
-+	u8 value[2];
-+	int raw;
-+
-+	if (capacity_uah <= 0)
-+		return -EINVAL;
-+
-+	raw = capacity_uah / AXP22X_FG_DES_CAP_LSB_UAH;
-+	if (raw <= 0 || raw > AXP22X_FG_DES_CAP_MAX)
-+		return -ERANGE;
-+
-+	value[0] = BIT(7) | ((raw >> 8) & 0x7f);
-+	value[1] = raw & 0xff;
-+
-+	return regmap_bulk_write(axp20x_batt->regmap,
-+				 AXP288_FG_DES_CAP1_REG,
-+				 value, sizeof(value));
-+}
-+
- static int axp20x_power_probe(struct platform_device *pdev)
- {
- 	struct axp20x_batt_ps *axp20x_batt;
- 	struct power_supply_config psy_cfg = {};
- 	struct power_supply_battery_info *info;
- 	struct device *dev = &pdev->dev;
- 	int ret;
- 
- 	if (!of_device_is_available(pdev->dev.of_node))
- 		return -ENODEV;
- 
- 	axp20x_batt = devm_kzalloc(&pdev->dev, sizeof(*axp20x_batt),
- 				   GFP_KERNEL);
- 	if (!axp20x_batt)
- 		return -ENOMEM;
- 
- 	axp20x_batt->dev = &pdev->dev;
- 	axp20x_batt->regmap = dev_get_regmap(pdev->dev.parent, NULL);
- 	platform_set_drvdata(pdev, axp20x_batt);
- 
- 	psy_cfg.drv_data = axp20x_batt;
- 	psy_cfg.fwnode = dev_fwnode(&pdev->dev);
- 
- 	axp20x_batt->data = (struct axp_data *)of_device_get_match_data(dev);
- 
- 	ret = axp20x_batt->data->cfg_iio_chan(pdev, axp20x_batt);
- 	if (ret)
- 		return ret;
- 	axp20x_batt->batt = devm_power_supply_register(&pdev->dev,
- 						       axp20x_batt->data->bat_ps_desc,
- 						       &psy_cfg);
- 	if (IS_ERR(axp20x_batt->batt)) {
- 		dev_err(&pdev->dev, "failed to register power supply: %ld\n",
- 			PTR_ERR(axp20x_batt->batt));
- 		return PTR_ERR(axp20x_batt->batt);
- 	}
- 
+@@ -1131,4 +1131,27 @@
  	if (!power_supply_get_battery_info(axp20x_batt->batt, &info)) {
  		axp20x_batt->data->set_bat_info(pdev, axp20x_batt, info);
 +
 +		if (of_device_is_compatible(pdev->dev.of_node,
 +					    "x-powers,axp221-battery-power-supply") &&
 +		    info->charge_full_design_uah > 0) {
-+			ret = axp22x_set_design_capacity(
-+				axp20x_batt, info->charge_full_design_uah);
-+			if (ret)
-+				dev_warn(dev,
-+					 "failed to set fuel-gauge design capacity: %d\n",
-+					 ret);
++			u8 value[2];
++			int raw;
++
++			/* AXP22x full-design-capacity resolution is 1456 uAh/LSB. */
++			raw = info->charge_full_design_uah / 1456;
++			if (raw > 0 && raw <= 0x7fff) {
++				value[0] = BIT(7) | ((raw >> 8) & 0x7f);
++				value[1] = raw & 0xff;
++
++				ret = regmap_bulk_write(axp20x_batt->regmap,
++						 AXP288_FG_DES_CAP1_REG,
++						 value, sizeof(value));
++				if (ret)
++					dev_warn(dev,
++						 "failed to set fuel-gauge design capacity: %d\n",
++						 ret);
++			}
 +		}
 +
  		power_supply_put_battery_info(axp20x_batt->batt, info);
  	}
- 
- 	/*
