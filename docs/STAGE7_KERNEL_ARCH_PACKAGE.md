@@ -1,6 +1,6 @@
 # Stage 7 — reproducible kernel configuration and Arch packaging
 
-**Status:** implemented; configuration/composition CI validation pending.
+**Status:** complete; configuration/composition CI validation passed.
 
 ## Goal
 
@@ -190,3 +190,28 @@ The validator now:
 
 No PKGBUILD, kernel config, boot policy, source pin, patch, or package behavior
 changed in this correction.
+
+## Final validation result
+
+The GitHub Actions `Validate kernel config and Arch package` workflow completed
+successfully.
+
+This proves the Stage 7 composition/package contract:
+
+1. repository and package policy checks pass;
+2. deterministic Arch package staging succeeds;
+3. exact pinned Raspberry Pi Linux 6.18.60 source is fetched;
+4. exact pinned CWU50 and OCP8178 sources are fetched;
+5. the actual PKGBUILD `prepare()` path runs successfully;
+6. patches `0001` through `0005` all apply with `--fuzz=0`;
+7. `bcm2711_defconfig` plus `uconsole-cm4.config` resolves all required
+   uConsole hardware symbols;
+8. Linux Kbuild consistently uses `ARCH=arm64`;
+9. the resulting kernel release is exactly `6.18.60-1-uconsole`;
+10. the fully composed source tree passes `make prepare`.
+
+Stage 7 is therefore complete.
+
+A complete compile of `Image`, modules and DTBs is intentionally deferred to
+Stage 8, so Stage 7 does not yet prove that the entire configured kernel
+builds end-to-end.

@@ -206,4 +206,4 @@ uConsole overlay selection, CM4 USB host mode and PWM audio on GPIO12/13.
 
 Detailed rationale: `docs/STAGE7_KERNEL_ARCH_PACKAGE.md`.
 
-Stage 7 CI validation is **pending**.
+Stage 7 CI validation: **PASS**. The actual staged PKGBUILD `prepare()` path composes all five project patches against the pinned Raspberry Pi Linux 6.18.60 source, resolves the uConsole config, produces kernel release `6.18.60-1-uconsole`, and passes `make prepare`.

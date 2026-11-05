@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.7  
-**Current phase:** Stage 7 static PKGBUILD assertions corrected; composition/config/package CI validation pending
+**Document revision:** 2.8  
+**Current phase:** Stage 7 kernel configuration and Arch packaging complete; Stage 8 full build-only validation is next
 
 ---
 
@@ -387,53 +387,65 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-### Stage 7 — kernel configuration and Arch packaging: STATIC ASSERTIONS CORRECTED, VALIDATION PENDING
+### Stage 7 — kernel configuration and Arch packaging: COMPLETE
 
-Third Stage 7 CI result:
+Final Stage 7 architecture:
 
-- repository policy: PASS;
-- package staging: PASS;
-- workflow exited immediately afterward;
-- source fetching and PKGBUILD composition were not reached.
+- Raspberry Pi `bcm2711_defconfig` is the platform baseline;
+- `kernel/config/uconsole-cm4.config` is the auditable project delta;
+- the staged `linux-uconsole` PKGBUILD is the Arch package definition;
+- authoritative project sources remain under `kernel/`;
+- `scripts/stage-arch-kernel-package.sh` creates a self-contained makepkg
+  workspace;
+- Arch package architecture remains `aarch64`;
+- Linux Kbuild architecture is explicitly `arm64`;
+- expected release is `6.18.60-1-uconsole`;
+- boot/image policy remains outside the kernel package.
 
-Root cause:
+Final Stage 7 CI result:
 
-The previous Kbuild architecture correction changed the valid PKGBUILD command
-from:
+- repository policy checks: PASS;
+- package workspace staging: PASS;
+- exact source fetch: PASS;
+- PKGBUILD syntax/policy assertions: PASS;
+- actual PKGBUILD `prepare()` composition: PASS;
+- patches 0001-0005 with `--fuzz=0`: PASS;
+- uConsole config merge and resolution: PASS;
+- expected kernel release `6.18.60-1-uconsole`: PASS;
+- composed source identity checks: PASS;
+- `make prepare`: PASS.
 
-`make bcm2711_defconfig`
+Stage 7 therefore proves the complete source/configuration/package composition
+path, but intentionally does not yet prove a full kernel compile.
 
-to:
+### NEXT: Stage 8 — full build-only validation
 
-`make ARCH=arm64 bcm2711_defconfig`
+Stage 8 should:
 
-but the Stage 7 validator still contained the old literal `grep -q`. Under
-`set -e`, that failed silently.
+1. reuse the exact Stage 7 staged PKGBUILD composition path;
+2. run the actual kernel `build()` path:
+   - `Image`
+   - modules
+   - DTBs;
+3. verify the project modules exist:
+   - `panel-cwu50.ko`
+   - `ocp8178_bl.ko`
+   - `uconsole-amp-switch.ko`
+   - relevant AXP20x modules;
+4. verify the uConsole DTBO is produced;
+5. verify the CM4 base DTB is produced;
+6. apply the uConsole DTBO to the CM4 base DTB with `fdtoverlay`;
+7. exercise the package install path into a temporary package root;
+8. verify:
+   - `/boot/kernel8.img`;
+   - DTBs and overlays;
+   - `/usr/lib/modules/6.18.60-1-uconsole/...`;
+   - mkinitcpio preset;
+9. avoid building a flashable image yet;
+10. update provenance and this handoff before Stage 8 closure.
 
-Correction:
-
-- replace plain PKGBUILD greps with named `assert_pkgbuild` checks;
-- assert `ARCH=arm64` for:
-  - `bcm2711_defconfig`;
-  - `olddefconfig`;
-  - `kernelrelease`;
-  - `Image modules dtbs`;
-  - module installation;
-  - DTB installation;
-- retain checks for package identity, pinned version/commit, config merge and
-  `/boot/kernel8.img`;
-- each static invariant now prints an explicit error before exiting.
-
-No PKGBUILD or build behavior changed.
-
-### NEXT
-
-Push this validator-only correction and inspect
-`Validate kernel config and Arch package`.
-
-The next meaningful boundary is the actual PKGBUILD `prepare()` path. Stage 7
-closes only when composition/configuration succeeds, the expected
-`6.18.60-1-uconsole` release is verified, and `make prepare` passes.
+If Stage 8 passes, Stage 9 begins Arch Linux ARM rootfs/image-builder
+integration.
 
 ---
 
@@ -452,6 +464,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.8 / Stage 7 complete
+
+- Recorded successful `Validate kernel config and Arch package` workflow.
+- Confirmed deterministic package staging and policy checks.
+- Confirmed actual PKGBUILD `prepare()` composition against the pinned source.
+- Confirmed patches 0001-0005 all apply with `--fuzz=0`.
+- Confirmed the uConsole config resolves and kernel release is
+  `6.18.60-1-uconsole`.
+- Confirmed the composed tree passes `make prepare`.
+- Marked Stage 7 complete.
+- Set Stage 8 full build-only validation as the next step.
+
 
 ### 2026-11-05 — Revision 2.7 / Stage 7 static-assertion correction
 
