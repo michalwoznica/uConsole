@@ -1,0 +1,127 @@
+# Stage 7 — reproducible kernel configuration and Arch packaging
+
+**Status:** implemented; configuration/composition CI validation pending.
+
+## Goal
+
+Turn the independently proven uConsole kernel deltas into one deterministic
+kernel composition and a standard Arch Linux ARM package definition.
+
+Stage 7 deliberately stops before a complete kernel/package build. Full
+build-only validation is Stage 8.
+
+## Kernel configuration model
+
+The platform baseline remains the pinned Raspberry Pi Linux
+`bcm2711_defconfig`.
+
+The project adds only:
+
+`kernel/config/uconsole-cm4.config`
+
+This fragment enables the already selected hardware paths:
+
+- VC4/MIPI DSI and CWU50 panel;
+- OCP8178 backlight;
+- AXP221 MFD/ADC/battery/charger/regulator/power-key support;
+- TI ADC101C;
+- spidev for the exposed expansion SPI path;
+- Raspberry Pi PWM audio;
+- the project uConsole amplifier-switch module;
+- Landlock for a modern Arch userspace security/sandboxing baseline.
+
+A full copied `.config` is intentionally not stored.
+
+## Composition order
+
+The Arch package `prepare()` path performs the real project composition:
+
+1. unpack exact Raspberry Pi Linux 6.18.60 source;
+2. install exact pinned CWU50 source;
+3. install exact pinned OCP8178 source;
+4. install the project-owned CM4 overlay;
+5. install the project-owned amplifier-switch driver;
+6. apply patches `0001` through `0005` with `--fuzz=0`;
+7. remove Raspberry Pi's `CONFIG_LOCALVERSION="-v8"`;
+8. set package localversion files;
+9. run `bcm2711_defconfig`;
+10. merge `uconsole-cm4.config`;
+11. run `olddefconfig`;
+12. record the resulting kernel release.
+
+Expected release for package revision 1:
+
+`6.18.60-1-uconsole`
+
+## Arch package
+
+Package metadata lives at:
+
+`image/archlinuxarm/packages/linux-uconsole/`
+
+Package name:
+
+`linux-uconsole`
+
+The package installs:
+
+- `/boot/kernel8.img`;
+- Raspberry Pi DTBs;
+- kernel-matched overlays, including the uConsole overlay;
+- `/usr/lib/modules/<kernel-release>/...`;
+- an mkinitcpio preset.
+
+It follows the current Arch Linux ARM `linux-rpi` packaging shape where useful,
+but does **not** inherit that package's moving Raspberry Pi source commit.
+The project `kernel/source.lock` remains authoritative.
+
+The package intentionally does not install `config.txt` or `cmdline.txt`.
+
+## Deterministic staging
+
+The package directory does not contain duplicate copies of kernel patches or
+drivers.
+
+Use:
+
+`scripts/stage-arch-kernel-package.sh DESTINATION`
+
+to create a self-contained makepkg workspace from the Git-tracked
+authoritative project files.
+
+## Arch boot policy
+
+The first Arch boot-policy fragment is:
+
+`image/archlinuxarm/boot/config-uconsole-cm4.txt`
+
+It selects:
+
+- 64-bit firmware mode;
+- CM4 USB host mode;
+- project uConsole overlay;
+- Pi 4/CM4 VC4 KMS;
+- PWM audio on GPIO12/13;
+- `/boot/kernel8.img`.
+
+It intentionally does not restore historical `gpio=11=...` speaker forcing:
+the Stage 6 kernel driver owns amplifier switching.
+
+It also does not add SD overclocking, forced Ethernet/PCIe disablement, or
+init-system-specific behavior.
+
+Stage 9 will compose this fragment into the actual Arch image.
+
+## Validation boundary
+
+Stage 7 CI must prove:
+
+- package staging is deterministic;
+- PKGBUILD shell syntax is valid;
+- package source commit/version match the project lock;
+- the actual PKGBUILD `prepare()` path composes all five patches;
+- the config fragment resolves to all required values;
+- kernel release is `6.18.60-1-uconsole`;
+- `make prepare` succeeds.
+
+Stage 7 does not compile `Image`, modules, or DTBs. That is Stage 8.

@@ -15,3 +15,11 @@ paths. CI workflows therefore invoke project shell validators explicitly with
 `bash ./scripts/<name>.sh` rather than relying on the executable bit. This
 prevents archive metadata loss from turning a valid source checkpoint into a
 spurious CI `Permission denied` failure.
+
+Stage 7 adds:
+
+- `stage-arch-kernel-package.sh` — create a self-contained Arch makepkg
+  workspace without duplicating authoritative project sources in Git;
+- `validate-kernel-config-package.sh` — compose the full pinned source tree,
+  execute the actual PKGBUILD `prepare()` path, resolve the uConsole kernel
+  config, and stop before the Stage 8 full build.

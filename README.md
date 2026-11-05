@@ -143,3 +143,8 @@ tree and cross-compiles successfully for ARM64; the shared CM4 overlay also
 remains green.
 
 Next: Stage 7 — kernel configuration and Arch packaging.
+
+Stage 7 (reproducible kernel configuration and Arch packaging) is implemented
+and awaiting CI validation. It introduces a small config fragment on top of
+`bcm2711_defconfig`, a staged `linux-uconsole` PKGBUILD, and an Arch boot-policy
+fragment while preserving init-system independence in the kernel layer.

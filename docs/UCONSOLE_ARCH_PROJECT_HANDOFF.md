@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
-**Status date:** 2026-11-04  
-**Document revision:** 2.3  
-**Current phase:** Stage 6 audio/headphone switching complete; Stage 7 kernel configuration and Arch packaging is next
+**Status date:** 2026-11-05  
+**Document revision:** 2.4  
+**Current phase:** Stage 7 kernel configuration and Arch packaging implemented; CI validation pending
 
 ---
 
@@ -387,47 +387,75 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-Final Stage 6 architecture:
+### Stage 7 — kernel configuration and Arch packaging: IMPLEMENTED, VALIDATION PENDING
 
-- stock Raspberry Pi PWM audio routing remains the signal path;
-- later boot/image configuration will enable:
-  - `dtparam=audio=on`
-  - `dtoverlay=audremap,pins_12_13`
-- GPIO10 = headphone detect, active high;
-- GPIO11 = speaker amplifier enable, active high;
-- project-owned GPL-2.0-only threaded-IRQ driver handles automatic speaker
-  cutoff;
-- no userspace polling;
-- no hard-IRQ `*_cansleep()` operations;
-- no firmware-forced permanent amplifier enable.
+Configuration architecture:
 
-Final validation result:
+- exact Raspberry Pi `bcm2711_defconfig` remains the platform baseline;
+- project delta is `kernel/config/uconsole-cm4.config`;
+- no copied full `.config`;
+- expected package kernel release is `6.18.60-1-uconsole`.
 
-- Stage 6 driver/overlay policy assertions: PASS;
-- Kconfig integration patch with `--fuzz=0`: PASS;
-- Makefile integration patch with `--fuzz=0`: PASS;
-- `CONFIG_UCONSOLE_AMP_SWITCH=m`: PASS;
-- `drivers/misc/uconsole-amp-switch.o` ARM64 compilation: PASS;
-- shared CM4 overlay workflow after adding the audio node: PASS.
+The fragment explicitly enables:
 
-Physical audio routing, jack behavior, speaker cutoff timing, audio quality and
-pop/click behavior remain unproven until hardware testing.
+- VC4/MIPI DSI + CWU50;
+- OCP8178;
+- AXP221 I2C MFD/ADC/battery/charger/regulator/power key;
+- TI ADC101C;
+- spidev expansion support;
+- Raspberry Pi PWM audio;
+- uConsole amplifier switch;
+- Landlock.
 
-### NEXT: Stage 7 — kernel configuration and Arch packaging
+Arch package:
 
-Stage 7 should:
+`image/archlinuxarm/packages/linux-uconsole/PKGBUILD`
 
-1. define the reproducible kernel config starting from `bcm2711_defconfig`;
-2. enable the proven uConsole-specific drivers/configs deterministically;
-3. identify all additional CM4/uConsole runtime requirements that must be
-   modules or built-ins;
-4. create Arch Linux ARM package/build metadata without introducing
-   systemd-specific assumptions into the shared kernel layer;
-5. keep boot-policy settings such as `audio=on` and `audremap,pins_12_13` in
-   the Arch image/boot configuration, not in kernel patches;
-6. define deterministic kernel/DTBO/module install outputs;
-7. add build-only CI for the complete configured kernel package;
-8. update provenance and this handoff before Stage 7 closure.
+Responsibilities:
+
+- compose exact pinned kernel + project source inputs;
+- apply patches 0001-0005 with `--fuzz=0`;
+- merge the project config fragment;
+- build/install `kernel8.img`, DTBs/overlays and modules;
+- integrate with Arch mkinitcpio;
+- remain free of systemd/OpenRC policy.
+
+Authoritative source files are not duplicated into the package directory.
+`scripts/stage-arch-kernel-package.sh` creates a self-contained makepkg
+workspace.
+
+Arch boot policy:
+
+`image/archlinuxarm/boot/config-uconsole-cm4.txt`
+
+Contains:
+
+- 64-bit mode;
+- CM4 USB host mode;
+- uConsole overlay;
+- Pi4/CM4 VC4 KMS;
+- PWM audio remap on GPIO12/13;
+- `kernel8.img`.
+
+It does not contain old GPIO11 speaker forcing, SD overclocking or
+init-system-specific logic.
+
+Validation workflow:
+
+`.github/workflows/validate-kernel-config-package.yml`
+
+It must execute the actual PKGBUILD `prepare()` path against the exact pinned
+source, verify the resolved config and kernel release, and pass `make prepare`.
+It intentionally does not perform a full kernel build.
+
+### NEXT
+
+Push the Stage 7 candidate and inspect `Validate kernel config and Arch
+package`.
+
+If it passes, create the Stage 7 completion checkpoint. Stage 8 will then be
+the first complete build-only validation of Image, modules and DTBs from this
+composition/package path.
 
 ---
 
@@ -446,6 +474,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.4 / Stage 7 candidate
+
+- Defined the uConsole CM4 config fragment on top of `bcm2711_defconfig`.
+- Added a pacman-managed `linux-uconsole` Arch Linux ARM package definition.
+- Added deterministic package-workspace staging without duplicating
+  authoritative kernel inputs in Git.
+- Added the first Arch CM4 boot-policy fragment with KMS, uConsole overlay,
+  USB host and PWM audio settings.
+- Kept boot/image policy out of the kernel package and kept init-system policy
+  out of the shared kernel layer.
+- Added Stage 7 composition/config/package CI.
+- Stage 7 remains open until that workflow passes.
+
 
 ### 2026-11-05 — Revision 2.3 / Stage 6 complete
 

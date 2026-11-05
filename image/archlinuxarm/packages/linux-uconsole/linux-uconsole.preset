@@ -1,0 +1,10 @@
+# mkinitcpio preset for linux-uconsole
+
+#ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="%KERNVER%"
+
+PRESETS=('default')
+
+#default_config="/etc/mkinitcpio.conf"
+default_image="/boot/initramfs-linux-uconsole.img"
+#default_options=""

@@ -1,0 +1,172 @@
+# Maintained by the uConsole Linux project.
+# This PKGBUILD is staged with authoritative project inputs by:
+#   scripts/stage-arch-kernel-package.sh
+#
+# Build source: exact project-pinned Raspberry Pi Linux commit, not branch HEAD.
+
+pkgbase=linux-uconsole
+pkgname=("$pkgbase")
+pkgver=6.18.60
+pkgrel=1
+pkgdesc='Raspberry Pi Linux kernel for ClockworkPi uConsole CM4'
+arch=('aarch64')
+url='https://github.com/raspberrypi/linux'
+license=('GPL-2.0-only')
+
+_commit=0b41724521c9adf5399409d02aece6c1df0a4432
+_srcname="linux-${_commit}"
+
+makedepends=(
+  bc
+  dtc
+  inetutils
+  kmod
+)
+
+depends=(
+  coreutils
+  firmware-raspberrypi
+  kmod
+  'mkinitcpio>=0.7'
+  raspberrypi-bootloader
+)
+
+optdepends=(
+  'linux-firmware: firmware images needed for some devices'
+  'wireless-regdb: set the legal Wi-Fi channels for the configured country'
+)
+
+provides=(
+  "linux=${pkgver}"
+  KSMBD-MODULE
+  WIREGUARD-MODULE
+  raspberrypi-overlays
+)
+
+conflicts=(
+  linux
+  linux-aarch64
+  linux-rpi
+  linux-rpi-16k
+  uboot-raspberrypi
+)
+
+options=('!strip')
+
+source=(
+  "linux-${pkgver}-${_commit:0:10}.tar.gz::https://github.com/raspberrypi/linux/archive/${_commit}.tar.gz"
+  "panel-cwu50.c::https://raw.githubusercontent.com/ak-rex/rpi-linux/0234e320bec7748fc6f1fb6904a055de10f0a727/drivers/gpu/drm/panel/panel-cwu50.c"
+  "ocp8178_bl.c::https://raw.githubusercontent.com/ak-rex/rpi-linux/0234e320bec7748fc6f1fb6904a055de10f0a727/drivers/video/backlight/ocp8178_bl.c"
+  'uconsole-cm4.config'
+  'clockworkpi-uconsole-cm4-overlay.dts'
+  'uconsole-amp-switch.c'
+  '0001-drm-panel-integrate-cwu50.patch'
+  '0002-video-backlight-integrate-ocp8178.patch'
+  '0003-arm-dts-build-uconsole-cm4-overlay.patch'
+  '0004-power-axp20x-program-design-capacity.patch'
+  '0005-misc-integrate-uconsole-amplifier-switch.patch'
+  'linux-uconsole.preset'
+)
+
+# Remote inputs are pinned by immutable Git commit URLs; local inputs are
+# supplied from the Git-tracked project by the deterministic staging script.
+# Stage 8 will validate a complete build from these exact sources.
+sha256sums=(
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+)
+
+prepare() {
+  cd "${srcdir}/${_srcname}"
+
+  install -Dm644 "${srcdir}/panel-cwu50.c" \
+    drivers/gpu/drm/panel/panel-cwu50.c
+  install -Dm644 "${srcdir}/ocp8178_bl.c" \
+    drivers/video/backlight/ocp8178_bl.c
+  install -Dm644 "${srcdir}/clockworkpi-uconsole-cm4-overlay.dts" \
+    arch/arm/boot/dts/overlays/clockworkpi-uconsole-cm4-overlay.dts
+  install -Dm644 "${srcdir}/uconsole-amp-switch.c" \
+    drivers/misc/uconsole-amp-switch.c
+
+  local patch_name
+  for patch_name in \
+    0001-drm-panel-integrate-cwu50.patch \
+    0002-video-backlight-integrate-ocp8178.patch \
+    0003-arm-dts-build-uconsole-cm4-overlay.patch \
+    0004-power-axp20x-program-design-capacity.patch \
+    0005-misc-integrate-uconsole-amplifier-switch.patch
+  do
+    patch --strip=1 --forward --fuzz=0 < "${srcdir}/${patch_name}"
+  done
+
+  # Keep the kernel release package-owned instead of inheriting "-v8".
+  sed -i '/^CONFIG_LOCALVERSION=/d' arch/arm64/configs/bcm2711_defconfig
+  printf '%s\n' "-${pkgrel}" > localversion.10-pkgrel
+  printf '%s\n' "-uconsole" > localversion.20-pkgname
+
+  make bcm2711_defconfig
+  scripts/kconfig/merge_config.sh -m .config "${srcdir}/uconsole-cm4.config"
+  make olddefconfig
+
+  make -s kernelrelease > version
+  printf 'Prepared %s kernel release %s\n' "$pkgbase" "$(<version)"
+}
+
+build() {
+  cd "${srcdir}/${_srcname}"
+  make Image modules dtbs
+}
+
+package() {
+  cd "${srcdir}/${_srcname}"
+
+  local kernver
+  kernver="$(<version)"
+  local modulesdir="${pkgdir}/usr/lib/modules/${kernver}"
+
+  printf '%s\n' "$pkgbase" |
+    install -Dm644 /dev/stdin "${modulesdir}/pkgbase"
+
+  make INSTALL_MOD_PATH="${pkgdir}/usr" \
+    INSTALL_MOD_STRIP=1 \
+    DEPMOD=/doesnt/exist \
+    modules_install
+
+  rm -f "${modulesdir}/build" "${modulesdir}/source"
+
+  mkdir -p "${pkgdir}/boot"
+  make INSTALL_DTBS_PATH="${pkgdir}/boot" dtbs_install
+
+  # Match the Raspberry Pi firmware layout used by Arch Linux ARM.
+  if [[ -d "${pkgdir}/boot/broadcom" ]]; then
+    find "${pkgdir}/boot/broadcom" -type f -print0 |
+      xargs -0 -r mv -t "${pkgdir}/boot"
+    rmdir "${pkgdir}/boot/broadcom"
+  fi
+
+  install -m644 arch/arm64/boot/Image "${pkgdir}/boot/kernel8.img"
+  install -m644 arch/arm/boot/dts/overlays/README \
+    "${pkgdir}/boot/overlays/README"
+
+  local subst
+  subst="
+s|%KERNVER%|${kernver}|g
+"
+  sed "${subst}" "${srcdir}/linux-uconsole.preset" |
+    install -Dm644 /dev/stdin \
+      "${pkgdir}/etc/mkinitcpio.d/linux-uconsole.preset"
+
+  # Trigger Arch's mkinitcpio install hook without adding a project-specific
+  # systemd/OpenRC hook.
+  touch "${modulesdir}/vmlinuz"
+}

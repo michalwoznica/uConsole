@@ -1,0 +1,27 @@
+# ClockworkPi uConsole CM4 boot policy for the Arch image target.
+#
+# This file is NOT installed by linux-uconsole. Stage 9 image integration will
+# compose/install it into the image boot partition.
+
+[all]
+arm_64bit=1
+disable_overscan=1
+ignore_lcd=1
+max_framebuffers=2
+
+# CM4 USB2 host path used by uConsole peripherals.
+otg_mode=1
+
+# Raspberry Pi PWM audio routed to uConsole GPIO12/13.
+dtparam=audio=on
+dtoverlay=audremap,pins_12_13
+
+[cm4]
+# Project-owned uConsole hardware description.
+dtoverlay=clockworkpi-uconsole-cm4
+
+# Raspberry Pi 4/CM4 KMS display path required by the DSI panel.
+dtoverlay=vc4-kms-v3d-pi4,cma-384
+
+# Kernel file installed by the linux-uconsole package.
+kernel=kernel8.img

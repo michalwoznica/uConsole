@@ -1,5 +1,21 @@
 # Kernel configuration
 
-The uConsole CM4 kernel configuration will be introduced after the source baseline and initial hardware-support patches are established.
+The project configuration is derived deterministically from the pinned
+Raspberry Pi `bcm2711_defconfig`.
 
-It should derive from the Raspberry Pi CM4 / BCM2711 configuration rather than an unrelated generic ARM64 configuration.
+Authoritative project delta:
+
+`uconsole-cm4.config`
+
+The build procedure is:
+
+1. prepare the exact pinned Raspberry Pi Linux source;
+2. install the project drivers/overlay and apply patches `0001` through `0005`;
+3. run `make bcm2711_defconfig`;
+4. merge `uconsole-cm4.config`;
+5. run `make olddefconfig`;
+6. verify every required uConsole symbol resolved to the intended value.
+
+Do not replace this with a copied full `.config`. The small fragment keeps the
+project delta auditable and lets the Raspberry Pi baseline evolve explicitly
+when the pinned source is updated.

@@ -110,3 +110,16 @@ PWM audio signal routing.
 Stage 6 result: **PASS**. The uConsole threaded-IRQ audio switch integrates
 cleanly with the pinned Raspberry Pi Linux 6.18.60 tree, resolves as a module,
 and `uconsole-amp-switch.o` cross-compiles successfully for ARM64.
+
+## Stage 7 configuration and packaging
+
+The complete uConsole kernel is now configured as:
+
+`bcm2711_defconfig` + `kernel/config/uconsole-cm4.config`
+
+Arch package metadata lives under:
+
+`image/archlinuxarm/packages/linux-uconsole/`
+
+Stage 7 validates composition/configuration only. Stage 8 performs the first
+complete build of Image, modules and DTBs from this package path.

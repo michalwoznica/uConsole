@@ -188,3 +188,22 @@ routing mechanism. Boot/image configuration is deferred to later stages.
 Detailed rationale: `docs/STAGE6_AUDIO_SWITCH.md`.
 
 Stage 6 CI validation: **PASS**. The uConsole threaded-IRQ amplifier switch integrates into the pinned Raspberry Pi Linux 6.18.60 tree, resolves as `CONFIG_UCONSOLE_AMP_SWITCH=m`, and `uconsole-amp-switch.o` cross-compiles successfully for ARM64. The shared CM4 overlay workflow also remains green.
+
+## Stage 7 Arch Linux ARM packaging reference
+
+The project reviewed the current Arch Linux ARM `linux-rpi` PKGBUILD for
+package layout and install conventions: Raspberry Pi source archive,
+`bcm2711_defconfig`, `Image`/modules/DTB build targets, `kernel8.img`,
+`dtbs_install`, module installation and mkinitcpio integration.
+
+This is a packaging-style reference only. The project's pinned Raspberry Pi
+Linux commit in `kernel/source.lock` remains authoritative even when the
+Arch Linux ARM package tracks a different commit carrying the same upstream
+stable version.
+
+The project also retains ClockworkPi/community boot evidence for CM4 KMS,
+uConsole overlay selection, CM4 USB host mode and PWM audio on GPIO12/13.
+
+Detailed rationale: `docs/STAGE7_KERNEL_ARCH_PACKAGE.md`.
+
+Stage 7 CI validation is **pending**.
