@@ -1,0 +1,46 @@
+name: Validate uConsole audio switch
+
+on:
+  push:
+    paths:
+      - 'kernel/source.lock'
+      - 'kernel/drivers/uconsole-amp-switch.c'
+      - 'kernel/patches/0005-misc-integrate-uconsole-amplifier-switch.patch'
+      - 'kernel/sources/uconsole-audio.lock'
+      - 'kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts'
+      - 'scripts/validate-uconsole-audio-switch.sh'
+      - '.github/workflows/validate-uconsole-audio-switch.yml'
+  pull_request:
+    paths:
+      - 'kernel/source.lock'
+      - 'kernel/drivers/uconsole-amp-switch.c'
+      - 'kernel/patches/0005-misc-integrate-uconsole-amplifier-switch.patch'
+      - 'kernel/sources/uconsole-audio.lock'
+      - 'kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts'
+      - 'scripts/validate-uconsole-audio-switch.sh'
+      - '.github/workflows/validate-uconsole-audio-switch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-audio-switch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends             bc bison flex gcc-aarch64-linux-gnu libelf-dev libssl-dev             make patch curl
+
+      - name: Validate uConsole audio switch
+        env:
+          ARCH: arm64
+          CROSS_COMPILE: aarch64-linux-gnu-
+          JOBS: '2'
+        run: bash ./scripts/validate-uconsole-audio-switch.sh

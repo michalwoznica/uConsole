@@ -162,3 +162,29 @@ fuel gauge. Calibration and unrelated PMIC policy writes remain excluded.
 Detailed rationale: `docs/STAGE5_AXP20X_BATTERY.md`.
 
 Stage 5 CI validation: **PASS**. The exact-block AXP221 design-capacity patch applies with `--fuzz=0` to the pinned Raspberry Pi Linux 6.18.60 source and `axp20x_battery.o` cross-compiles successfully for ARM64.
+
+## uConsole audio / headphone speaker switch
+
+Hardware evidence:
+
+- ClockworkPi GPIO documentation identifies GPIO10 as `HP_DET`, high when a
+  3.5 mm plug is inserted;
+- GPIO11 is `PA_EN`, high to enable the speaker amplifier;
+- GPIO12/13 are the PWM audio outputs.
+
+Behavioral lineage:
+
+- PotatoMania `uconsole-cm3` simple amplifier switch;
+- immutable postmarketOS archival commit
+  `587b03ad734fdf86c378a1d0de8e307ddcdd301d`.
+
+The project does not copy the original hard-IRQ implementation. It uses a
+small GPL-2.0-only project-owned driver with a threaded IRQ and semantic GPIO
+properties.
+
+Stock Raspberry Pi Linux 6.18 `audremap,pins_12_13` remains the audio-signal
+routing mechanism. Boot/image configuration is deferred to later stages.
+
+Detailed rationale: `docs/STAGE6_AUDIO_SWITCH.md`.
+
+Stage 6 CI validation is **pending**.

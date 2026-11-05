@@ -1,0 +1,20 @@
+# Stage 6 uConsole audio/headphone-switch provenance.
+
+# Original implementation lineage.
+POTATOMANIA_REPOSITORY=https://github.com/PotatoMania/uconsole-cm3.git
+POTATOMANIA_BRANCH=dev
+POTATOMANIA_ORIGINAL_PATCH_ID=e790ee89bbf63aa6f2741f4c18760ae877868daa
+POTATOMANIA_DRIVER_PATH=drivers/staging/uconsole/simple-amplifier-switch.c
+
+# Immutable archival copy of PotatoMania's patch and CM4 DT wiring.
+POSTMARKETOS_ARCHIVE_COMMIT=587b03ad734fdf86c378a1d0de8e307ddcdd301d
+POSTMARKETOS_ARCHIVE_URL=https://git.mrlokop.dev/MRLokop/pmaports/commit/587b03ad734fdf86c378a1d0de8e307ddcdd301d
+
+# Hardware signal references.
+CLOCKWORKPI_GPIO_WIKI_URL=https://wiki.clockworkpi.com/GPIO
+CLOCKWORKPI_CONFIG_FORUM_URL=https://forum.clockworkpi.com/t/raspberry-pis-config-txt/19360
+
+# Stock Raspberry Pi audio route used later by the image layer.
+RPI_AUDREMAP_PATH=arch/arm/boot/dts/overlays/audremap-overlay.dts
+RPI_AUDREMAP_CONFIG=dtoverlay=audremap,pins_12_13
+RPI_AUDIO_ENABLE_CONFIG=dtparam=audio=on

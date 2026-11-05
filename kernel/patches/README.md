@@ -29,3 +29,6 @@ against the pinned kernel baseline.
 
 4. `0004-power-axp20x-program-design-capacity.patch` — minimal AXP221
    fuel-gauge design-capacity programming from standard DT battery data.
+
+5. `0005-misc-integrate-uconsole-amplifier-switch.patch` — register the
+   project-owned uConsole threaded-IRQ amplifier switch in `drivers/misc`.

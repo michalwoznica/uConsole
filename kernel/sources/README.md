@@ -18,3 +18,6 @@ Current inputs:
   OuinOuin74 design-reference metadata for Stage 4.
 
 - `axp20x-battery.lock` — Stage 5 battery/fuel-gauge provenance.
+
+- `uconsole-audio.lock` — Stage 6 hardware, PotatoMania lineage and stock
+  Raspberry Pi audio-route provenance.

@@ -1,0 +1,39 @@
+From: uConsole Linux project
+Subject: [PATCH 5/5] misc: integrate uConsole amplifier switch driver
+
+License: GPL-2.0-only
+
+Register the project-owned ClockworkPi uConsole headphone/speaker amplifier
+switch driver in drivers/misc.
+
+The driver source is copied into the pinned kernel tree by the project build
+before this integration patch is applied.
+
+---
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -2,4 +2,15 @@
+ 	tristate
+ 	depends on INPUT
+ 
++config UCONSOLE_AMP_SWITCH
++	tristate "ClockworkPi uConsole headphone/speaker switch"
++	depends on GPIOLIB && OF
++	depends on ARCH_BCM2835 || COMPILE_TEST
++	help
++	  Enable interrupt-driven control of the uConsole internal speaker
++	  amplifier from the 3.5 mm headphone-detect GPIO.
++
++	  GPIO polarity is described by device tree. When headphones are
++	  inserted, the internal speaker amplifier is disabled.
++
+ config BCM2835_SMI
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -1,3 +1,4 @@
+ obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
+ obj-$(CONFIG_BCM2835_SMI)	+= bcm2835_smi.o
++obj-$(CONFIG_UCONSOLE_AMP_SWITCH)	+= uconsole-amp-switch.o
+ obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o

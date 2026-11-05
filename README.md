@@ -136,3 +136,8 @@ exact-block patch applies cleanly to the pinned 6.18.60 source and the changed
 battery object cross-compiles successfully for ARM64.
 
 Next: Stage 6 — audio/headphone switching.
+
+Stage 6 (audio/headphone speaker switching) is implemented and awaiting CI.
+It uses stock Raspberry Pi PWM audio routing plus a narrow project-owned
+threaded-IRQ driver for GPIO10 headphone detection and GPIO11 speaker
+amplifier enable.

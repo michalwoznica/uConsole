@@ -258,6 +258,26 @@
 	 * Replaceable cells: design capacity/energy default to zero (unspecified).
 	 * Set non-zero values from config.txt to match the installed pack.
 	 */
+
+	/*
+	 * Automatic speaker cutoff.
+	 *
+	 * uConsole GPIO10 (HP_DET) is physically high when headphones are
+	 * inserted. GPIO11 (PA_EN) is physically high to enable the speaker
+	 * amplifier.
+	 */
+	fragment@10 {
+		target-path = "/";
+
+		__overlay__ {
+			audio_amplifier: audio-amplifier {
+				compatible = "clockworkpi,uconsole-amplifier-switch";
+				headphone-detect-gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+				amplifier-enable-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			};
+		};
+	};
+
 	__overrides__ {
 		batt_uah = <&battery>,"charge-full-design-microamp-hours:0";
 		batt_uwh = <&battery>,"energy-full-design-microwatt-hours:0";

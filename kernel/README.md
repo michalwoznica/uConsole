@@ -93,3 +93,16 @@ regmap range already includes E0/E1, so the final Stage 5 delta changes only
 Stage 5 result: **PASS**. The exact-block AXP221 design-capacity patch applies
 cleanly to the pinned Raspberry Pi Linux 6.18.60 source and
 `axp20x_battery.o` cross-compiles successfully for ARM64.
+
+## uConsole audio amplifier switch
+
+Stage 6 adds the project-owned threaded-IRQ headphone/speaker switch driver:
+
+`kernel/drivers/uconsole-amp-switch.c`
+
+Integration patch:
+
+`kernel/patches/0005-misc-integrate-uconsole-amplifier-switch.patch`
+
+The stock Raspberry Pi `audremap,pins_12_13` overlay remains responsible for
+PWM audio signal routing.

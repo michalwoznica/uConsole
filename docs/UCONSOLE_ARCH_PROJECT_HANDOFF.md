@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 2.0  
-**Current phase:** Stage 5 minimal AXP221 fuel-gauge delta complete; Stage 6 audio/headphone switching is next
+**Document revision:** 2.1  
+**Current phase:** Stage 6 audio/headphone switching implemented; CI validation pending
 
 ---
 
@@ -385,51 +385,62 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
 
-Final selected kernel delta:
+### Stage 6 — audio/headphone speaker switching: IMPLEMENTED, VALIDATION PENDING
 
-- no MFD/regmap change;
-- no helper function;
-- one exact-block patch inside the existing
-  `power_supply_get_battery_info()` block;
-- positive `charge-full-design-microamp-hours` values are converted at
-  1456 uAh/LSB and written to the AXP221/AXP228 E0/E1 design-capacity
-  registers;
-- zero remains the replaceable-pack default and causes no programming.
+Hardware:
 
-Explicitly excluded:
+- GPIO10 = `HP_DET`; physical high means headphones inserted;
+- GPIO11 = `PA_EN`; physical high enables the internal speaker amplifier;
+- GPIO12/13 = PWM audio signal.
 
-- calibration controls;
-- writable charge-full;
-- added charge-now/energy properties;
-- synthetic energy calculations;
-- historical percentage remapping;
-- VBUS/LED/PEK/GPIO policy writes;
-- wholesale community battery-driver replacement.
+Architecture:
 
-Final validation result:
+- keep stock Raspberry Pi `dtparam=audio=on`;
+- keep stock `dtoverlay=audremap,pins_12_13`;
+- do not duplicate those boot settings inside the uConsole overlay;
+- add only the uConsole-specific automatic speaker cutoff.
 
-- Stage 4 overlay workflow after zero-default refinement: PASS;
-- Stage 5 exact-block patch dry-run/apply with `--fuzz=0`: PASS;
-- Stage 5 scope assertions: PASS;
-- `drivers/power/supply/axp20x_battery.o` ARM64 compilation: PASS.
+Driver:
 
-Physical fuel-gauge accuracy and persistence remain unproven until hardware
-testing.
+`kernel/drivers/uconsole-amp-switch.c`
 
-### NEXT: Stage 6 — audio/headphone switching
+Design:
 
-Stage 6 should:
+- project-owned GPL-2.0-only driver;
+- one semantic headphone-detect GPIO;
+- one semantic amplifier-enable GPIO;
+- threaded rising/falling-edge IRQ;
+- `*_cansleep()` GPIO API used from threaded context;
+- speaker starts disabled until initial detect state is read;
+- speaker disabled during shutdown.
 
-1. audit the uConsole speaker/headphone routing hardware and current community
-   implementations, prioritising PotatoMania's simple amplifier-switch design;
-2. compare against stock Raspberry Pi Linux 6.18 audio support;
-3. identify the minimum kernel/device-tree delta needed for reliable
-   speaker/headphone switching;
-4. keep audio routing policy separate from unrelated mixer/userspace policy;
-5. avoid importing a large out-of-tree audio stack unless technically
-   necessary;
-6. compile-validate the exact changed object(s) and any DT changes;
-7. update provenance and this handoff before Stage 6 closure.
+This intentionally modernizes PotatoMania's proven behavioral design rather
+than copying its generic hard-IRQ implementation.
+
+Overlay:
+
+- compatible: `clockworkpi,uconsole-amplifier-switch`;
+- `headphone-detect-gpios = <&gpio 10 GPIO_ACTIVE_HIGH>`;
+- `amplifier-enable-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>`.
+
+Explicitly deferred:
+
+- PipeWire/ALSA userspace;
+- separate remembered speaker/headphone volumes;
+- boot-image `audio=on` / `audremap` configuration;
+- physical audio quality/pop testing.
+
+Validation workflows expected for this commit:
+
+1. `Validate uConsole audio switch`
+2. `Validate uConsole CM4 overlay` because the shared overlay changed.
+
+Stage 6 closes only when the new driver compiles for ARM64 and the shared
+overlay remains green.
+
+### NEXT
+
+Push the Stage 6 candidate and inspect both workflows.
 
 ---
 
@@ -448,6 +459,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-04 — Revision 2.1 / Stage 6 candidate
+
+- Audited uConsole CM4 audio routing and PotatoMania's automatic amplifier
+  switch.
+- Confirmed GPIO10 HP_DET, GPIO11 PA_EN and GPIO12/13 PWM audio roles.
+- Kept stock Raspberry Pi `audremap,pins_12_13` for signal routing.
+- Added a narrow project-owned threaded-IRQ amplifier-switch driver.
+- Added semantic GPIO properties to the cleaned uConsole overlay.
+- Avoided firmware GPIO11 forcing, userspace polling and the historical
+  hard-IRQ `*_cansleep()` pattern.
+- Added Stage 6 provenance, CI validation and design documentation.
+- Stage 6 remains open until driver and overlay CI pass.
+
 
 ### 2026-11-04 — Revision 2.0 / Stage 5 complete
 
