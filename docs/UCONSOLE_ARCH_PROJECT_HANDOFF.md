@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.9  
-**Current phase:** Stage 9B reached real makepkg; temporary-workspace traversal permission corrected; CI validation pending
+**Document revision:** 4.0  
+**Current phase:** Stage 9B real package build proven; cross-architecture pacman/ownership validation corrected; CI pending
 
 ---
 
@@ -393,42 +393,52 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
-### Stage 9B — pacman-managed uConsole rootfs integration: WORKSPACE PERMISSION CORRECTED, CI PENDING
+### Stage 9B — pacman-managed uConsole rootfs integration: FINAL HOST-VALIDATION CORRECTION, CI PENDING
 
-First Stage 9B CI result:
+Latest Stage 9B CI evidence:
 
-PASS before failure:
+- rootfs authentication/extraction: PASS;
+- stock target package state: PASS;
+- deterministic package staging: PASS;
+- real aarch64 makepkg build: PASS;
+- produced `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
+- package metadata: PASS;
+- remove `linux-aarch64` + `uboot-raspberrypi`: transaction completed;
+- install `linux-uconsole`: transaction completed;
+- target package DB consistency (`pacman -Dk`): PASS;
+- `pacman -Qk linux-uconsole`: 2765 files, 0 missing;
+- failure occurred only in the final host-side ownership check.
 
-- rootfs/package policy checks;
-- exact pinned rootfs fetch/authentication;
-- rootfs extraction as container root;
-- Stage 9A stock package-state validation;
-- deterministic `linux-uconsole` makepkg workspace staging.
+Two cross-architecture validator issues were identified:
 
-Failure:
-
-`makepkg` was correctly invoked as the unprivileged `uconsole-build` user, but
-could not `cd` into:
-
-`.../linux-uconsole-package`
-
-Root cause:
-
-- top-level `workdir="$(mktemp -d)"` was mode `0700`;
-- package/build subdirectories were correctly chowned to `uconsole-build`;
-- nevertheless, the build user could not traverse the root-owned top-level
-  temporary directory.
+1. libalpm automatically invokes target `/usr/bin/ldconfig` after a package
+   transaction. On the x86_64 CI host that AArch64 binary produced
+   `Exec format error`. `--noscriptlet` and disabled hooks do not suppress
+   libalpm's own ldconfig step.
+2. pacman documents that paths passed as command targets with `--sysroot` are
+   not rewritten. Therefore `-Qo /boot/kernel8.img` queried the CI host path,
+   not the target rootfs.
 
 Correction:
 
-- immediately set the disposable Stage 9B workdir to `0755`;
-- retain root ownership of the rootfs/authentication material;
-- chown only package/build-output/build-home paths to `uconsole-build`;
-- create `uconsole-build` with `--no-create-home` because the build home is
-  explicitly created by the validator.
+- save target `/usr/bin/ldconfig` mode;
+- temporarily remove its execute permission during only the kernel/U-Boot
+  target transactions so libalpm skips the foreign-architecture exec;
+- restore the exact original mode immediately after, with EXIT cleanup as a
+  safety path;
+- no replacement ldconfig run is needed because no shared libraries change;
+- verify `/boot/kernel8.img` ownership through `pacman -Ql linux-uconsole`;
+- verify `/boot/config.txt` is absent from all local package `files` records.
 
-No kernel source, config, patch, PKGBUILD, rootfs input, package replacement
-set, pacman policy or boot policy changed.
+No CPU limit was added or changed. Stage 9B continues to use `nproc` and the
+actual runner allocation.
+
+### Repository privacy/publication policy
+
+The repository is intended to become public after physical uConsole
+validation. Treat Git history as permanently public: never commit user or host
+identifiers, usernames, account IDs, machine-specific absolute paths or other
+PII. Continue privacy audits for every checkpoint.
 
 ### NEXT
 
@@ -436,10 +446,8 @@ Push this correction and rerun:
 
 `Validate Arch rootfs uConsole integration`
 
-Stage 9B closes only after that workflow completes all makepkg, pacman and
-boot-layout checks.
-
-Do not begin Stage 9C yet.
+Stage 9B closes only after the final package/boot ownership checks pass. Do
+not begin Stage 9C yet.
 
 ---
 
@@ -458,6 +466,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 4.0 / Stage 9B cross-architecture pacman correction
+
+- Recorded successful real aarch64 package build and target package
+  transaction evidence.
+- Diagnosed foreign-architecture `ldconfig` as the source of transaction-end
+  `Exec format error` messages.
+- Temporarily suppress target ldconfig execution only during the two kernel
+  package transactions and restore its exact mode afterward.
+- Replaced incorrect `--sysroot -Qo` path ownership checks with package/local
+  DB file-record checks.
+- Confirmed no build parallelism restriction was introduced.
+- Strengthened public-repository privacy/Git-history policy.
+- Stage 9B remains CI-pending.
+
 
 ### 2026-11-05 — Revision 3.9 / Stage 9B workspace-permission correction
 

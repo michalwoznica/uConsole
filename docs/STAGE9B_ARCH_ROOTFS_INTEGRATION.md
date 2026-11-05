@@ -201,3 +201,37 @@ No kernel source, PKGBUILD, rootfs input, package transition, pacman policy or
 boot policy changed.
 
 Stage 9B remains open until the corrected workflow completes successfully.
+
+## Cross-architecture pacman final-validation correction
+
+The next Stage 9B run completed the expensive real aarch64 makepkg build and
+produced:
+
+`linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`
+
+The target package transactions also completed and `pacman -Dk` plus
+`pacman -Qk linux-uconsole` passed with 2765 files and zero missing files.
+
+Two validator issues remained:
+
+1. libalpm automatically attempted to execute the target rootfs's AArch64
+   `ldconfig` after each transaction, producing `Exec format error` on the
+   x86_64 CI host. This is separate from package scriptlets and ALPM hooks.
+2. `pacman --sysroot ... -Qo /boot/kernel8.img` queried the literal path
+   target rather than rewriting it under the sysroot, so the ownership check
+   incorrectly inspected the CI host path.
+
+Correction:
+
+- temporarily remove execute permission from target `/usr/bin/ldconfig` only
+  for the kernel/U-Boot pacman transactions;
+- save and restore its exact original mode, including from the EXIT cleanup
+  path;
+- do not run a replacement ldconfig because these transactions change no
+  shared libraries;
+- verify kernel ownership using `pacman -Ql linux-uconsole`;
+- verify project-owned `/boot/config.txt` is absent from all local pacman
+  package file records.
+
+No kernel rebuild settings, package contents, rootfs input, dependency policy,
+boot policy or CPU parallelism changed.

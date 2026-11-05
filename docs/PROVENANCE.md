@@ -303,3 +303,11 @@ Retained boot/runtime packages include `firmware-raspberrypi`,
 `raspberrypi-bootloader`, `mkinitcpio` and the linux-firmware set.
 
 Stage 9B CI validation is **pending**. The first run reached the real `makepkg` invocation but the unprivileged build user could not traverse the root-owned `mktemp` parent directory. The workspace traversal permission has been corrected; no rootfs/package policy changed.
+
+### Stage 9B cross-architecture pacman correction
+
+The real aarch64 package build succeeded. The remaining CI failure was in
+host-side validation: libalpm attempted target-AArch64 `ldconfig`, and a
+`--sysroot -Qo` query used a literal host path. Stage 9B now suppresses only
+the unnecessary ldconfig execution during the kernel-only transactions and
+uses package/database file records for ownership checks.

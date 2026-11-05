@@ -21,7 +21,18 @@ fi
 workdir="$(mktemp -d)"
 chmod 0755 "$workdir"
 
+target_ldconfig=""
+target_ldconfig_mode=""
+
+restore_target_ldconfig() {
+    if [[ -n "$target_ldconfig" && -n "$target_ldconfig_mode" && -e "$target_ldconfig" ]]; then
+        chmod "$target_ldconfig_mode" "$target_ldconfig" 2>/dev/null || true
+        target_ldconfig_mode=""
+    fi
+}
+
 cleanup() {
+    restore_target_ldconfig
     chmod -R u+rwX "$workdir" 2>/dev/null || true
     rm -rf "$workdir"
 }
@@ -266,6 +277,16 @@ if [[ -d "$custom_hooks" ]]; then
 fi
 mkdir -p "$custom_hooks"
 
+printf 'Temporarily suppressing target-architecture ldconfig execution...\n'
+target_ldconfig="$rootfs/usr/bin/ldconfig"
+if [[ ! -x "$target_ldconfig" ]]; then
+    printf 'ERROR: expected executable target ldconfig missing: %s\n' \
+        "$target_ldconfig" >&2
+    exit 1
+fi
+target_ldconfig_mode="$(stat -Lc '%a' "$target_ldconfig")"
+chmod a-x "$target_ldconfig"
+
 printf 'Removing stock kernel and U-Boot packages from target rootfs...\n'
 pacman_target \
     --noconfirm \
@@ -281,6 +302,13 @@ pacman_target \
     --noscriptlet \
     --asexplicit \
     -U "$package_file"
+
+printf 'Restoring target ldconfig execute mode...\n'
+restore_target_ldconfig
+if [[ ! -x "$target_ldconfig" ]]; then
+    printf 'ERROR: target ldconfig execute mode was not restored.\n' >&2
+    exit 1
+fi
 
 rm -rf "$system_hooks" "$custom_hooks"
 if [[ -d "$system_hooks_saved" ]]; then
@@ -334,11 +362,17 @@ cmp -s \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
     "$rootfs/boot/config.txt"
 
-pacman_target -Qo /boot/kernel8.img |
-    grep -q 'linux-uconsole'
+printf 'Checking package ownership records without sysroot path-target ambiguity...\n'
+if ! pacman_target -Ql linux-uconsole |
+    grep -Fxq 'linux-uconsole /boot/kernel8.img'; then
+    printf 'ERROR: linux-uconsole package database does not own /boot/kernel8.img.\n' >&2
+    exit 1
+fi
 
-if pacman_target -Qo /boot/config.txt >/dev/null 2>&1; then
-    printf 'ERROR: /boot/config.txt unexpectedly remains package-owned.\n' >&2
+if grep -Fxl 'boot/config.txt' "$rootfs"/var/lib/pacman/local/*/files \
+    >"$workdir/config-owners.txt" 2>/dev/null; then
+    printf 'ERROR: /boot/config.txt unexpectedly appears in a package file database.\n' >&2
+    cat "$workdir/config-owners.txt" >&2
     exit 1
 fi
 
