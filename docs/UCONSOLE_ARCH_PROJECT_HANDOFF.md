@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.3  
-**Current phase:** Stage 9C direct-root boot contract implemented; CI validation pending
+**Document revision:** 4.4  
+**Current phase:** Stage 9C direct-root boot contract implemented; fstab validator false positive corrected; CI validation pending
 
 ---
 
@@ -395,67 +395,59 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 
-### Stage 9C — final boot command line/initramfs policy: IMPLEMENTED, CI PENDING
+### Stage 9C — final boot command line/initramfs policy: VALIDATOR CORRECTION, CI PENDING
 
-Selected first-image boot architecture:
+First Stage 9C workflow result:
 
-- Raspberry Pi CM4 firmware directly loads `kernel8.img`;
-- U-Boot remains removed;
-- no firmware-loaded initramfs;
-- kernel mounts ext4 root directly from CM4 microSD;
-- deterministic DOS/MBR disk identifier: `0x55434f4e`;
-- boot PARTUUID: `55434f4e-01`;
-- root PARTUUID: `55434f4e-02`;
-- boot partition mountpoint: `/boot`;
-- root partition mountpoint: `/`.
+PASS before failure:
 
-Final cmdline:
+- deterministic image identity;
+- final Raspberry Pi kernel command line;
+- Raspberry Pi firmware boot policy;
+- exact deterministic fstab entries.
 
-`8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw`
+Failure:
 
-Reasons:
+`ERROR: device-name/UUID/LABEL addressing leaked into Stage 9C fstab.`
 
-- exact pinned bcm2711 baseline has MMC/SDHCI/BCM2835 microSD support built in;
-- exact pinned baseline has ext4 built in;
-- therefore the first ext4 microSD root does not require initramfs modules;
-- `CONFIG_BLK_DEV_INITRD=y` and the mkinitcpio preset are retained for future
-  optional use;
-- `8250.nr_uarts=1` preserves the original uConsole expansion-UART behavior
-  after project policy moved bootargs out of Device Tree;
-- normal image has no serial console;
-- GPIO14/15 remain assigned to the expansion UART;
-- no `quiet`/splash on the first physical validation image.
+Root cause:
 
-New files:
+The generic guard used a raw `UUID=` substring search. The required
+`PARTUUID=...` entries naturally contain `UUID=`, so valid deterministic
+PARTUUID addressing was falsely rejected.
 
-- `image/archlinuxarm/image-layout.lock`;
-- `image/archlinuxarm/boot/cmdline-uconsole-cm4.txt`;
-- `image/archlinuxarm/rootfs/fstab-uconsole-cm4`;
-- `scripts/validate-arch-boot-contract.sh`;
-- `.github/workflows/validate-arch-boot-contract.yml`;
-- `docs/STAGE9C_BOOT_CONTRACT.md`.
+Correction:
 
-Stage 9C validator also fetches the exact pinned bcm2711 defconfig and requires
-the direct-root storage/filesystem stack to remain built in.
+The guard is now token-boundary aware and rejects only unstable addressing:
 
-CI timeout follows project policy: 360 minutes.
+- `/dev/mmcblk...`;
+- `/dev/sd...`;
+- `/dev/nvme...`;
+- standalone `UUID=...`;
+- standalone `LABEL=...`.
 
-### Repository privacy/publication policy
+Required `PARTUUID=...` entries remain accepted.
 
-Treat Git history as permanently public. Never commit user/host identifiers,
-usernames, account IDs, machine-specific absolute paths or other PII.
-Continue privacy audits before every checkpoint.
+No Stage 9C boot-policy content changed:
+
+- disk identifier remains `0x55434f4e`;
+- boot PARTUUID remains `55434f4e-01`;
+- root PARTUUID remains `55434f4e-02`;
+- cmdline remains unchanged;
+- direct ext4 root without firmware-loaded initramfs remains unchanged;
+- serial-console policy remains unchanged;
+- kernel config and PKGBUILD remain unchanged.
+
+The other existing workflows from the same push may continue; this correction
+does not alter their build inputs.
 
 ### NEXT
 
-Push the Stage 9C candidate and inspect:
+Apply this validator-only correction and rerun:
 
 `Validate uConsole Arch boot contract`
 
 Stage 9C closes only after that workflow passes.
-
-After Stage 9C, Stage 10 constructs the first reproducible partitioned
-microSD image using the locked DOS disk identifier and PARTUUID values.
 
 ---
 
@@ -474,6 +466,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 4.4 / Stage 9C PARTUUID validator correction
+
+- Recorded the first Stage 9C CI failure.
+- Diagnosed raw `UUID=` substring matching as a false positive against valid
+  `PARTUUID=` entries.
+- Made unstable-addressing validation token-boundary aware.
+- Changed no boot policy, PARTUUID, cmdline, fstab, kernel config or package
+  input.
+- Stage 9C remains CI-pending.
+
 
 ### 2026-11-05 — Revision 4.3 / Stage 9C candidate
 

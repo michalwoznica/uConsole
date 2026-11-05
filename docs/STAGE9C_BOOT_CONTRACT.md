@@ -170,3 +170,35 @@ Stage 9C is complete only when:
 `Validate uConsole Arch boot contract`
 
 passes.
+
+## First CI correction — PARTUUID false positive
+
+The first Stage 9C validation run passed:
+
+- deterministic image identity;
+- final kernel command line;
+- Raspberry Pi firmware boot policy;
+- exact root and boot fstab entries.
+
+It then failed in the generic unstable-addressing guard.
+
+Root cause:
+
+The validator searched for the substring `UUID=`. A valid token such as
+`PARTUUID=55434f4e-02` necessarily contains that substring, so the guard
+incorrectly rejected the intended deterministic PARTUUID policy.
+
+Correction:
+
+The forbidden-addressing expression is now token-boundary aware. It rejects:
+
+- `/dev/mmcblk...`;
+- `/dev/sd...`;
+- `/dev/nvme...`;
+- standalone `UUID=...`;
+- standalone `LABEL=...`;
+
+while allowing the explicitly required `PARTUUID=...` form.
+
+No boot policy, PARTUUID value, cmdline, fstab content, kernel configuration or
+image-layout contract changed.

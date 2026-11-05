@@ -362,3 +362,9 @@ First-image boot policy:
 Detailed contract: `docs/STAGE9C_BOOT_CONTRACT.md`.
 
 Stage 9C CI validation is **pending**.
+
+### Stage 9C fstab-validator correction
+
+The first Stage 9C run exposed a validator-only false positive: a raw `UUID=`
+substring search also matched valid `PARTUUID=` entries. The guard is now
+token-boundary aware. Stage 9C boot policy itself is unchanged.

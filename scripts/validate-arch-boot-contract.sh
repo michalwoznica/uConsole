@@ -119,8 +119,10 @@ if ! grep -Eq \
     exit 1
 fi
 
-if grep -Eq '/dev/(mmcblk|sd[a-z]|nvme)|UUID=|LABEL=' "$fstab_file"; then
-    printf 'ERROR: device-name/UUID/LABEL addressing leaked into Stage 9C fstab.\n' >&2
+if grep -Eq \
+    '(^|[[:space:]])(/dev/(mmcblk|sd[a-z]|nvme)|UUID=|LABEL=)' \
+    "$fstab_file"; then
+    printf 'ERROR: unstable /dev, UUID=, or LABEL= addressing leaked into Stage 9C fstab.\n' >&2
     exit 1
 fi
 
