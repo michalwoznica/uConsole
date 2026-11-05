@@ -1,6 +1,6 @@
 # Stage 6 — uConsole audio/headphone switching
 
-**Status:** implemented; ARM64 CI and shared-overlay validation pending.
+**Status:** complete; ARM64 driver validation passed and shared overlay remained green.
 
 ## Hardware path
 
@@ -112,3 +112,24 @@ is narrower still: it is anchored only on `CONFIG_BCM2835_SMI` and
 `CONFIG_DUMMY_IRQ`, the two exact adjacent lines printed by CI.
 
 No driver, overlay, or functional behavior changed.
+
+## Final validation result
+
+The GitHub Actions `Validate uConsole audio switch` workflow completed
+successfully against the pinned Raspberry Pi Linux 6.18.60 source.
+
+This proves:
+
+1. the Stage 6 Kconfig/Makefile integration patch applies with `--fuzz=0`;
+2. the project-owned driver is copied into `drivers/misc`;
+3. `CONFIG_UCONSOLE_AMP_SWITCH=m` resolves successfully;
+4. `drivers/misc/uconsole-amp-switch.o` cross-compiles successfully for ARM64;
+5. the threaded-IRQ driver policy assertions pass;
+6. the GPIO10/GPIO11 device-tree semantics remain intact.
+
+The shared `Validate uConsole CM4 overlay` workflow also remained green after
+the Stage 6 audio-switch node was added.
+
+Stage 6 is therefore complete at source/integration/compile-validation level.
+Physical speaker/headphone behavior, pop/click characteristics, audio quality,
+and userspace mixer behavior remain for later hardware validation.

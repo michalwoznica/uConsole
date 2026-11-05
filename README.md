@@ -137,7 +137,9 @@ battery object cross-compiles successfully for ARM64.
 
 Next: Stage 6 — audio/headphone switching.
 
-Stage 6 (audio/headphone speaker switching) is implemented and awaiting CI.
-It uses stock Raspberry Pi PWM audio routing plus a narrow project-owned
-threaded-IRQ driver for GPIO10 headphone detection and GPIO11 speaker
-amplifier enable.
+Stage 6 (audio/headphone speaker switching) is complete. The project-owned
+threaded-IRQ driver integrates into the pinned Raspberry Pi Linux 6.18.60
+tree and cross-compiles successfully for ARM64; the shared CM4 overlay also
+remains green.
+
+Next: Stage 7 — kernel configuration and Arch packaging.

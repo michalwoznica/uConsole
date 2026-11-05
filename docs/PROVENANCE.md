@@ -187,4 +187,4 @@ routing mechanism. Boot/image configuration is deferred to later stages.
 
 Detailed rationale: `docs/STAGE6_AUDIO_SWITCH.md`.
 
-Stage 6 CI validation is **pending**.
+Stage 6 CI validation: **PASS**. The uConsole threaded-IRQ amplifier switch integrates into the pinned Raspberry Pi Linux 6.18.60 tree, resolves as `CONFIG_UCONSOLE_AMP_SWITCH=m`, and `uconsole-amp-switch.o` cross-compiles successfully for ARM64. The shared CM4 overlay workflow also remains green.

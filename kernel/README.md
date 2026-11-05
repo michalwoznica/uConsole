@@ -106,3 +106,7 @@ Integration patch:
 
 The stock Raspberry Pi `audremap,pins_12_13` overlay remains responsible for
 PWM audio signal routing.
+
+Stage 6 result: **PASS**. The uConsole threaded-IRQ audio switch integrates
+cleanly with the pinned Raspberry Pi Linux 6.18.60 tree, resolves as a module,
+and `uconsole-amp-switch.o` cross-compiles successfully for ARM64.

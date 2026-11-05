@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 2.2  
-**Current phase:** Stage 6 driver/overlay policy passed; exact-source integration patch corrected; CI validation pending
+**Document revision:** 2.3  
+**Current phase:** Stage 6 audio/headphone switching complete; Stage 7 kernel configuration and Arch packaging is next
 
 ---
 
@@ -385,35 +385,49 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
 
-### Stage 6 — audio/headphone speaker switching: INTEGRATION PATCH CORRECTED, VALIDATION PENDING
+### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-First Stage 6 CI result:
+Final Stage 6 architecture:
 
-- driver/overlay policy checks: PASS;
-- pinned Raspberry Pi Linux fetch: PASS;
-- Kconfig integration hunk: FAIL before compilation;
-- Makefile integration hunk: FAIL before compilation.
+- stock Raspberry Pi PWM audio routing remains the signal path;
+- later boot/image configuration will enable:
+  - `dtparam=audio=on`
+  - `dtoverlay=audremap,pins_12_13`
+- GPIO10 = headphone detect, active high;
+- GPIO11 = speaker amplifier enable, active high;
+- project-owned GPL-2.0-only threaded-IRQ driver handles automatic speaker
+  cutoff;
+- no userspace polling;
+- no hard-IRQ `*_cansleep()` operations;
+- no firmware-forced permanent amplifier enable.
 
-The failure is limited to integration patch context, not the driver design.
+Final validation result:
 
-Correction:
+- Stage 6 driver/overlay policy assertions: PASS;
+- Kconfig integration patch with `--fuzz=0`: PASS;
+- Makefile integration patch with `--fuzz=0`: PASS;
+- `CONFIG_UCONSOLE_AMP_SWITCH=m`: PASS;
+- `drivers/misc/uconsole-amp-switch.o` ARM64 compilation: PASS;
+- shared CM4 overlay workflow after adding the audio node: PASS.
 
-- Kconfig hunk rebuilt from exact CI-emitted lines around
-  `SENSORS_LIS3LV02D` and `BCM2835_SMI`;
-- Makefile hunk narrowed to only the exact adjacent
-  `CONFIG_BCM2835_SMI` and `CONFIG_DUMMY_IRQ` lines;
-- strict `--fuzz=0` retained;
-- driver source unchanged;
-- threaded-IRQ design unchanged;
-- GPIO10/GPIO11 overlay node unchanged.
+Physical audio routing, jack behavior, speaker cutoff timing, audio quality and
+pop/click behavior remain unproven until hardware testing.
 
-### NEXT
+### NEXT: Stage 7 — kernel configuration and Arch packaging
 
-Push this correction and inspect `Validate uConsole audio switch`.
+Stage 7 should:
 
-Stage 6 closes only when the integration patch applies,
-`CONFIG_UCONSOLE_AMP_SWITCH=m` resolves, and
-`drivers/misc/uconsole-amp-switch.o` compiles successfully.
+1. define the reproducible kernel config starting from `bcm2711_defconfig`;
+2. enable the proven uConsole-specific drivers/configs deterministically;
+3. identify all additional CM4/uConsole runtime requirements that must be
+   modules or built-ins;
+4. create Arch Linux ARM package/build metadata without introducing
+   systemd-specific assumptions into the shared kernel layer;
+5. keep boot-policy settings such as `audio=on` and `audremap,pins_12_13` in
+   the Arch image/boot configuration, not in kernel patches;
+6. define deterministic kernel/DTBO/module install outputs;
+7. add build-only CI for the complete configured kernel package;
+8. update provenance and this handoff before Stage 7 closure.
 
 ---
 
@@ -432,6 +446,18 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.3 / Stage 6 complete
+
+- Recorded successful `Validate uConsole audio switch` workflow.
+- Confirmed exact-source Kconfig/Makefile integration applies with
+  `--fuzz=0`.
+- Confirmed `CONFIG_UCONSOLE_AMP_SWITCH=m` resolves successfully.
+- Confirmed `drivers/misc/uconsole-amp-switch.o` cross-compiles for ARM64.
+- Confirmed the shared CM4 overlay remains green with the Stage 6 audio node.
+- Marked Stage 6 complete.
+- Set Stage 7 kernel configuration and Arch packaging as the next step.
+
 
 ### 2026-11-05 — Revision 2.2 / Stage 6 integration-patch correction
 
