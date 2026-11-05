@@ -105,3 +105,38 @@ Stage 9A does not:
 Stage 9A is complete when `Validate pinned Arch Linux ARM rootfs` passes and
 its stock kernel/boot package inventory is recorded in the handoff for Stage
 9B.
+
+## Signature-validator correction
+
+The first Stage 9A CI run passed:
+
+- versioned rootfs selection;
+- archive download;
+- exact expected byte size;
+- published MD5;
+- extraction of the Arch Linux ARM keyring.
+
+It then failed at the project's fingerprint-presence parser before detached
+signature verification.
+
+The official signing fingerprint itself was not changed. Arch Linux ARM
+documents the release/package signing key as:
+
+`68B3537F39A313B3E574D06777193F152BDBE6A6`
+
+The original validator relied on one exact textual layout from
+`gpg --with-colons --fingerprint`. That was unnecessarily brittle.
+
+The corrected validator now:
+
+1. lists all fingerprints from the extracted keyring and compares field 10
+   from `fpr` records exactly;
+2. runs `gpgv --status-fd=1` on the detached rootfs signature;
+3. requires the resulting `VALIDSIG` fingerprint to be exactly the official
+   Arch Linux ARM build-system fingerprint.
+
+The second condition is stronger than merely checking keyring membership: it
+proves the downloaded archive was actually validated by the expected key.
+
+No rootfs release, mirror, expected size, checksum, signing fingerprint, or
+Stage 9A trust policy changed.

@@ -244,3 +244,12 @@ The moving `-latest` alias is not accepted as a project build input.
 Detailed contract: `docs/STAGE9A_ARCH_ROOTFS_PIN.md`.
 
 Stage 9A CI validation is **pending**.
+
+### Stage 9A signature-parser correction
+
+The first CI attempt exposed a brittle local parser for GnuPG colon output.
+The official Arch Linux ARM signing fingerprint remains unchanged.
+
+The validator now requires the detached signature's `VALIDSIG` status to name
+the exact official fingerprint, in addition to confirming that fingerprint is
+present in the extracted Arch Linux ARM keyring.

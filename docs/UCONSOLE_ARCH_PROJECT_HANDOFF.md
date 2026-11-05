@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.2  
-**Current phase:** Stage 9A pinned Arch Linux ARM rootfs provenance implemented; CI validation pending
+**Document revision:** 3.3  
+**Current phase:** Stage 9A signature-validation parser corrected; CI validation pending
 
 ---
 
@@ -391,70 +391,52 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-### Stage 9A — pin/authenticate Arch Linux ARM rootfs: IMPLEMENTED, CI PENDING
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: SIGNATURE VALIDATOR CORRECTED, CI PENDING
 
-Stage 9 was split into bounded checkpoints because it combines a large rootfs,
-package-database changes and image composition.
+First Stage 9A CI result:
 
-Selected rootfs:
+- rootfs lock policy: PASS;
+- versioned 2026.08 rootfs download: PASS;
+- exact archive size: PASS;
+- published MD5: PASS;
+- Arch Linux ARM keyring extraction: PASS;
+- local fingerprint-presence parser: FAIL;
+- detached signature verification was not reached.
 
-- Arch Linux ARM Raspberry Pi AArch64;
-- versioned release `2026.08`;
-- `ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz`;
-- expected size `850215189` bytes;
-- timestamp `2026-08-05T12:55:04Z`;
-- official signing fingerprint:
-  `68B3537F39A313B3E574D06777193F152BDBE6A6`.
+The official Arch Linux ARM signing fingerprint remains:
 
-The moving `-latest` filename is explicitly forbidden as a build input.
+`68B3537F39A313B3E574D06777193F152BDBE6A6`
 
-Stage 9A validator:
+Root cause:
 
-`scripts/validate-arch-rootfs-pin.sh`
+The validator relied on one exact colon-record layout from
+`gpg --with-colons --fingerprint`, making the local parser brittle.
 
-Workflow:
+Correction:
 
-`.github/workflows/validate-arch-rootfs-pin.yml`
+- enumerate all `fpr` records from the extracted keyring and compare their
+  fingerprint field exactly;
+- run `gpgv --status-fd=1` against the detached rootfs signature;
+- require `VALIDSIG` to report exactly the official signing fingerprint;
+- print the actual keyring fingerprints if membership validation fails.
 
-Validation contract:
+This is stronger than the original check because it verifies not only that the
+expected key exists, but that the archive's signature was actually validated
+by that exact key.
 
-1. fetch the versioned archive plus its published MD5/signature sidecars;
-2. verify exact archive size;
-3. verify the published MD5;
-4. extract the Arch Linux ARM public keyring from the archive;
-5. require the exact official signing fingerprint;
-6. verify the detached archive signature with `gpgv`;
-7. print SHA-256 for audit diagnostics;
-8. extract the authenticated rootfs;
-9. verify expected base structure;
-10. read package names directly from pacman's local database;
-11. print the exact installed kernel/boot package subset for Stage 9B.
-
-No target binaries are executed and no rootfs mutation occurs in 9A.
-
-CI timeout follows project policy: `timeout-minutes: 360`.
+No rootfs version, mirror, size, checksum, fingerprint, or trust model changed.
 
 ### NEXT
 
-Push the Stage 9A candidate and inspect:
+Push this Stage 9A validator correction and rerun:
 
 `Validate pinned Arch Linux ARM rootfs`
 
-If it passes, capture the printed stock kernel/boot package inventory in the
-handoff and proceed to Stage 9B.
+If it passes, capture the printed:
 
-### Stage 9B — planned after Stage 9A
+`=== STAGE 9B STOCK KERNEL/BOOT PACKAGE INVENTORY ===`
 
-Stage 9B will:
-
-1. remove/replace the exact stock kernel/boot packages observed in 9A;
-2. integrate the pacman-managed `linux-uconsole` package into a rootfs tree;
-3. install the project boot policy and kernel command line;
-4. establish the uConsole SD-card root/boot mount contract;
-5. validate package-database consistency;
-6. stop before creating a partitioned flashable image.
-
-Stage 10 remains the first actual microSD image construction stage.
+and proceed to Stage 9B.
 
 ---
 
@@ -473,6 +455,18 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.3 / Stage 9A signature-validator correction
+
+- Recorded that rootfs download, exact size, MD5 and keyring extraction passed.
+- Kept the official Arch Linux ARM signing fingerprint unchanged.
+- Replaced brittle GnuPG colon-output matching with explicit `fpr` field
+  extraction.
+- Added `gpgv --status-fd` verification and require `VALIDSIG` to report the
+  exact official signing fingerprint.
+- No rootfs input or trust-policy decision changed.
+- Stage 9A remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.2 / Stage 9A candidate
 
