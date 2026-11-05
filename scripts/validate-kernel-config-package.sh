@@ -7,7 +7,7 @@ source "$repo_root/kernel/source.lock"
 source "$repo_root/kernel/sources/cwu50.lock"
 source "$repo_root/kernel/sources/ocp8178.lock"
 
-arch="${ARCH:-arm64}"
+kernel_arch="${ARCH:-arm64}"
 cross_compile="${CROSS_COMPILE:-aarch64-linux-gnu-}"
 
 workdir="$(mktemp -d)"
@@ -88,7 +88,7 @@ printf 'Running the actual PKGBUILD prepare() composition path...\n'
     cd "$package_stage"
     # shellcheck disable=SC1091
     source ./PKGBUILD
-    export ARCH="$arch"
+    export ARCH="$kernel_arch"
     export CROSS_COMPILE="$cross_compile"
     export srcdir
     prepare
@@ -147,7 +147,7 @@ grep -q 'CONFIG_UCONSOLE_AMP_SWITCH' "$linux_src/drivers/misc/Makefile"
 
 printf 'Running kernel prepare without a full build...\n'
 make -C "$linux_src" \
-    ARCH="$arch" CROSS_COMPILE="$cross_compile" \
+    ARCH="$kernel_arch" CROSS_COMPILE="$cross_compile" \
     prepare
 
 printf 'PASS: Stage 7 composed source, config and Arch package metadata validated.\n'

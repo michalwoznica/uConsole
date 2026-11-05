@@ -141,3 +141,26 @@ to the same restriction.
 
 No package behavior, kernel configuration, boot policy, source pin, or patch
 changed.
+
+## Kbuild architecture correction
+
+The second Stage 7 CI run reached the actual PKGBUILD `prepare()` composition
+path and all five project patches applied successfully.
+
+It then failed before configuration because the validator sourced the PKGBUILD
+into the same shell where it had stored the kernel architecture in a variable
+named `arch`. The PKGBUILD's standard `arch=('aarch64')` assignment replaced
+that variable, causing the validator to export `ARCH=aarch64`.
+
+Linux Kbuild uses `arm64` as the architecture directory name. `aarch64` is the
+Arch Linux package/userspace architecture name.
+
+The correction makes this distinction explicit:
+
+- PKGBUILD keeps `arch=('aarch64')`;
+- every kernel `make` invocation in the PKGBUILD passes `ARCH=arm64`;
+- the validator uses `kernel_arch` rather than `arch`;
+- cross-validation still passes its `CROSS_COMPILE` prefix independently.
+
+No kernel source, patches, config fragment, boot policy, or package file layout
+changed.

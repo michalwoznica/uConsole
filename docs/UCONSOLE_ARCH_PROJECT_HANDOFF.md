@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.5  
-**Current phase:** Stage 7 validator false positive corrected; composition/config/package CI validation pending
+**Document revision:** 2.6  
+**Current phase:** Stage 7 Kbuild architecture collision corrected; composition/config/package CI validation pending
 
 ---
 
@@ -387,41 +387,49 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-### Stage 7 — kernel configuration and Arch packaging: VALIDATOR CORRECTED, VALIDATION PENDING
+### Stage 7 — kernel configuration and Arch packaging: KBUILD ARCH CORRECTED, VALIDATION PENDING
 
-First Stage 7 CI result:
+Second Stage 7 CI result:
 
-- repository-policy checks started;
-- package workspace staging: PASS;
-- workflow stopped at init-system policy check;
-- source fetch/composition/config validation was not reached.
+- repository policy: PASS;
+- package staging: PASS;
+- exact Stage 7 source fetch: PASS;
+- PKGBUILD `prepare()` path entered;
+- patches 0001-0005 all applied successfully;
+- failure occurred at the first kernel `make` invocation.
+
+Observed error:
+
+`arch/aarch64/Makefile: No such file or directory`
 
 Root cause:
 
-The PKGBUILD is init-system neutral. The validator's raw text grep matched an
-explanatory comment containing the words `systemd/OpenRC`:
+The validator originally stored `ARCH=arm64` in a shell variable named
+`arch`. Sourcing the PKGBUILD then executed its standard
+`arch=('aarch64')` package declaration, overwriting that validator variable.
+The validator subsequently exported `ARCH=aarch64`.
 
-`without adding a project-specific systemd/OpenRC hook.`
+Linux Kbuild requires `ARCH=arm64`; `aarch64` is the Arch package/userspace
+architecture name.
 
 Correction:
 
-- keep the explanatory PKGBUILD comment;
-- remove comment-only lines before applying the forbidden init-system grep;
-- executable/non-comment PKGBUILD content is still checked for
-  `systemctl`, `systemd`, `rc-service`, and `openrc`;
-- no package behavior changed;
-- no kernel config changed;
-- no boot policy changed;
-- no source pins or patches changed.
+- keep PKGBUILD `arch=('aarch64')`;
+- use `kernel_arch` in the validator;
+- explicitly pass `ARCH=arm64` to every kernel `make` invocation in the
+  PKGBUILD, including prepare, build and package/install phases;
+- retain cross-compiler handling independently.
+
+No source pins, project patches, kernel config, boot policy or package layout
+changed.
 
 ### NEXT
 
-Push this validator-only correction and inspect
+Push this correction and inspect
 `Validate kernel config and Arch package`.
 
-Stage 7 closes only when the workflow proceeds through the actual PKGBUILD
-`prepare()` composition path, verifies the resolved configuration and expected
-kernel release, and passes `make prepare`.
+Stage 7 closes only when the workflow resolves the full config, verifies the
+expected `6.18.60-1-uconsole` kernel release, and passes `make prepare`.
 
 ---
 
@@ -440,6 +448,18 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.6 / Stage 7 Kbuild architecture correction
+
+- Recorded that all five Stage 7 patches successfully composed in the actual
+  PKGBUILD `prepare()` path.
+- Diagnosed `ARCH=aarch64` as a shell-variable collision between the
+  validator and the PKGBUILD's standard `arch=('aarch64')` declaration.
+- Renamed the validator variable to `kernel_arch`.
+- Made every PKGBUILD kernel `make` invocation explicitly use `ARCH=arm64`.
+- No source, patch, config, boot-policy, or package-layout behavior changed.
+- Stage 7 remains validation-pending.
+
 
 ### 2026-11-05 — Revision 2.5 / Stage 7 validator correction
 

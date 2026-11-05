@@ -10,6 +10,7 @@ pkgver=6.18.60
 pkgrel=1
 pkgdesc='Raspberry Pi Linux kernel for ClockworkPi uConsole CM4'
 arch=('aarch64')
+# Arch package architecture is aarch64; Linux Kbuild architecture is arm64.
 url='https://github.com/raspberrypi/linux'
 license=('GPL-2.0-only')
 
@@ -114,17 +115,17 @@ prepare() {
   printf '%s\n' "-${pkgrel}" > localversion.10-pkgrel
   printf '%s\n' "-uconsole" > localversion.20-pkgname
 
-  make bcm2711_defconfig
+  make ARCH=arm64 bcm2711_defconfig
   scripts/kconfig/merge_config.sh -m .config "${srcdir}/uconsole-cm4.config"
-  make olddefconfig
+  make ARCH=arm64 olddefconfig
 
-  make -s kernelrelease > version
+  make -s ARCH=arm64 kernelrelease > version
   printf 'Prepared %s kernel release %s\n' "$pkgbase" "$(<version)"
 }
 
 build() {
   cd "${srcdir}/${_srcname}"
-  make Image modules dtbs
+  make ARCH=arm64 Image modules dtbs
 }
 
 package() {
@@ -137,7 +138,7 @@ package() {
   printf '%s\n' "$pkgbase" |
     install -Dm644 /dev/stdin "${modulesdir}/pkgbase"
 
-  make INSTALL_MOD_PATH="${pkgdir}/usr" \
+  make ARCH=arm64 INSTALL_MOD_PATH="${pkgdir}/usr" \
     INSTALL_MOD_STRIP=1 \
     DEPMOD=/doesnt/exist \
     modules_install
@@ -145,7 +146,7 @@ package() {
   rm -f "${modulesdir}/build" "${modulesdir}/source"
 
   mkdir -p "${pkgdir}/boot"
-  make INSTALL_DTBS_PATH="${pkgdir}/boot" dtbs_install
+  make ARCH=arm64 INSTALL_DTBS_PATH="${pkgdir}/boot" dtbs_install
 
   # Match the Raspberry Pi firmware layout used by Arch Linux ARM.
   if [[ -d "${pkgdir}/boot/broadcom" ]]; then
