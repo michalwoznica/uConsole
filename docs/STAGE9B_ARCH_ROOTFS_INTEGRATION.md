@@ -1,6 +1,6 @@
 # Stage 9B — pacman-managed uConsole rootfs integration
 
-**Status:** implemented; CI validation pending.
+**Status:** complete; pacman-managed rootfs integration validation passed.
 
 ## Goal
 
@@ -162,3 +162,35 @@ Stage 9B is complete only when:
 `Validate Arch rootfs uConsole integration`
 
 passes.
+
+## Final Stage 9B result
+
+The `Validate Arch rootfs uConsole integration` workflow completed
+successfully.
+
+This proves the complete Stage 9B contract:
+
+1. the exact pinned 2026.08 Arch Linux ARM Raspberry Pi AArch64 rootfs is
+   re-authenticated;
+2. the locked SHA-256 matches;
+3. the rootfs is extracted as root in the disposable Arch build container;
+4. the authoritative `linux-uconsole` PKGBUILD is staged;
+5. a real `aarch64` pacman package is cross-built successfully with makepkg;
+6. package metadata identifies `linux-uconsole 6.18.60-1`, architecture
+   `aarch64`, expected dependencies and expected conflicts;
+7. target-root pacman sees the Stage 9A stock package state;
+8. `linux-aarch64` and `uboot-raspberrypi` are removed;
+9. `linux-uconsole` is installed and registered as explicit;
+10. `firmware-raspberrypi`, `raspberrypi-bootloader`, `mkinitcpio` and
+    `linux-firmware` remain installed;
+11. target pacman database consistency passes;
+12. `pacman -Qk linux-uconsole` passes;
+13. `/boot/kernel8.img`, CM4 DTB and uConsole DTBO are installed;
+14. `/usr/lib/modules/6.18.60-1-uconsole` exists;
+15. the uConsole mkinitcpio preset is installed;
+16. project boot policy is installed byte-for-byte as `/boot/config.txt`;
+17. `/boot/kernel8.img` is owned by `linux-uconsole`;
+18. `/boot/config.txt` remains image-policy-owned rather than package-owned;
+19. U-Boot `boot.txt`/`boot.scr` residue is absent.
+
+Stage 9B is complete.
