@@ -160,8 +160,14 @@ validsig_summary="$(
 printf 'Signature validated against expected Arch Linux ARM identity: %s\n' \
     "$validsig_summary"
 
-printf 'Recording stronger local digest for diagnostics...\n'
-sha256sum "$archive"
+printf 'Checking locked SHA-256...\n'
+actual_sha256="$(sha256sum "$archive" | awk '{print $1}')"
+if [[ "$actual_sha256" != "$ROOTFS_SHA256" ]]; then
+    printf 'ERROR: rootfs SHA-256 mismatch: got %s expected %s\n' \
+        "$actual_sha256" "$ROOTFS_SHA256" >&2
+    exit 1
+fi
+printf 'SHA-256: %s\n' "$actual_sha256"
 
 printf 'Auditing authenticated rootfs archive structure without extraction...\n'
 archive_index="$workdir/archive-index.txt"

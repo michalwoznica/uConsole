@@ -1,0 +1,50 @@
+name: Validate Arch rootfs uConsole integration
+
+on:
+  push:
+    paths:
+      - 'kernel/**'
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'image/archlinuxarm/stage9a-stock-kernel-boot-packages.txt'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/packages/linux-uconsole/**'
+      - 'scripts/stage-arch-kernel-package.sh'
+      - 'scripts/validate-arch-rootfs-integration.sh'
+      - 'docs/STAGE9B_ARCH_ROOTFS_INTEGRATION.md'
+      - '.github/workflows/validate-arch-rootfs-integration.yml'
+  pull_request:
+    paths:
+      - 'kernel/**'
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'image/archlinuxarm/stage9a-stock-kernel-boot-packages.txt'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/packages/linux-uconsole/**'
+      - 'scripts/stage-arch-kernel-package.sh'
+      - 'scripts/validate-arch-rootfs-integration.sh'
+      - 'docs/STAGE9B_ARCH_ROOTFS_INTEGRATION.md'
+      - '.github/workflows/validate-arch-rootfs-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrate-rootfs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    container:
+      image: archlinux:base-devel
+
+    steps:
+      - name: Prepare Arch build container
+        run: |
+          pacman -Syu --needed --noconfirm \
+            aarch64-linux-gnu-gcc \
+            bc bison curl dtc flex git gnupg inetutils kmod \
+            libarchive libcap libelf openssl patch perl python rsync
+
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Build package and validate rootfs integration
+        run: bash ./scripts/validate-arch-rootfs-integration.sh

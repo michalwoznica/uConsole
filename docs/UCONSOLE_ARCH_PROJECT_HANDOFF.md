@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.6  
-**Current phase:** Stage 9A cryptographic verification proven; structural audit converted to archive-native read-only mode; CI validation pending
+**Document revision:** 3.7  
+**Current phase:** Stage 9A complete; Stage 9B pacman-managed rootfs integration implemented; CI validation pending
 
 ---
 
@@ -391,61 +391,105 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-### Stage 9A — pin/authenticate Arch Linux ARM rootfs: ARCHIVE-NATIVE AUDIT, CI PENDING
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
-Fourth Stage 9A CI result:
+Final Stage 9A evidence:
 
-- rootfs lock policy: PASS;
-- versioned 2026.08 download: PASS;
-- exact archive size: PASS;
+- versioned 2026.08 Raspberry Pi AArch64 rootfs: PASS;
+- exact byte size: PASS;
 - published MD5: PASS;
-- keyring extraction: PASS;
-- ASCII-armored keyring normalization: PASS;
-- detached `gpgv` verification: PASS;
-- exact expected Arch Linux ARM identity: PASS;
-- signer:
-  `68B3537F39A313B3E574D06777193F152BDBE6A6`;
-- primary:
-  `68B3537F39A313B3E574D06777193F152BDBE6A6`;
+- detached OpenPGP signature: PASS;
+- exact official Arch Linux ARM signing identity: PASS;
 - SHA-256:
   `f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`;
-- failure occurred only during full filesystem extraction.
+- archive structure: PASS;
+- pacman local database inventory: PASS.
 
-Observed extraction issue:
+The SHA-256 is now promoted into `image/archlinuxarm/rootfs.lock`.
 
-- `bsdtar` could not restore `security.capability` xattrs on the unprivileged
-  GitHub runner;
-- examples: `newuidmap`, `newgidmap`;
-- partial extraction also produced restrictive paths that the cleanup trap
-  could not remove as the runner user.
+Observed stock kernel/boot package subset is recorded in:
 
-This is not a rootfs authenticity or content failure.
+`image/archlinuxarm/stage9a-stock-kernel-boot-packages.txt`
 
-Correction:
+Important Stage 9A inventory:
 
-- Stage 9A no longer performs full rootfs extraction;
-- audit authenticated archive member names directly;
-- stream pacman `/var/lib/pacman/local/*/desc` files with `bsdtar -xOf`;
-- derive installed package inventory without executing AArch64 binaries;
-- derive `/boot` top-level inventory directly from archive names;
-- restore no ownership, permissions, capabilities, ACLs or xattrs.
+- `linux-aarch64`;
+- `uboot-raspberrypi`;
+- `firmware-raspberrypi`;
+- `raspberrypi-bootloader`;
+- `mkinitcpio`;
+- normal `linux-firmware*` packages.
 
-This is a cleaner Stage 9A boundary: provenance and inventory are read-only.
+### Stage 9B — pacman-managed uConsole rootfs integration: IMPLEMENTED, CI PENDING
 
-Stage 9B will define the real rootfs extraction/mutation method for image
-construction.
+Exact package transition:
+
+REMOVE:
+
+- `linux-aarch64`;
+- `uboot-raspberrypi`.
+
+INSTALL:
+
+- real `linux-uconsole-6.18.60-1-aarch64.pkg.tar.*`.
+
+RETAIN:
+
+- `firmware-raspberrypi`;
+- `raspberrypi-bootloader`;
+- `mkinitcpio`;
+- `linux-firmware*`.
+
+`uboot-raspberrypi` must be removed because `linux-uconsole`, like Arch Linux
+ARM's `linux-rpi`, conflicts with it. The intended uConsole path is Raspberry
+Pi firmware -> `/boot/kernel8.img`, not Raspberry Pi firmware -> U-Boot.
+
+Stage 9B workflow:
+
+`.github/workflows/validate-arch-rootfs-integration.yml`
+
+Validator:
+
+`scripts/validate-arch-rootfs-integration.sh`
+
+Architecture:
+
+1. disposable Arch Linux x86_64 CI container;
+2. authenticate exact pinned rootfs;
+3. extract as root preserving rootfs metadata;
+4. stage authoritative kernel package workspace;
+5. real cross-build through Arch `makepkg` with:
+   - `CARCH=aarch64`;
+   - `ARCH=arm64`;
+   - `CROSS_COMPILE=aarch64-linux-gnu-`;
+6. require real aarch64 package metadata;
+7. operate host pacman on target rootfs with:
+   - `--sysroot`;
+   - `--arch aarch64`;
+8. suppress target scriptlets/hooks during cross-architecture package
+   transaction;
+9. remove stock kernel/U-Boot;
+10. install `linux-uconsole`;
+11. restore ALPM hooks;
+12. install project `/boot/config.txt`;
+13. verify package DB, package files and direct-boot layout.
+
+No QEMU/AArch64 target execution is used in Stage 9B.
+
+No partitioned image is created yet.
+
+CI timeout follows project policy: 360 minutes.
 
 ### NEXT
 
-Push this Stage 9A archive-audit correction and rerun:
+Push the Stage 9B candidate and inspect:
 
-`Validate pinned Arch Linux ARM rootfs`
+`Validate Arch rootfs uConsole integration`
 
-If it passes, capture:
+If it passes, Stage 9B closes.
 
-`=== STAGE 9B STOCK KERNEL/BOOT PACKAGE INVENTORY ===`
-
-and proceed to Stage 9B.
+The following checkpoint will define the final boot command line/initramfs
+decision and then construct the first partitioned microSD image.
 
 ---
 
@@ -464,6 +508,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.7 / Stage 9A complete, Stage 9B candidate
+
+- Marked Stage 9A complete after successful archive-native provenance and
+  inventory validation.
+- Promoted authenticated rootfs SHA-256 into `rootfs.lock`.
+- Recorded the exact successful stock kernel/boot package inventory.
+- Corrected the Stage 9B replacement set to include both `linux-aarch64` and
+  `uboot-raspberrypi`, matching `linux-uconsole`/`linux-rpi` conflict policy.
+- Added a real cross-architecture Arch `makepkg` package build.
+- Added pacman-managed target-rootfs replacement using `--sysroot` and
+  `--arch aarch64`.
+- Added direct-firmware boot-policy installation and package/database checks.
+- Stage 9B remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.6 / Stage 9A archive-native audit correction
 

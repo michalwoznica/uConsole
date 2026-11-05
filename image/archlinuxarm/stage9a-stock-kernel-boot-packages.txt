@@ -1,0 +1,20 @@
+# Observed from authenticated ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz
+# during successful Stage 9A validation.
+firmware-raspberrypi
+linux-aarch64
+linux-api-headers
+linux-firmware
+linux-firmware-amdgpu
+linux-firmware-atheros
+linux-firmware-broadcom
+linux-firmware-cirrus
+linux-firmware-intel
+linux-firmware-mediatek
+linux-firmware-nvidia
+linux-firmware-other
+linux-firmware-radeon
+linux-firmware-realtek
+linux-firmware-whence
+mkinitcpio
+raspberrypi-bootloader
+uboot-raspberrypi

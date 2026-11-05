@@ -1,6 +1,6 @@
 # Stage 9A — pin and authenticate Arch Linux ARM rootfs
 
-**Status:** implemented; CI validation pending.
+**Status:** complete; authenticated rootfs provenance and archive inventory validation passed.
 
 ## Why Stage 9 is split
 
@@ -241,3 +241,34 @@ Stage 9A and better matches its read-only provenance/inventory boundary.
 Stage 9B, which actually mutates a rootfs tree, will define an extraction
 method appropriate for image construction rather than reusing this audit-only
 path.
+
+## Final Stage 9A result
+
+The archive-native Stage 9A workflow completed successfully.
+
+Proven:
+
+- exact versioned 2026.08 Raspberry Pi AArch64 archive;
+- exact expected byte size;
+- published MD5;
+- detached OpenPGP signature;
+- exact official Arch Linux ARM signing identity;
+- SHA-256
+  `f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`;
+- required rootfs structure;
+- readable pacman local package database;
+- stock kernel/boot package inventory.
+
+The authenticated SHA-256 is now promoted into `rootfs.lock` and is enforced
+by subsequent validation.
+
+Observed stock transition targets:
+
+- remove: `linux-aarch64`;
+- remove: `uboot-raspberrypi`;
+- retain: `firmware-raspberrypi`;
+- retain: `raspberrypi-bootloader`;
+- retain: `mkinitcpio`;
+- retain: `linux-firmware*`.
+
+Stage 9A is complete.

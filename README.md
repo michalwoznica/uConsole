@@ -158,7 +158,11 @@ root.
 
 Next: Stage 9 — Arch Linux ARM rootfs and image-builder integration.
 
-Stage 9A (Arch Linux ARM rootfs pin/authentication) is implemented and awaiting
-CI. It pins the versioned Raspberry Pi AArch64 2026.08 rootfs and validates
-its published checksum, detached signature and base structure before any
-rootfs mutation.
+Stage 9A (Arch Linux ARM rootfs pin/authentication) is complete. The
+versioned Raspberry Pi AArch64 2026.08 rootfs is authenticated, SHA-256 pinned
+and its package/boot inventory is recorded.
+
+Stage 9B (pacman-managed uConsole rootfs integration) is implemented and
+awaiting CI. It cross-builds a real aarch64 `linux-uconsole` package and
+replaces the stock `linux-aarch64` + `uboot-raspberrypi` boot path in an
+extracted target rootfs.

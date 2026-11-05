@@ -45,3 +45,10 @@ Stage 9A adds:
 - `validate-arch-rootfs-pin.sh` — download the versioned Arch Linux ARM
   Raspberry Pi AArch64 rootfs, validate size/MD5/OpenPGP signature, extract it,
   and report the stock kernel/boot package inventory needed by Stage 9B.
+
+Stage 9B adds:
+
+- `validate-arch-rootfs-integration.sh` — authenticate and extract the pinned
+  ARM rootfs, cross-build the real aarch64 `linux-uconsole` package, perform
+  the pacman-managed stock-kernel/U-Boot replacement, install boot policy, and
+  verify the resulting rootfs/package database.

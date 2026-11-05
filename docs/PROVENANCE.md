@@ -243,7 +243,7 @@ The moving `-latest` alias is not accepted as a project build input.
 
 Detailed contract: `docs/STAGE9A_ARCH_ROOTFS_PIN.md`.
 
-Stage 9A CI validation is **pending**.
+Stage 9A CI validation: **PASS**. The pinned 2026.08 Raspberry Pi AArch64 rootfs was authenticated and its package/boot inventory was audited directly from the archive.
 
 ### Stage 9A signature-parser correction
 
@@ -284,3 +284,22 @@ xattrs.
 Stage 9A now performs its structural and package-database audit directly from
 the authenticated tar archive. No filesystem metadata is restored during this
 read-only provenance checkpoint.
+
+## Stage 9B rootfs integration
+
+Stage 9B uses the exact authenticated Stage 9A rootfs and the existing
+`linux-uconsole` source/package definition.
+
+The authenticated rootfs SHA-256 is now locked as:
+
+`f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`
+
+Observed replacement set:
+
+- `linux-aarch64`;
+- `uboot-raspberrypi`.
+
+Retained boot/runtime packages include `firmware-raspberrypi`,
+`raspberrypi-bootloader`, `mkinitcpio` and the linux-firmware set.
+
+Stage 9B CI validation is **pending**.

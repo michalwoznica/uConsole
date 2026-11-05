@@ -35,3 +35,12 @@ The moving `-latest` alias is informational only and is never a build input.
 
 Stage 9A validates provenance and inventory only. Stage 9B performs custom
 kernel/rootfs integration.
+
+## Stage 9B rootfs integration
+
+Stage 9B replaces the authenticated rootfs's `linux-aarch64` +
+`uboot-raspberrypi` path with a real pacman-managed `linux-uconsole` package.
+
+`firmware-raspberrypi`, `raspberrypi-bootloader`, `mkinitcpio` and firmware
+packages remain installed. The image policy owns `/boot/config.txt`; the
+kernel package does not.
