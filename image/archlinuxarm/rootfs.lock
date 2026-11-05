@@ -1,0 +1,25 @@
+# Arch Linux ARM Raspberry Pi AArch64 rootfs pin.
+#
+# The build must use the versioned archive, never the moving -latest alias.
+# The published MD5 and detached signature are fetched from the same versioned
+# archive directory. The signature is anchored to the official Arch Linux ARM
+# build-system fingerprint documented at:
+# https://archlinuxarm.org/about/package-signing
+
+ROOTFS_RELEASE=2026.08
+ROOTFS_ARCH=aarch64
+ROOTFS_FAMILY=rpi
+ROOTFS_FILENAME=ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz
+ROOTFS_EXPECTED_SIZE=850215189
+ROOTFS_RELEASE_TIMESTAMP_UTC=2026-08-05T12:55:04Z
+
+ROOTFS_PRIMARY_BASE_URL=https://ca.us.mirror.archlinuxarm.org/os/rpi
+ROOTFS_FALLBACK_BASE_URL=https://mirror.yandex.ru/archlinux-arm/os/rpi
+
+ROOTFS_MD5_SUFFIX=.md5
+ROOTFS_SIGNATURE_SUFFIX=.sig
+
+ROOTFS_SIGNING_FINGERPRINT=68B3537F39A313B3E574D06777193F152BDBE6A6
+
+# Informational only. Never use this moving alias as a build input.
+ROOTFS_LATEST_ALIAS=ArchLinuxARM-rpi-aarch64-latest.tar.gz

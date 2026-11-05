@@ -1,0 +1,107 @@
+# Stage 9A — pin and authenticate Arch Linux ARM rootfs
+
+**Status:** implemented; CI validation pending.
+
+## Why Stage 9 is split
+
+Stage 9 combines a large external root filesystem, package-database changes,
+custom-kernel integration and image composition. To keep failures bounded,
+Stage 9 is split into smaller checkpoints.
+
+Stage 9A does only rootfs provenance and structural validation.
+
+Stage 9B will integrate `linux-uconsole` into the authenticated rootfs tree.
+
+## Selected rootfs
+
+Target:
+
+`ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz`
+
+This is the versioned Raspberry Pi AArch64 rootfs archive from Arch Linux ARM.
+
+The project intentionally does **not** build from the moving
+`ArchLinuxARM-rpi-aarch64-latest.tar.gz` alias.
+
+The archive was published on 2026-08-05 and mirrored with an exact size of
+850,215,189 bytes.
+
+## Authenticity model
+
+Arch Linux ARM publishes:
+
+- the rootfs archive;
+- an MD5 sidecar;
+- a detached OpenPGP signature.
+
+Arch Linux ARM states that release archives use the same build-system signing
+key as packages:
+
+`68B3537F39A313B3E574D06777193F152BDBE6A6`
+
+Stage 9A verifies:
+
+1. the versioned filename;
+2. exact expected byte size;
+3. the published MD5 sidecar;
+4. the detached signature;
+5. that the keyring used for verification contains the official full
+   fingerprint.
+
+The validator extracts the Arch Linux ARM public keyring from the downloaded
+archive, then independently requires the exact official fingerprint before
+using that keyring with `gpgv`. A modified archive cannot pass the detached
+signature without the corresponding private signing key.
+
+The validator also prints a SHA-256 digest for diagnostic/audit purposes.
+
+## Mirror policy
+
+The rootfs lock uses a versioned archive path.
+
+Primary mirror:
+
+`https://ca.us.mirror.archlinuxarm.org/os/rpi`
+
+Fallback mirror:
+
+`https://mirror.yandex.ru/archlinux-arm/os/rpi`
+
+Because the filename is versioned and the content is signature-checked,
+mirrors are transport sources rather than authorities.
+
+## Structural audit
+
+After authentication the validator extracts the rootfs and requires:
+
+- pacman;
+- systemd tooling;
+- pacman configuration;
+- Arch Linux ARM keyring;
+- pacman local package database;
+- boot directory.
+
+It reads installed package names directly from pacman's local database without
+executing target-AArch64 binaries.
+
+The workflow prints the installed kernel/boot package subset so Stage 9B can
+remove/replace the exact stock packages observed in this pinned rootfs rather
+than guessing.
+
+## Explicit non-goals
+
+Stage 9A does not:
+
+- build the uConsole kernel again;
+- modify the rootfs;
+- remove stock packages;
+- run AArch64 binaries through QEMU;
+- create partitions/filesystems;
+- create an SD-card image;
+- flash hardware.
+
+## Completion criterion
+
+Stage 9A is complete when `Validate pinned Arch Linux ARM rootfs` passes and
+its stock kernel/boot package inventory is recorded in the handoff for Stage
+9B.

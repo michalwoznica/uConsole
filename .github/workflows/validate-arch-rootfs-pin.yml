@@ -1,0 +1,37 @@
+name: Validate pinned Arch Linux ARM rootfs
+
+on:
+  push:
+    paths:
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'scripts/validate-arch-rootfs-pin.sh'
+      - 'docs/STAGE9A_ARCH_ROOTFS_PIN.md'
+      - '.github/workflows/validate-arch-rootfs-pin.yml'
+  pull_request:
+    paths:
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'scripts/validate-arch-rootfs-pin.sh'
+      - 'docs/STAGE9A_ARCH_ROOTFS_PIN.md'
+      - '.github/workflows/validate-arch-rootfs-pin.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-rootfs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install rootfs validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            curl libarchive-tools gnupg
+
+      - name: Validate pinned Arch Linux ARM rootfs
+        run: bash ./scripts/validate-arch-rootfs-pin.sh

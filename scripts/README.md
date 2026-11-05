@@ -39,3 +39,9 @@ maximum job timeout unless a lower limit is specifically justified.
 For GitHub Actions, verify the platform limit before changing workflow
 timeouts. At Stage 8 completion, the maximum/default job timeout is 360
 minutes, so full kernel/image jobs use `timeout-minutes: 360`.
+
+Stage 9A adds:
+
+- `validate-arch-rootfs-pin.sh` — download the versioned Arch Linux ARM
+  Raspberry Pi AArch64 rootfs, validate size/MD5/OpenPGP signature, extract it,
+  and report the stock kernel/boot package inventory needed by Stage 9B.

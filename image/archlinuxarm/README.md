@@ -24,3 +24,14 @@ Planned later responsibilities:
 The existing `fabiiw05/uconsole-archlinux` project remains a useful
 image-building reference, but this project uses its own pinned 6.18 LTS kernel
 composition and pacman-managed kernel package.
+
+## Stage 9A rootfs pin
+
+The Arch Linux ARM base is pinned in `rootfs.lock`.
+
+The project uses the versioned Raspberry Pi AArch64 2026.08 archive and
+verifies its published checksum and detached signature before extraction.
+The moving `-latest` alias is informational only and is never a build input.
+
+Stage 9A validates provenance and inventory only. Stage 9B performs custom
+kernel/rootfs integration.

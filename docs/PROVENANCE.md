@@ -221,3 +221,26 @@ output names against the pinned Raspberry Pi Linux Makefiles and uses
 Detailed contract: `docs/STAGE8_FULL_BUILD.md`.
 
 Stage 8 CI validation: **PASS**. The complete staged PKGBUILD `prepare()`, `build()` and `package()` path succeeded, including Image, modules, DTBs/DTBOs, overlay application and package-root verification.
+
+## Stage 9A Arch Linux ARM rootfs
+
+Selected rootfs:
+
+- family: Raspberry Pi AArch64;
+- release: `2026.08`;
+- file: `ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz`;
+- mirrored size: `850215189` bytes;
+- release timestamp: `2026-08-05T12:55:04Z`;
+- signing fingerprint:
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`.
+
+Arch Linux ARM's downloads page states that releases are signed with its
+package-signing build-system key. The versioned mirror directory retains the
+2026.08 Raspberry Pi AArch64 archive alongside MD5 and detached-signature
+sidecars.
+
+The moving `-latest` alias is not accepted as a project build input.
+
+Detailed contract: `docs/STAGE9A_ARCH_ROOTFS_PIN.md`.
+
+Stage 9A CI validation is **pending**.

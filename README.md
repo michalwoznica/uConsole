@@ -157,3 +157,8 @@ Stage 8 (full build-only validation) is complete. The actual staged
 root.
 
 Next: Stage 9 — Arch Linux ARM rootfs and image-builder integration.
+
+Stage 9A (Arch Linux ARM rootfs pin/authentication) is implemented and awaiting
+CI. It pins the versioned Raspberry Pi AArch64 2026.08 rootfs and validates
+its published checksum, detached signature and base structure before any
+rootfs mutation.

@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.1  
-**Current phase:** Stage 8 full build-only validation complete; Stage 9 Arch Linux ARM rootfs/image-builder integration is next
+**Document revision:** 3.2  
+**Current phase:** Stage 9A pinned Arch Linux ARM rootfs provenance implemented; CI validation pending
 
 ---
 
@@ -391,50 +391,70 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-Final Stage 8 result:
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: IMPLEMENTED, CI PENDING
 
-- first full-build attempt was healthy but cancelled by the project's 90-minute timeout;
-- timeout/resource policy was corrected;
-- second run completed successfully in approximately 1 hour 19 minutes;
-- deterministic package staging: PASS;
-- exact input fetch: PASS;
-- real PKGBUILD `prepare()`: PASS;
-- real PKGBUILD `build()` for Image, modules and DTBs: PASS;
-- required uConsole/AXP20x/TI ADC modules: PASS;
-- CM4 DTB and uConsole DTBO: PASS;
-- built DTBO application with `fdtoverlay`: PASS;
-- real PKGBUILD `package()`: PASS;
-- `/boot/kernel8.img`, installed DTBs/DTBOs and module tree: PASS;
-- module `pkgbase`, mkinitcpio preset and package-root leakage checks: PASS.
+Stage 9 was split into bounded checkpoints because it combines a large rootfs,
+package-database changes and image composition.
 
-### CI timeout policy
+Selected rootfs:
 
-Project rule going forward:
+- Arch Linux ARM Raspberry Pi AArch64;
+- versioned release `2026.08`;
+- `ArchLinuxARM-2026.08-rpi-aarch64-rootfs.tar.gz`;
+- expected size `850215189` bytes;
+- timestamp `2026-08-05T12:55:04Z`;
+- official signing fingerprint:
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`.
 
-- do not impose CI/workflow timeout limits lower than the hosting platform's
-  current maximum unless there is a specific documented reason;
-- verify the current platform maximum before setting/changing a timeout;
-- for current GitHub Actions standard jobs, use `timeout-minutes: 360` for
-  long-running kernel/image workflows.
+The moving `-latest` filename is explicitly forbidden as a build input.
 
-This rule was adopted because a healthy Stage 8 kernel build was cancelled by
-an unnecessarily restrictive project timeout.
+Stage 9A validator:
 
-### NEXT: Stage 9 — Arch Linux ARM rootfs/image-builder integration
+`scripts/validate-arch-rootfs-pin.sh`
 
-Stage 9 should:
+Workflow:
 
-1. research and pin the current Arch Linux ARM aarch64 rootfs source;
-2. define rootfs provenance/checksum verification;
-3. integrate the `linux-uconsole` package into the rootfs;
-4. install Raspberry Pi firmware/bootloader dependencies consistently;
-5. compose the project boot-policy fragment into the image boot partition;
-6. define the kernel command line;
-7. remove/replace stock kernel packages safely;
-8. keep image-building operations reproducible and noninteractive;
-9. produce an image-build pipeline, but keep first physical flashing/testing
-   as the following stage if useful for risk control;
-10. update provenance and this handoff before Stage 9 closure.
+`.github/workflows/validate-arch-rootfs-pin.yml`
+
+Validation contract:
+
+1. fetch the versioned archive plus its published MD5/signature sidecars;
+2. verify exact archive size;
+3. verify the published MD5;
+4. extract the Arch Linux ARM public keyring from the archive;
+5. require the exact official signing fingerprint;
+6. verify the detached archive signature with `gpgv`;
+7. print SHA-256 for audit diagnostics;
+8. extract the authenticated rootfs;
+9. verify expected base structure;
+10. read package names directly from pacman's local database;
+11. print the exact installed kernel/boot package subset for Stage 9B.
+
+No target binaries are executed and no rootfs mutation occurs in 9A.
+
+CI timeout follows project policy: `timeout-minutes: 360`.
+
+### NEXT
+
+Push the Stage 9A candidate and inspect:
+
+`Validate pinned Arch Linux ARM rootfs`
+
+If it passes, capture the printed stock kernel/boot package inventory in the
+handoff and proceed to Stage 9B.
+
+### Stage 9B — planned after Stage 9A
+
+Stage 9B will:
+
+1. remove/replace the exact stock kernel/boot packages observed in 9A;
+2. integrate the pacman-managed `linux-uconsole` package into a rootfs tree;
+3. install the project boot policy and kernel command line;
+4. establish the uConsole SD-card root/boot mount contract;
+5. validate package-database consistency;
+6. stop before creating a partitioned flashable image.
+
+Stage 10 remains the first actual microSD image construction stage.
 
 ---
 
@@ -453,6 +473,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.2 / Stage 9A candidate
+
+- Split Stage 9 into bounded rootfs-provenance and rootfs-integration
+  checkpoints.
+- Selected the versioned Arch Linux ARM Raspberry Pi AArch64 2026.08 rootfs.
+- Explicitly prohibited the moving `-latest` alias as a build input.
+- Added exact size, published MD5 and detached-signature validation.
+- Anchored signature verification to Arch Linux ARM's official full signing
+  fingerprint.
+- Added structural and pacman-database inventory audit without executing
+  AArch64 target binaries.
+- Kept the Stage 9A workflow at GitHub's 360-minute job timeout.
+- Stage 9A remains open until CI passes and reports the stock kernel/boot
+  package inventory.
+
 
 ### 2026-11-05 — Revision 3.1 / Stage 8 complete
 
