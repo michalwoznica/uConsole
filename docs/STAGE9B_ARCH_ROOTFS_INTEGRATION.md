@@ -1,6 +1,6 @@
 # Stage 9B — pacman-managed uConsole rootfs integration
 
-**Status:** workspace-permission correction applied; CI validation pending.
+**Status:** complete; full pacman-managed rootfs integration validation passed.
 
 ## Goal
 
@@ -265,3 +265,27 @@ The corrected validator now:
 
 This changes only the final validation method. The package build, package
 transaction, rootfs, kernel, boot policy and CPU parallelism are unchanged.
+
+## Final successful Stage 9B result
+
+The corrected `Validate Arch rootfs uConsole integration` workflow completed
+successfully.
+
+Final proven contract:
+
+- exact pinned rootfs authentication: PASS;
+- real aarch64 `linux-uconsole` package build: PASS;
+- produced `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
+- removal of `linux-aarch64`: PASS;
+- removal of `uboot-raspberrypi`: PASS;
+- installation of `linux-uconsole 6.18.60-1`: PASS;
+- retained Raspberry Pi firmware/bootloader, mkinitcpio and linux-firmware:
+  PASS;
+- `pacman -Dk`: PASS;
+- `pacman -Qk linux-uconsole`: 2765 files, 0 missing;
+- authoritative local package file DB records `boot/kernel8.img`: PASS;
+- `boot/config.txt` appears in no package file DB: PASS;
+- kernel image, CM4 DTB, uConsole DTBO, module tree and preset: PASS;
+- U-Boot boot-script residue absent: PASS.
+
+Stage 9B is complete.

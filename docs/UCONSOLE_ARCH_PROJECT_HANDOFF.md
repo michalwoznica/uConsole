@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.1  
-**Current phase:** Stage 9B build/transaction proven; final ownership check moved to authoritative local pacman database; CI pending
+**Document revision:** 4.2  
+**Current phase:** Stage 9B pacman-managed rootfs integration complete; Stage 9C final boot command line/initramfs policy is next
 
 ---
 
@@ -393,60 +393,63 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
-### Stage 9B — pacman-managed uConsole rootfs integration: FINAL LOCAL-DB OWNERSHIP CHECK, CI PENDING
+### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 
-Latest Stage 9B CI evidence:
+Final Stage 9B evidence:
 
-- rootfs authentication/extraction: PASS;
-- stock target package state: PASS;
-- deterministic package staging: PASS;
-- real aarch64 makepkg build: PASS;
-- produced `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
-- package metadata: PASS;
-- target ALPM hook suppression/restoration: PASS;
-- target foreign-architecture ldconfig suppression/restoration: PASS;
-- remove `linux-aarch64` + `uboot-raspberrypi`: PASS;
-- install/register `linux-uconsole`: PASS;
-- retained-package checks: PASS;
-- target package DB consistency (`pacman -Dk`): PASS;
-- `pacman -Qk linux-uconsole`: 2765 files, 0 missing;
-- physical `/boot/kernel8.img`, CM4 DTB, uConsole DTBO, preset and module tree:
+- authenticated rootfs reuse: PASS;
+- real aarch64 `linux-uconsole` package build: PASS;
+- package:
+  `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
+- remove `linux-aarch64`: PASS;
+- remove `uboot-raspberrypi`: PASS;
+- install/register `linux-uconsole 6.18.60-1`: PASS;
+- retain Raspberry Pi firmware/bootloader, mkinitcpio and linux-firmware:
   PASS;
-- project `/boot/config.txt` byte comparison: PASS;
-- failure occurred only in a formatted `pacman -Ql` ownership assertion.
+- target pacman DB consistency: PASS;
+- `pacman -Qk linux-uconsole`:
+  2765 files, 0 missing;
+- authoritative local pacman file DB records `boot/kernel8.img`: PASS;
+- no package owns `boot/config.txt`: PASS;
+- kernel image / CM4 DTB / uConsole DTBO / module tree / preset:
+  PASS;
+- project boot config installation: PASS;
+- U-Boot boot-script residue absent: PASS.
 
-Correction:
+Cross-architecture transaction lessons:
 
-- do not parse human-readable `pacman -Ql` formatting;
-- find exactly one installed
-  `var/lib/pacman/local/linux-uconsole-*/files` record;
-- require exact root-relative entry `boot/kernel8.img`;
-- continue requiring `boot/config.txt` to appear in no installed package
-  `files` record;
-- print relevant boot entries from the linux-uconsole record if the assertion
-  fails.
+- suppress target ALPM hooks and target-architecture `ldconfig` while the
+  x86_64 host pacman mutates the AArch64 rootfs;
+- restore them immediately afterward;
+- do not use `pacman -Qo` with an unadjusted target path under `--sysroot`;
+- use the target pacman local database `files` record for authoritative
+  install-root-relative ownership validation.
 
-libalpm defines package file-list paths as install-root-relative with no
-leading slash, which matches the local database representation.
-
-No kernel source, config, patch, PKGBUILD, rootfs input, package transaction,
-boot policy, CI timeout or CPU parallelism changed.
+CI parallelism remains dynamic via `nproc`; no explicit core cap exists.
 
 ### Repository privacy/publication policy
 
 The repository is intended to become public after physical uConsole
 validation. Treat Git history as permanently public: never commit user or host
 identifiers, usernames, account IDs, machine-specific absolute paths or other
-PII. Continue privacy audits for every checkpoint.
+PII. Continue privacy audits before every checkpoint.
 
-### NEXT
+### NEXT: Stage 9C — final boot command line and initramfs policy
 
-Push this correction and rerun:
+Stage 9C should:
 
-`Validate Arch rootfs uConsole integration`
+1. define final `/boot/cmdline.txt`;
+2. decide direct-root boot versus initramfs;
+3. verify root filesystem/storage drivers are available early enough;
+4. choose reproducible root-device addressing;
+5. define console/serial policy;
+6. define first-boot verbosity/debug policy;
+7. confirm direct Raspberry Pi firmware -> `kernel8.img` boot chain;
+8. validate config/cmdline composition in CI;
+9. stop before creating partitions or a flashable image.
 
-Stage 9B closes only after the final package/boot ownership checks pass. Do
-not begin Stage 9C yet.
+After Stage 9C, Stage 10 constructs the first reproducible partitioned
+microSD image.
 
 ---
 
@@ -465,6 +468,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 4.2 / Stage 9B complete
+
+- Recorded successful final Stage 9B workflow.
+- Confirmed real aarch64 package build and complete target pacman transition.
+- Confirmed `pacman -Dk`.
+- Confirmed `pacman -Qk linux-uconsole`: 2765 files, 0 missing.
+- Confirmed `boot/kernel8.img` in authoritative local package file records.
+- Confirmed `boot/config.txt` is deliberately unowned by packages.
+- Marked Stage 9B complete.
+- Set Stage 9C boot-command-line/initramfs policy as next.
+- Retained dynamic `nproc` CPU parallelism and maximum CI timeout policy.
+
 
 ### 2026-11-05 — Revision 4.1 / Stage 9B local-database ownership correction
 

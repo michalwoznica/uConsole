@@ -167,3 +167,12 @@ validation is pending after a CI workspace-permission correction. The first
 run authenticated/extracted the rootfs and reached the real `makepkg`
 invocation; the unprivileged build user could not traverse the root-owned
 temporary parent directory.
+
+Stage 9B (pacman-managed uConsole rootfs integration) is complete. The real
+aarch64 `linux-uconsole` package builds and installs into the authenticated
+Arch Linux ARM rootfs; stock `linux-aarch64` and `uboot-raspberrypi` are
+removed, retained firmware/bootloader packages remain consistent, and pacman
+file/database ownership checks pass.
+
+Next: Stage 9C — final boot command line and initramfs policy before first
+partitioned microSD image construction.

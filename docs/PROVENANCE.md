@@ -302,7 +302,7 @@ Observed replacement set:
 Retained boot/runtime packages include `firmware-raspberrypi`,
 `raspberrypi-bootloader`, `mkinitcpio` and the linux-firmware set.
 
-Stage 9B CI validation is **pending**. The first run reached the real `makepkg` invocation but the unprivileged build user could not traverse the root-owned `mktemp` parent directory. The workspace traversal permission has been corrected; no rootfs/package policy changed.
+Stage 9B CI validation: **PASS**. The real aarch64 `linux-uconsole` package build, target-root pacman transition, local database consistency, installed-file integrity, boot layout and authoritative file-ownership records all passed. The first run reached the real `makepkg` invocation but the unprivileged build user could not traverse the root-owned `mktemp` parent directory. The workspace traversal permission has been corrected; no rootfs/package policy changed.
 
 ### Stage 9B cross-architecture pacman correction
 
@@ -321,3 +321,18 @@ The remaining ownership assertion was changed from formatted `pacman -Ql`
 output to the target pacman local database `files` record. Package file names
 are install-root-relative there, so `boot/kernel8.img` is checked directly and
 `boot/config.txt` remains required to be absent from every package file list.
+
+### Stage 9B final validation
+
+The final corrected Stage 9B workflow passed end to end.
+
+Important evidence:
+
+- `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst` built successfully;
+- target pacman DB consistent;
+- `linux-uconsole`: 2765 files, 0 missing;
+- local package database owns `boot/kernel8.img`;
+- no package owns `boot/config.txt`;
+- direct Raspberry Pi firmware boot layout validated.
+
+Stage 9B is complete.

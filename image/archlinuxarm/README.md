@@ -48,3 +48,9 @@ kernel package does not.
 Stage 9B validation is pending after a CI workspace-permission correction.
 The first run authenticated/extracted the rootfs and reached the real
 unprivileged `makepkg` invocation.
+
+Stage 9B result: **PASS**. The authenticated rootfs accepts the real
+pacman-managed `linux-uconsole` package; `linux-aarch64` and
+`uboot-raspberrypi` are removed, retained firmware/boot packages remain
+registered, `/boot/kernel8.img` is owned by `linux-uconsole`, and
+`/boot/config.txt` remains deliberately image-policy-owned.
