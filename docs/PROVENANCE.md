@@ -302,4 +302,4 @@ Observed replacement set:
 Retained boot/runtime packages include `firmware-raspberrypi`,
 `raspberrypi-bootloader`, `mkinitcpio` and the linux-firmware set.
 
-Stage 9B CI validation: **PASS**. A real aarch64 `linux-uconsole` pacman package was cross-built and installed into the authenticated target rootfs; stock `linux-aarch64` and `uboot-raspberrypi` were removed, retained firmware/boot packages remained registered, and package/database/boot-layout validation passed.
+Stage 9B CI validation is **pending**. The first run reached the real `makepkg` invocation but the unprivileged build user could not traverse the root-owned `mktemp` parent directory. The workspace traversal permission has been corrected; no rootfs/package policy changed.

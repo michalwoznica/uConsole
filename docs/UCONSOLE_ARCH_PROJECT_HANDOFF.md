@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.8  
-**Current phase:** Stage 9B pacman-managed rootfs integration complete; Stage 9C final boot command line/initramfs policy is next
+**Document revision:** 3.9  
+**Current phase:** Stage 9B reached real makepkg; temporary-workspace traversal permission corrected; CI validation pending
 
 ---
 
@@ -393,65 +393,53 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
-### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
+### Stage 9B — pacman-managed uConsole rootfs integration: WORKSPACE PERMISSION CORRECTED, CI PENDING
 
-Final Stage 9B evidence:
+First Stage 9B CI result:
 
-- exact pinned rootfs re-authentication: PASS;
-- locked SHA-256: PASS;
-- rootfs extraction as root: PASS;
-- authoritative package staging: PASS;
-- real aarch64 `linux-uconsole` makepkg build: PASS;
-- package metadata checks: PASS;
-- stock rootfs package-state checks: PASS;
-- remove `linux-aarch64`: PASS;
-- remove `uboot-raspberrypi`: PASS;
-- install/register `linux-uconsole 6.18.60-1`: PASS;
-- retain `firmware-raspberrypi`: PASS;
-- retain `raspberrypi-bootloader`: PASS;
-- retain `mkinitcpio`: PASS;
-- retain `linux-firmware`: PASS;
-- target pacman database consistency: PASS;
-- `pacman -Qk linux-uconsole`: PASS;
-- `/boot/kernel8.img`: PASS;
-- CM4 DTB: PASS;
-- uConsole DTBO: PASS;
-- `/usr/lib/modules/6.18.60-1-uconsole`: PASS;
-- uConsole mkinitcpio preset: PASS;
-- project `/boot/config.txt`: PASS;
-- `/boot/kernel8.img` owned by `linux-uconsole`: PASS;
-- `/boot/config.txt` deliberately not package-owned: PASS;
-- U-Boot `boot.txt` / `boot.scr` residue absent: PASS.
+PASS before failure:
 
-This proves the rootfs/package transition without executing target AArch64
-userspace or constructing a disk image.
+- rootfs/package policy checks;
+- exact pinned rootfs fetch/authentication;
+- rootfs extraction as container root;
+- Stage 9A stock package-state validation;
+- deterministic `linux-uconsole` makepkg workspace staging.
 
-### NEXT: Stage 9C — final boot command line and initramfs policy
+Failure:
 
-Stage 9C should stay bounded and answer the remaining boot contract before any
-partitioned image is created.
+`makepkg` was correctly invoked as the unprivileged `uconsole-build` user, but
+could not `cd` into:
 
-It should:
+`.../linux-uconsole-package`
 
-1. define the final Raspberry Pi kernel command line for the uConsole;
-2. decide whether the first boot uses:
-   - direct root filesystem mounting without an initramfs; or
-   - a generated initramfs;
-3. verify the selected root filesystem driver/storage path is available early
-   enough for that decision;
-4. define root-device addressing for reproducible image builds, preferably
-   filesystem UUID/PARTUUID rather than hard-coded device names;
-5. define serial console policy;
-6. define console/TTY and early-boot verbosity policy;
-7. confirm the direct-firmware `kernel8.img` + `config.txt` boot chain;
-8. validate the final `/boot/cmdline.txt` composition in CI;
-9. stop before creating partitions/filesystems or a flashable image.
+Root cause:
 
-After Stage 9C, Stage 10 should construct the first reproducible partitioned
-microSD image from the already-proven rootfs/kernel composition.
+- top-level `workdir="$(mktemp -d)"` was mode `0700`;
+- package/build subdirectories were correctly chowned to `uconsole-build`;
+- nevertheless, the build user could not traverse the root-owned top-level
+  temporary directory.
 
-CI/workflow timeout policy remains: use the hosting platform's current
-maximum unless a lower limit is specifically justified.
+Correction:
+
+- immediately set the disposable Stage 9B workdir to `0755`;
+- retain root ownership of the rootfs/authentication material;
+- chown only package/build-output/build-home paths to `uconsole-build`;
+- create `uconsole-build` with `--no-create-home` because the build home is
+  explicitly created by the validator.
+
+No kernel source, config, patch, PKGBUILD, rootfs input, package replacement
+set, pacman policy or boot policy changed.
+
+### NEXT
+
+Push this correction and rerun:
+
+`Validate Arch rootfs uConsole integration`
+
+Stage 9B closes only after that workflow completes all makepkg, pacman and
+boot-layout checks.
+
+Do not begin Stage 9C yet.
 
 ---
 
@@ -470,6 +458,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.9 / Stage 9B workspace-permission correction
+
+- Corrected the previous premature Stage 9B completion status.
+- Recorded that the first Stage 9B run reached the real unprivileged makepkg
+  invocation.
+- Diagnosed `Permission denied` as `mktemp -d` parent mode `0700`, not a
+  package/kernel failure.
+- Made the disposable top-level work directory traversable (`0755`).
+- Changed build-user creation to `--no-create-home` to avoid the harmless
+  existing-home warning.
+- No functional build/package/rootfs policy changed.
+- Stage 9B remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.8 / Stage 9B complete
 

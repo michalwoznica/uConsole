@@ -162,11 +162,8 @@ Stage 9A (Arch Linux ARM rootfs pin/authentication) is complete. The
 versioned Raspberry Pi AArch64 2026.08 rootfs is authenticated, SHA-256 pinned
 and its package/boot inventory is recorded.
 
-Stage 9B (pacman-managed uConsole rootfs integration) is complete. A real
-aarch64 `linux-uconsole` package is cross-built and installed into the
-authenticated rootfs, replacing the stock `linux-aarch64` +
-`uboot-raspberrypi` path while retaining Raspberry Pi firmware/bootloader and
-normal firmware packages.
-
-Next: Stage 9C — final boot command line and initramfs policy before the first
-partitioned microSD image build.
+Stage 9B (pacman-managed uConsole rootfs integration) is implemented and
+validation is pending after a CI workspace-permission correction. The first
+run authenticated/extracted the rootfs and reached the real `makepkg`
+invocation; the unprivileged build user could not traverse the root-owned
+temporary parent directory.

@@ -19,6 +19,8 @@ if ! [[ "$jobs" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 workdir="$(mktemp -d)"
+chmod 0755 "$workdir"
+
 cleanup() {
     chmod -R u+rwX "$workdir" 2>/dev/null || true
     rm -rf "$workdir"
@@ -189,7 +191,7 @@ bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
 mkdir -p "$pkgdest" "$build_home"
 
 if ! id -u uconsole-build >/dev/null 2>&1; then
-    useradd --create-home --home-dir "$build_home" --shell /bin/bash uconsole-build
+    useradd --no-create-home --home-dir "$build_home" --shell /bin/bash uconsole-build
 fi
 
 chown -R uconsole-build:uconsole-build \

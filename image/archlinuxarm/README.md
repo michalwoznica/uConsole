@@ -45,7 +45,6 @@ Stage 9B replaces the authenticated rootfs's `linux-aarch64` +
 packages remain installed. The image policy owns `/boot/config.txt`; the
 kernel package does not.
 
-Stage 9B result: **PASS**. The authenticated rootfs accepts the real
-pacman-managed `linux-uconsole` package; stock `linux-aarch64` and
-`uboot-raspberrypi` are removed, required retained packages remain installed,
-and the direct-firmware `/boot/kernel8.img` layout validates successfully.
+Stage 9B validation is pending after a CI workspace-permission correction.
+The first run authenticated/extracted the rootfs and reached the real
+unprivileged `makepkg` invocation.

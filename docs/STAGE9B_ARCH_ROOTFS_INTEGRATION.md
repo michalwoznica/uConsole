@@ -1,6 +1,6 @@
 # Stage 9B — pacman-managed uConsole rootfs integration
 
-**Status:** complete; pacman-managed rootfs integration validation passed.
+**Status:** workspace-permission correction applied; CI validation pending.
 
 ## Goal
 
@@ -163,34 +163,41 @@ Stage 9B is complete only when:
 
 passes.
 
-## Final Stage 9B result
+## First Stage 9B CI failure
 
-The `Validate Arch rootfs uConsole integration` workflow completed
-successfully.
+The first Stage 9B run successfully reached the real `makepkg` invocation.
 
-This proves the complete Stage 9B contract:
+Passed before the failure:
 
-1. the exact pinned 2026.08 Arch Linux ARM Raspberry Pi AArch64 rootfs is
-   re-authenticated;
-2. the locked SHA-256 matches;
-3. the rootfs is extracted as root in the disposable Arch build container;
-4. the authoritative `linux-uconsole` PKGBUILD is staged;
-5. a real `aarch64` pacman package is cross-built successfully with makepkg;
-6. package metadata identifies `linux-uconsole 6.18.60-1`, architecture
-   `aarch64`, expected dependencies and expected conflicts;
-7. target-root pacman sees the Stage 9A stock package state;
-8. `linux-aarch64` and `uboot-raspberrypi` are removed;
-9. `linux-uconsole` is installed and registered as explicit;
-10. `firmware-raspberrypi`, `raspberrypi-bootloader`, `mkinitcpio` and
-    `linux-firmware` remain installed;
-11. target pacman database consistency passes;
-12. `pacman -Qk linux-uconsole` passes;
-13. `/boot/kernel8.img`, CM4 DTB and uConsole DTBO are installed;
-14. `/usr/lib/modules/6.18.60-1-uconsole` exists;
-15. the uConsole mkinitcpio preset is installed;
-16. project boot policy is installed byte-for-byte as `/boot/config.txt`;
-17. `/boot/kernel8.img` is owned by `linux-uconsole`;
-18. `/boot/config.txt` remains image-policy-owned rather than package-owned;
-19. U-Boot `boot.txt`/`boot.scr` residue is absent.
+- rootfs policy checks;
+- rootfs fetch/authentication;
+- rootfs extraction as container root;
+- stock package-state validation;
+- deterministic `linux-uconsole` package staging.
 
-Stage 9B is complete.
+Failure:
+
+`makepkg` running as the unprivileged `uconsole-build` user could not change
+directory into the staged package workspace:
+
+`cd: .../linux-uconsole-package: Permission denied`
+
+Root cause:
+
+`mktemp -d` creates the top-level Stage 9B workspace with mode `0700`. The
+package directory itself was correctly chowned to `uconsole-build`, but the
+build user still could not traverse the root-owned parent directory.
+
+Correction:
+
+- set the disposable top-level Stage 9B work directory to mode `0755`;
+- keep ownership of sensitive/rootfs content unchanged;
+- continue to chown only the build workspace, package destination and build
+  home to `uconsole-build`;
+- change `useradd` to `--no-create-home` because the build home is created
+  explicitly before user creation.
+
+No kernel source, PKGBUILD, rootfs input, package transition, pacman policy or
+boot policy changed.
+
+Stage 9B remains open until the corrected workflow completes successfully.
