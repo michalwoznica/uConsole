@@ -140,3 +140,33 @@ proves the downloaded archive was actually validated by the expected key.
 
 No rootfs release, mirror, expected size, checksum, signing fingerprint, or
 Stage 9A trust policy changed.
+
+## Direct gpgv trust-path correction
+
+The second Stage 9A CI run again reached the signing-key validation step and
+then exited with code 2 while trying to inspect the extracted pacman keyring
+through `gpg --keyring ... --list-keys`.
+
+That pre-check was unnecessary.
+
+The validator now uses one authoritative verification path:
+
+1. pass the extracted `archlinuxarm.gpg` keyring directly to `gpgv`;
+2. require `gpgv` to verify the detached rootfs signature successfully;
+3. parse the machine-readable `VALIDSIG` status;
+4. accept the signature only if the official Arch Linux ARM fingerprint is
+   either:
+   - the actual signing-key fingerprint; or
+   - the primary-key fingerprint associated with that signing key.
+
+GnuPG documents `VALIDSIG` as containing the signing fingerprint and, for
+OpenPGP signatures, the corresponding primary-key fingerprint. This correctly
+handles signatures produced by a signing subkey.
+
+The separate keyring-membership inspection is removed. Successful `gpgv`
+verification plus the exact `VALIDSIG` identity check already proves that the
+keyring contained a usable key rooted at the expected Arch Linux ARM signing
+identity.
+
+No rootfs release, checksum, size, mirror, fingerprint, or trust decision
+changed.

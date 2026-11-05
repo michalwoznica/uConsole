@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.3  
-**Current phase:** Stage 9A signature-validation parser corrected; CI validation pending
+**Document revision:** 3.4  
+**Current phase:** Stage 9A trust path simplified to direct gpgv/VALIDSIG verification; CI validation pending
 
 ---
 
@@ -391,44 +391,48 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-### Stage 9A — pin/authenticate Arch Linux ARM rootfs: SIGNATURE VALIDATOR CORRECTED, CI PENDING
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: DIRECT GPGV TRUST PATH, CI PENDING
 
-First Stage 9A CI result:
+Second Stage 9A CI result:
 
 - rootfs lock policy: PASS;
 - versioned 2026.08 rootfs download: PASS;
 - exact archive size: PASS;
 - published MD5: PASS;
-- Arch Linux ARM keyring extraction: PASS;
-- local fingerprint-presence parser: FAIL;
-- detached signature verification was not reached.
-
-The official Arch Linux ARM signing fingerprint remains:
-
-`68B3537F39A313B3E574D06777193F152BDBE6A6`
+- keyring extraction: PASS;
+- `gpg --keyring ... --list-keys` inspection: exited code 2;
+- detached signature verification was still not reached.
 
 Root cause:
 
-The validator relied on one exact colon-record layout from
-`gpg --with-colons --fingerprint`, making the local parser brittle.
+The validator was still treating the extracted pacman keyring as a GnuPG
+managed keyring for a separate membership check. That check is redundant and
+its invocation mode is not sufficiently portable for this CI environment.
 
 Correction:
 
-- enumerate all `fpr` records from the extracted keyring and compare their
-  fingerprint field exactly;
-- run `gpgv --status-fd=1` against the detached rootfs signature;
-- require `VALIDSIG` to report exactly the official signing fingerprint;
-- print the actual keyring fingerprints if membership validation fails.
+- remove the separate `gpg --keyring ... --list-keys` membership gate;
+- pass the extracted keyring directly to `gpgv`;
+- require `gpgv` success;
+- parse machine-readable `VALIDSIG`;
+- require the official fingerprint
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`
+  to match either:
+  - the signing-key fingerprint; or
+  - the corresponding primary-key fingerprint.
 
-This is stronger than the original check because it verifies not only that the
-expected key exists, but that the archive's signature was actually validated
-by that exact key.
+The primary-key alternative is intentional because OpenPGP signatures may be
+made by a signing subkey.
 
-No rootfs version, mirror, size, checksum, fingerprint, or trust model changed.
+This direct verification path is both simpler and stronger: a successful
+signature plus exact signer/primary identity proves the expected key was
+actually used.
+
+No rootfs input or trust anchor changed.
 
 ### NEXT
 
-Push this Stage 9A validator correction and rerun:
+Push this Stage 9A trust-path correction and rerun:
 
 `Validate pinned Arch Linux ARM rootfs`
 
@@ -455,6 +459,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.4 / Stage 9A direct-gpgv correction
+
+- Recorded the second Stage 9A failure as a GnuPG keyring-inspection invocation
+  issue.
+- Removed the redundant direct keyring-membership gate.
+- Made detached `gpgv` verification authoritative.
+- Required machine-readable `VALIDSIG` identity to match the official Arch
+  Linux ARM fingerprint as signer or primary key.
+- Added diagnostics for both gpgv status and logger output.
+- No rootfs version, checksum, size, mirror, or trust anchor changed.
+- Stage 9A remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.3 / Stage 9A signature-validator correction
 

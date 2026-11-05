@@ -96,50 +96,53 @@ fi
 bsdtar -xOf "$archive" "$keyring_member" > "$keyring"
 test -s "$keyring"
 
-printf 'Checking extracted keyring for official signing fingerprint...\n'
-keyring_fingerprints="$(
-    gpg \
-        --batch \
-        --no-default-keyring \
-        --keyring "$keyring" \
-        --with-colons \
-        --list-keys 2>/dev/null |
-        awk -F: '$1 == "fpr" { print $10 }'
-)"
-
-if ! grep -Fxq "$ROOTFS_SIGNING_FINGERPRINT" <<< "$keyring_fingerprints"; then
-    printf 'ERROR: official Arch Linux ARM signing fingerprint not present.\n' >&2
-    printf 'Fingerprints present in extracted keyring:\n' >&2
-    printf '%s\n' "$keyring_fingerprints" >&2
-    exit 1
-fi
-
 printf 'Verifying detached Arch Linux ARM rootfs signature...\n'
 gpgv_status="$workdir/gpgv-status.txt"
+gpgv_log="$workdir/gpgv-log.txt"
+
 if ! gpgv \
     --status-fd=1 \
     --keyring "$keyring" \
     "$sig_file" "$archive" \
-    >"$gpgv_status"; then
+    >"$gpgv_status" \
+    2>"$gpgv_log"; then
     printf 'ERROR: detached rootfs signature verification failed.\n' >&2
-    cat "$gpgv_status" >&2
+    cat "$gpgv_status" >&2 || true
+    cat "$gpgv_log" >&2 || true
     exit 1
 fi
 
-validsig_fingerprint="$(
-    awk '$1 == "[GNUPG:]" && $2 == "VALIDSIG" { print $3; exit }' \
+if ! awk \
+    -v expected="$ROOTFS_SIGNING_FINGERPRINT" \
+    '$1 == "[GNUPG:]" && $2 == "VALIDSIG" &&
+     ($3 == expected || $12 == expected) {
+         found = 1
+     }
+     END {
+         exit(found ? 0 : 1)
+     }' \
+    "$gpgv_status"; then
+    printf 'ERROR: valid rootfs signature was not made by the expected Arch Linux ARM key.\n' >&2
+    printf 'Expected primary/signing fingerprint: %s\n' \
+        "$ROOTFS_SIGNING_FINGERPRINT" >&2
+    cat "$gpgv_status" >&2
+    cat "$gpgv_log" >&2 || true
+    exit 1
+fi
+
+validsig_summary="$(
+    awk \
+        '$1 == "[GNUPG:]" && $2 == "VALIDSIG" {
+            signer = $3
+            primary = (NF >= 12 ? $12 : $3)
+            printf "signer=%s primary=%s", signer, primary
+            exit
+        }' \
         "$gpgv_status"
 )"
 
-if [[ "$validsig_fingerprint" != "$ROOTFS_SIGNING_FINGERPRINT" ]]; then
-    printf 'ERROR: rootfs signature used unexpected key: %s\n' \
-        "${validsig_fingerprint:-<none>}" >&2
-    cat "$gpgv_status" >&2
-    exit 1
-fi
-
-printf 'Signature validated by expected fingerprint: %s\n' \
-    "$validsig_fingerprint"
+printf 'Signature validated against expected Arch Linux ARM identity: %s\n' \
+    "$validsig_summary"
 
 printf 'Recording stronger local digest for diagnostics...\n'
 sha256sum "$archive"

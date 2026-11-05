@@ -253,3 +253,13 @@ The official Arch Linux ARM signing fingerprint remains unchanged.
 The validator now requires the detached signature's `VALIDSIG` status to name
 the exact official fingerprint, in addition to confirming that fingerprint is
 present in the extracted Arch Linux ARM keyring.
+
+### Direct gpgv trust path
+
+After CI showed that direct `gpg --keyring ... --list-keys` inspection of the
+pacman keyring was not portable in the hosted runner environment, Stage 9A
+removed that redundant pre-check.
+
+Detached-signature verification is now authoritative: `gpgv` must succeed and
+its `VALIDSIG` record must identify the official Arch Linux ARM build-system
+fingerprint as either signer or primary key.
