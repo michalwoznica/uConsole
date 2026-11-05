@@ -170,3 +170,35 @@ identity.
 
 No rootfs release, checksum, size, mirror, fingerprint, or trust decision
 changed.
+
+## Keyring-format correction
+
+The third Stage 9A CI run reached the actual detached-signature verification.
+
+`gpgv` reported:
+
+- the signature timestamp correctly;
+- the exact expected signing key
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`;
+- `invalid packet (ctb=2d)`;
+- `NO_PUBKEY` because it could not parse the supplied keyring.
+
+The packet byte `0x2d` is ASCII `-`, consistent with an ASCII-armored
+`-----BEGIN PGP PUBLIC KEY BLOCK-----` file being passed directly to
+`gpgv --keyring`, which expects a binary OpenPGP keyring.
+
+The validator is now format-aware:
+
+1. extract `/usr/share/pacman/keyrings/archlinuxarm.gpg` from the authenticated
+   archive candidate;
+2. detect an ASCII-armored public-key block;
+3. if armored, convert it with `gpg --dearmor` into a temporary binary
+   keyring;
+4. if already binary, copy it unchanged;
+5. pass only the normalized binary keyring to `gpgv`;
+6. continue to require `VALIDSIG` to identify the official Arch Linux ARM
+   signing fingerprint as signer or primary key.
+
+This changes only keyring representation handling. The rootfs release,
+checksum, expected size, signature, signing fingerprint and trust policy are
+unchanged.

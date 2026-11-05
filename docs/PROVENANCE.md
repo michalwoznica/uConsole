@@ -263,3 +263,13 @@ removed that redundant pre-check.
 Detached-signature verification is now authoritative: `gpgv` must succeed and
 its `VALIDSIG` record must identify the official Arch Linux ARM build-system
 fingerprint as either signer or primary key.
+
+### Stage 9A keyring-format correction
+
+The third Stage 9A CI run proved that the detached signature names the exact
+expected Arch Linux ARM signing key, but `gpgv` could not parse the extracted
+pacman keyring directly and reported `invalid packet (ctb=2d)`.
+
+The validator now normalizes an ASCII-armored `archlinuxarm.gpg` with
+`gpg --dearmor` before passing it to `gpgv`. Binary keyring input is left
+unchanged. The `VALIDSIG` fingerprint requirement remains authoritative.

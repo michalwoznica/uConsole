@@ -12,7 +12,8 @@ archive="$workdir/$ROOTFS_FILENAME"
 md5_file="$archive$ROOTFS_MD5_SUFFIX"
 sig_file="$archive$ROOTFS_SIGNATURE_SUFFIX"
 rootfs="$workdir/rootfs"
-keyring="$workdir/archlinuxarm.gpg"
+keyring_source="$workdir/archlinuxarm-source.gpg"
+keyring="$workdir/archlinuxarm-binary.gpg"
 
 download_from_base() {
     local base_url="$1"
@@ -93,7 +94,23 @@ if [[ -z "$keyring_member" ]]; then
     exit 1
 fi
 
-bsdtar -xOf "$archive" "$keyring_member" > "$keyring"
+bsdtar -xOf "$archive" "$keyring_member" > "$keyring_source"
+test -s "$keyring_source"
+
+printf 'Normalizing extracted Arch Linux ARM keyring for gpgv...\n'
+if grep -aqm1 '^-----BEGIN PGP PUBLIC KEY BLOCK-----' "$keyring_source"; then
+    printf 'Detected ASCII-armored keyring; converting to binary OpenPGP packets.\n'
+    gpg \
+        --batch \
+        --yes \
+        --dearmor \
+        --output "$keyring" \
+        "$keyring_source"
+else
+    printf 'Detected binary keyring; using it unchanged.\n'
+    cp "$keyring_source" "$keyring"
+fi
+
 test -s "$keyring"
 
 printf 'Verifying detached Arch Linux ARM rootfs signature...\n'

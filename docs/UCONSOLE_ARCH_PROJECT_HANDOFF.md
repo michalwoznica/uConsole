@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.4  
-**Current phase:** Stage 9A trust path simplified to direct gpgv/VALIDSIG verification; CI validation pending
+**Document revision:** 3.5  
+**Current phase:** Stage 9A keyring representation normalized for gpgv; CI validation pending
 
 ---
 
@@ -391,52 +391,46 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-### Stage 9A — pin/authenticate Arch Linux ARM rootfs: DIRECT GPGV TRUST PATH, CI PENDING
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: KEYRING FORMAT CORRECTED, CI PENDING
 
-Second Stage 9A CI result:
+Third Stage 9A CI result:
 
 - rootfs lock policy: PASS;
 - versioned 2026.08 rootfs download: PASS;
 - exact archive size: PASS;
 - published MD5: PASS;
 - keyring extraction: PASS;
-- `gpg --keyring ... --list-keys` inspection: exited code 2;
-- detached signature verification was still not reached.
+- detached-signature verification reached;
+- `gpgv` identified signature key:
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`;
+- `gpgv` then failed with:
+  `invalid packet (ctb=2d)` and `NO_PUBKEY`.
 
-Root cause:
+Interpretation:
 
-The validator was still treating the extracted pacman keyring as a GnuPG
-managed keyring for a separate membership check. That check is redundant and
-its invocation mode is not sufficiently portable for this CI environment.
+`0x2d` is ASCII `-`, consistent with the extracted pacman keyring being
+ASCII-armored (`-----BEGIN PGP PUBLIC KEY BLOCK-----`) while `gpgv --keyring`
+expects a binary OpenPGP keyring.
 
 Correction:
 
-- remove the separate `gpg --keyring ... --list-keys` membership gate;
-- pass the extracted keyring directly to `gpgv`;
-- require `gpgv` success;
-- parse machine-readable `VALIDSIG`;
-- require the official fingerprint
-  `68B3537F39A313B3E574D06777193F152BDBE6A6`
-  to match either:
-  - the signing-key fingerprint; or
-  - the corresponding primary-key fingerprint.
+- extract the original pacman keyring to a source file;
+- detect ASCII armor;
+- if armored, run `gpg --dearmor` into a temporary binary keyring;
+- if already binary, copy unchanged;
+- pass the normalized binary keyring to `gpgv`;
+- retain the exact `VALIDSIG` signer/primary fingerprint gate.
 
-The primary-key alternative is intentional because OpenPGP signatures may be
-made by a signing subkey.
-
-This direct verification path is both simpler and stronger: a successful
-signature plus exact signer/primary identity proves the expected key was
-actually used.
-
-No rootfs input or trust anchor changed.
+The rootfs version, mirror, byte size, published MD5, detached signature,
+official fingerprint and trust policy remain unchanged.
 
 ### NEXT
 
-Push this Stage 9A trust-path correction and rerun:
+Push this Stage 9A keyring-format correction and rerun:
 
 `Validate pinned Arch Linux ARM rootfs`
 
-If it passes, capture the printed:
+If it passes, capture:
 
 `=== STAGE 9B STOCK KERNEL/BOOT PACKAGE INVENTORY ===`
 
@@ -459,6 +453,18 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.5 / Stage 9A keyring-format correction
+
+- Recorded that `gpgv` reached the detached signature and identified the exact
+  expected Arch Linux ARM signing key.
+- Diagnosed `invalid packet (ctb=2d)` as keyring representation mismatch.
+- Added ASCII-armored keyring detection and `gpg --dearmor` normalization.
+- Binary keyrings remain supported unchanged.
+- Retained exact `VALIDSIG` signer/primary-key fingerprint validation.
+- No rootfs input or trust anchor changed.
+- Stage 9A remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.4 / Stage 9A direct-gpgv correction
 
