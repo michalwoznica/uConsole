@@ -220,4 +220,4 @@ output names against the pinned Raspberry Pi Linux Makefiles and uses
 
 Detailed contract: `docs/STAGE8_FULL_BUILD.md`.
 
-Stage 8 CI validation is **pending**.
+Stage 8 CI validation: **PASS**. The complete staged PKGBUILD `prepare()`, `build()` and `package()` path succeeded, including Image, modules, DTBs/DTBOs, overlay application and package-root verification.

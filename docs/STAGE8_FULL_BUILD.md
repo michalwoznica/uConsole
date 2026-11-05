@@ -1,6 +1,6 @@
 # Stage 8 — full build-only validation
 
-**Status:** implemented; full CI build pending.
+**Status:** complete; full CI build and package-root validation passed.
 
 ## Goal
 
@@ -98,12 +98,49 @@ job timeout cancelled it.
 
 Correction:
 
-- workflow timeout increased from 90 to 240 minutes;
+- workflow timeout increased from 90 minutes and then standardized at the GitHub maximum of 360 minutes;
 - validator default parallelism changed from fixed `JOBS=2` to `nproc`;
 - explicit positive `JOBS` overrides remain supported;
 - no kernel source, patches, config, PKGBUILD, packaging behavior, or
   validation requirements changed.
 
-GitHub-hosted jobs currently have a six-hour execution limit, so 240 minutes
-remains within the platform limit while giving the complete kernel build
-substantially more headroom.
+GitHub-hosted jobs currently have a six-hour execution limit, and GitHub's
+workflow syntax uses 360 minutes as the default/maximum job timeout. The
+project therefore standardizes long-running kernel/image jobs on 360 minutes
+rather than imposing a lower project-specific ceiling.
+
+## Final validation result
+
+The second Stage 8 full-build run completed successfully in approximately
+1 hour 19 minutes after the validator began using the runner's available CPU
+parallelism.
+
+This proves the complete Stage 8 contract:
+
+1. deterministic package staging succeeds;
+2. exact pinned Raspberry Pi Linux, CWU50 and OCP8178 inputs are fetched;
+3. the real PKGBUILD `prepare()` path succeeds;
+4. the real PKGBUILD `build()` path succeeds for `Image`, modules and DTBs;
+5. all required uConsole, AXP20x and TI ADC modules are built;
+6. the CM4 base DTB and uConsole DTBO are produced;
+7. `fdtoverlay` successfully applies the built uConsole DTBO to the built CM4 DTB;
+8. the real PKGBUILD `package()` path succeeds;
+9. `/boot/kernel8.img` is installed and matches the built `Image`;
+10. required DTBs/DTBOs and the `6.18.60-1-uconsole` module tree are installed;
+11. module `pkgbase`, mkinitcpio preset and package-root leakage checks pass.
+
+Stage 8 is complete.
+
+## CI timeout policy
+
+For long-running GitHub Actions jobs in this project:
+
+- do not impose a project timeout lower than GitHub's current maximum unless
+  there is a specific documented reason;
+- verify the current platform limit before adding or changing a timeout;
+- as of this Stage 8 completion, GitHub's standard job timeout maximum/default
+  is 360 minutes, so long-running kernel/image jobs use
+  `timeout-minutes: 360`.
+
+This policy exists because the first Stage 8 build was healthy but was
+artificially cancelled by the project's shorter 90-minute timeout.

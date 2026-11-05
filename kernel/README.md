@@ -134,3 +134,7 @@ function. The resolved kernel release is `6.18.60-1-uconsole`, and
 Stage 8 is the first end-to-end build of the complete Stage 7 composition.
 It reuses the actual `linux-uconsole` PKGBUILD and validates `Image`, modules,
 DTBs/DTBOs and the package-root install layout.
+
+Stage 8 result: **PASS**. The complete `linux-uconsole` composition builds
+`Image`, modules and DTBs successfully, the uConsole overlay applies to the
+built CM4 DTB, and the package-root install path validates successfully.

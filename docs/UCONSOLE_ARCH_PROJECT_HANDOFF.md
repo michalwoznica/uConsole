@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.0  
-**Current phase:** Stage 8 full build reached real compile; timeout/resource policy corrected; CI pending
+**Document revision:** 3.1  
+**Current phase:** Stage 8 full build-only validation complete; Stage 9 Arch Linux ARM rootfs/image-builder integration is next
 
 ---
 
@@ -389,39 +389,52 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 7 — kernel configuration and Arch packaging: COMPLETE
 
-### Stage 8 — full build-only validation: TIMEOUT/RESOURCE POLICY CORRECTED, CI PENDING
+### Stage 8 — full build-only validation: COMPLETE
 
-First Stage 8 CI result:
+Final Stage 8 result:
 
-- Stage 8 entered the real full kernel build;
-- compilation continued normally;
-- no compiler/configuration/package error was reported;
-- GitHub cancelled the job when the project-defined 90-minute timeout was
-  reached.
+- first full-build attempt was healthy but cancelled by the project's 90-minute timeout;
+- timeout/resource policy was corrected;
+- second run completed successfully in approximately 1 hour 19 minutes;
+- deterministic package staging: PASS;
+- exact input fetch: PASS;
+- real PKGBUILD `prepare()`: PASS;
+- real PKGBUILD `build()` for Image, modules and DTBs: PASS;
+- required uConsole/AXP20x/TI ADC modules: PASS;
+- CM4 DTB and uConsole DTBO: PASS;
+- built DTBO application with `fdtoverlay`: PASS;
+- real PKGBUILD `package()`: PASS;
+- `/boot/kernel8.img`, installed DTBs/DTBOs and module tree: PASS;
+- module `pkgbase`, mkinitcpio preset and package-root leakage checks: PASS.
 
-This is a timeout-policy failure, not evidence of a kernel build failure.
+### CI timeout policy
 
-Correction:
+Project rule going forward:
 
-- Stage 8 job timeout increased from 90 to 240 minutes;
-- default build parallelism now comes from `nproc`;
-- workflow no longer hard-codes `JOBS=2`;
-- explicit positive `JOBS` override remains supported;
-- PKGBUILD unchanged;
-- kernel source/config/patches unchanged;
-- validation requirements unchanged.
+- do not impose CI/workflow timeout limits lower than the hosting platform's
+  current maximum unless there is a specific documented reason;
+- verify the current platform maximum before setting/changing a timeout;
+- for current GitHub Actions standard jobs, use `timeout-minutes: 360` for
+  long-running kernel/image workflows.
 
-### NEXT
+This rule was adopted because a healthy Stage 8 kernel build was cancelled by
+an unnecessarily restrictive project timeout.
 
-Push this Stage 8 resource-policy correction and rerun:
+### NEXT: Stage 9 — Arch Linux ARM rootfs/image-builder integration
 
-`Validate full uConsole kernel build`
+Stage 9 should:
 
-Do not change kernel/package functionality based on the first run: there is no
-functional failure to diagnose yet.
-
-Stage 8 closes only when the full build and package-root validation completes
-successfully.
+1. research and pin the current Arch Linux ARM aarch64 rootfs source;
+2. define rootfs provenance/checksum verification;
+3. integrate the `linux-uconsole` package into the rootfs;
+4. install Raspberry Pi firmware/bootloader dependencies consistently;
+5. compose the project boot-policy fragment into the image boot partition;
+6. define the kernel command line;
+7. remove/replace stock kernel packages safely;
+8. keep image-building operations reproducible and noninteractive;
+9. produce an image-build pipeline, but keep first physical flashing/testing
+   as the following stage if useful for risk control;
+10. update provenance and this handoff before Stage 9 closure.
 
 ---
 
@@ -440,6 +453,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.1 / Stage 8 complete
+
+- Recorded successful full Stage 8 kernel/package build in approximately
+  1 hour 19 minutes.
+- Confirmed complete PKGBUILD `prepare()`, `build()` and `package()` paths.
+- Confirmed Image, required modules, DTBs/DTBOs, overlay composition and
+  package-root layout.
+- Standardized long-running GitHub workflow timeout on the current platform
+  maximum/default of 360 minutes.
+- Added project policy to avoid lower CI timeouts unless specifically
+  justified.
+- Marked Stage 8 complete.
+- Set Stage 9 Arch Linux ARM rootfs/image-builder integration as next.
+
 
 ### 2026-11-05 — Revision 3.0 / Stage 8 timeout correction
 

@@ -151,7 +151,9 @@ the uConsole config on top of `bcm2711_defconfig`, produces
 
 Next: Stage 8 — full build-only validation of `Image`, modules and DTBs.
 
-Stage 8 (full build-only validation) is implemented and awaiting CI. It runs
-the actual staged `linux-uconsole` PKGBUILD through `prepare()`, `build()` and
-`package()`, verifies the complete ARM64 kernel/module/DTB output, and stops
-before rootfs/image creation.
+Stage 8 (full build-only validation) is complete. The actual staged
+`linux-uconsole` PKGBUILD succeeds through `prepare()`, `build()` and
+`package()`, including the complete ARM64 kernel/module/DTB output and package
+root.
+
+Next: Stage 9 — Arch Linux ARM rootfs and image-builder integration.

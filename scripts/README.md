@@ -30,3 +30,12 @@ Stage 8 adds:
   `prepare()`, `build()` and `package()` paths, validate the built kernel
   image/modules/DTBs, apply the uConsole DTBO to the CM4 DTB, and inspect the
   temporary package root.
+
+## CI timeout policy
+
+Long-running kernel/image workflows should use the hosting platform's current
+maximum job timeout unless a lower limit is specifically justified.
+
+For GitHub Actions, verify the platform limit before changing workflow
+timeouts. At Stage 8 completion, the maximum/default job timeout is 360
+minutes, so full kernel/image jobs use `timeout-minutes: 360`.
