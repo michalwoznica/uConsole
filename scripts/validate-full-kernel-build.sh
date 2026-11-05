@@ -9,7 +9,14 @@ source "$repo_root/kernel/sources/ocp8178.lock"
 
 kernel_arch="${ARCH:-arm64}"
 cross_compile="${CROSS_COMPILE:-aarch64-linux-gnu-}"
-jobs="${JOBS:-2}"
+jobs="${JOBS:-$(nproc)}"
+
+if ! [[ "$jobs" =~ ^[1-9][0-9]*$ ]]; then
+    printf 'ERROR: JOBS must be a positive integer, got: %s\n' "$jobs" >&2
+    exit 1
+fi
+
+printf 'Stage 8 build parallelism: -j%s\n' "$jobs"
 
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT

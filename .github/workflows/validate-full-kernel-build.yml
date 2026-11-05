@@ -43,7 +43,7 @@ permissions:
 jobs:
   build-kernel:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 240
 
     steps:
       - name: Check out project
@@ -58,5 +58,4 @@ jobs:
         env:
           ARCH: arm64
           CROSS_COMPILE: aarch64-linux-gnu-
-          JOBS: '2'
         run: bash ./scripts/validate-full-kernel-build.sh

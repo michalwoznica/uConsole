@@ -25,8 +25,10 @@ instead of introducing a parallel build recipe.
 6. runs its real `package()` function into a temporary package root;
 7. verifies the resulting kernel and package artifacts.
 
-CI sets `MAKEFLAGS=-j2` for a bounded hosted-runner build. A real Arch
-`makepkg` build may supply a different MAKEFLAGS value from makepkg.conf.
+CI derives build parallelism from the runner with `nproc` unless `JOBS` is
+explicitly supplied. This uses the CPU allocation GitHub actually assigns
+without assuming a fixed hosted-runner core count. A real Arch `makepkg`
+build may instead supply MAKEFLAGS from makepkg.conf.
 
 ## Required source-tree build artifacts
 
@@ -87,3 +89,21 @@ Those belong to Stage 9 and later.
 ## Completion criterion
 
 Stage 8 is complete only when `Validate full uConsole kernel build` passes.
+
+## Initial full-build timeout
+
+The first Stage 8 CI attempt did not report a compile failure. The kernel
+continued building normally until the workflow's project-defined 90-minute
+job timeout cancelled it.
+
+Correction:
+
+- workflow timeout increased from 90 to 240 minutes;
+- validator default parallelism changed from fixed `JOBS=2` to `nproc`;
+- explicit positive `JOBS` overrides remain supported;
+- no kernel source, patches, config, PKGBUILD, packaging behavior, or
+  validation requirements changed.
+
+GitHub-hosted jobs currently have a six-hour execution limit, so 240 minutes
+remains within the platform limit while giving the complete kernel build
+substantially more headroom.

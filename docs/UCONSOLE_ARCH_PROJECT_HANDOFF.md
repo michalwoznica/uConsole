@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.9  
-**Current phase:** Stage 8 full build-only validation implemented; CI pending
+**Document revision:** 3.0  
+**Current phase:** Stage 8 full build reached real compile; timeout/resource policy corrected; CI pending
 
 ---
 
@@ -389,57 +389,39 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 7 — kernel configuration and Arch packaging: COMPLETE
 
-### Stage 8 — full build-only validation: IMPLEMENTED, CI PENDING
+### Stage 8 — full build-only validation: TIMEOUT/RESOURCE POLICY CORRECTED, CI PENDING
 
-Stage 8 reuses the exact Stage 7 Arch package path.
+First Stage 8 CI result:
 
-Validator:
+- Stage 8 entered the real full kernel build;
+- compilation continued normally;
+- no compiler/configuration/package error was reported;
+- GitHub cancelled the job when the project-defined 90-minute timeout was
+  reached.
 
-`scripts/validate-full-kernel-build.sh`
+This is a timeout-policy failure, not evidence of a kernel build failure.
 
-Workflow:
+Correction:
 
-`.github/workflows/validate-full-kernel-build.yml`
-
-The validator:
-
-1. stages the deterministic `linux-uconsole` makepkg workspace;
-2. fetches the exact pinned kernel/CWU50/OCP8178 inputs;
-3. executes the actual PKGBUILD `prepare()`;
-4. executes the actual PKGBUILD `build()`:
-   - `Image`;
-   - modules;
-   - DTBs;
-5. executes the actual PKGBUILD `package()` into a temporary root;
-6. verifies source build artifacts;
-7. verifies required uConsole/AXP20x/TI ADC modules;
-8. verifies the uConsole DTBO and CM4 DTB;
-9. applies the built DTBO to the built CM4 DTB with `fdtoverlay`;
-10. verifies package-root outputs:
-    - `/boot/kernel8.img`;
-    - CM4 DTB;
-    - uConsole DTBO;
-    - `/usr/lib/modules/6.18.60-1-uconsole`;
-    - required packaged `.ko*` modules;
-    - module `pkgbase`;
-    - mkinitcpio preset;
-11. verifies no build/source symlink leakage.
-
-CI uses bounded `MAKEFLAGS=-j2` and a 90-minute job timeout.
-
-Stage 8 adds no new kernel functionality. It is a complete build/package proof
-for the composition already selected in Stages 1-7.
+- Stage 8 job timeout increased from 90 to 240 minutes;
+- default build parallelism now comes from `nproc`;
+- workflow no longer hard-codes `JOBS=2`;
+- explicit positive `JOBS` override remains supported;
+- PKGBUILD unchanged;
+- kernel source/config/patches unchanged;
+- validation requirements unchanged.
 
 ### NEXT
 
-Push the Stage 8 candidate and inspect:
+Push this Stage 8 resource-policy correction and rerun:
 
 `Validate full uConsole kernel build`
 
-Stage 8 closes only when that workflow passes.
+Do not change kernel/package functionality based on the first run: there is no
+functional failure to diagnose yet.
 
-If Stage 8 passes, Stage 9 begins Arch Linux ARM rootfs/image-builder
-integration.
+Stage 8 closes only when the full build and package-root validation completes
+successfully.
 
 ---
 
@@ -458,6 +440,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.0 / Stage 8 timeout correction
+
+- Recorded the first Stage 8 run as a project-timeout cancellation rather than
+  a compile failure.
+- Increased the full-build workflow timeout from 90 to 240 minutes.
+- Changed default CI build parallelism from fixed `-j2` to the runner's
+  `nproc` CPU count.
+- Retained an explicit positive `JOBS` override.
+- No kernel source, config, patch, PKGBUILD, packaging, or validation contract
+  changed.
+- Stage 8 remains validation-pending.
+
 
 ### 2026-11-05 — Revision 2.9 / Stage 8 candidate
 
