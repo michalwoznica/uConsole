@@ -362,16 +362,37 @@ cmp -s \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
     "$rootfs/boot/config.txt"
 
-printf 'Checking package ownership records without sysroot path-target ambiguity...\n'
-if ! pacman_target -Ql linux-uconsole |
-    grep -Fxq 'linux-uconsole /boot/kernel8.img'; then
-    printf 'ERROR: linux-uconsole package database does not own /boot/kernel8.img.\n' >&2
+printf 'Checking authoritative local package file records...\n'
+mapfile -t linux_uconsole_file_dbs < <(
+    find "$rootfs/var/lib/pacman/local" \
+        -mindepth 2 \
+        -maxdepth 2 \
+        -type f \
+        -name files \
+        -path '*/linux-uconsole-*/files' \
+        -print |
+        sort
+)
+
+if [[ "${#linux_uconsole_file_dbs[@]}" -ne 1 ]]; then
+    printf 'ERROR: expected exactly one installed linux-uconsole files database, got %s.\n' \
+        "${#linux_uconsole_file_dbs[@]}" >&2
+    printf '%s\n' "${linux_uconsole_file_dbs[@]:-}" >&2
+    exit 1
+fi
+
+linux_uconsole_files_db="${linux_uconsole_file_dbs[0]}"
+
+if ! grep -Fxq 'boot/kernel8.img' "$linux_uconsole_files_db"; then
+    printf 'ERROR: linux-uconsole local package database does not record boot/kernel8.img.\n' >&2
+    printf 'Relevant boot records from %s:\n' "$linux_uconsole_files_db" >&2
+    grep -E '^boot/(kernel|.*uconsole|.*cm4)' "$linux_uconsole_files_db" >&2 || true
     exit 1
 fi
 
 if grep -Fxl 'boot/config.txt' "$rootfs"/var/lib/pacman/local/*/files \
     >"$workdir/config-owners.txt" 2>/dev/null; then
-    printf 'ERROR: /boot/config.txt unexpectedly appears in a package file database.\n' >&2
+    printf 'ERROR: boot/config.txt unexpectedly appears in a package file database.\n' >&2
     cat "$workdir/config-owners.txt" >&2
     exit 1
 fi

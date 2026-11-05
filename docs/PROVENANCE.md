@@ -311,3 +311,13 @@ host-side validation: libalpm attempted target-AArch64 `ldconfig`, and a
 `--sysroot -Qo` query used a literal host path. Stage 9B now suppresses only
 the unnecessary ldconfig execution during the kernel-only transactions and
 uses package/database file records for ownership checks.
+
+### Stage 9B local-database ownership correction
+
+The package build and target transaction now complete successfully through
+`pacman -Dk` and `pacman -Qk linux-uconsole` (2765 files, 0 missing).
+
+The remaining ownership assertion was changed from formatted `pacman -Ql`
+output to the target pacman local database `files` record. Package file names
+are install-root-relative there, so `boot/kernel8.img` is checked directly and
+`boot/config.txt` remains required to be absent from every package file list.

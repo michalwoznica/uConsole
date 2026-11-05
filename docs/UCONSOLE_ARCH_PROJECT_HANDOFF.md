@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.0  
-**Current phase:** Stage 9B real package build proven; cross-architecture pacman/ownership validation corrected; CI pending
+**Document revision:** 4.1  
+**Current phase:** Stage 9B build/transaction proven; final ownership check moved to authoritative local pacman database; CI pending
 
 ---
 
@@ -393,7 +393,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
-### Stage 9B — pacman-managed uConsole rootfs integration: FINAL HOST-VALIDATION CORRECTION, CI PENDING
+### Stage 9B — pacman-managed uConsole rootfs integration: FINAL LOCAL-DB OWNERSHIP CHECK, CI PENDING
 
 Latest Stage 9B CI evidence:
 
@@ -403,35 +403,34 @@ Latest Stage 9B CI evidence:
 - real aarch64 makepkg build: PASS;
 - produced `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
 - package metadata: PASS;
-- remove `linux-aarch64` + `uboot-raspberrypi`: transaction completed;
-- install `linux-uconsole`: transaction completed;
+- target ALPM hook suppression/restoration: PASS;
+- target foreign-architecture ldconfig suppression/restoration: PASS;
+- remove `linux-aarch64` + `uboot-raspberrypi`: PASS;
+- install/register `linux-uconsole`: PASS;
+- retained-package checks: PASS;
 - target package DB consistency (`pacman -Dk`): PASS;
 - `pacman -Qk linux-uconsole`: 2765 files, 0 missing;
-- failure occurred only in the final host-side ownership check.
-
-Two cross-architecture validator issues were identified:
-
-1. libalpm automatically invokes target `/usr/bin/ldconfig` after a package
-   transaction. On the x86_64 CI host that AArch64 binary produced
-   `Exec format error`. `--noscriptlet` and disabled hooks do not suppress
-   libalpm's own ldconfig step.
-2. pacman documents that paths passed as command targets with `--sysroot` are
-   not rewritten. Therefore `-Qo /boot/kernel8.img` queried the CI host path,
-   not the target rootfs.
+- physical `/boot/kernel8.img`, CM4 DTB, uConsole DTBO, preset and module tree:
+  PASS;
+- project `/boot/config.txt` byte comparison: PASS;
+- failure occurred only in a formatted `pacman -Ql` ownership assertion.
 
 Correction:
 
-- save target `/usr/bin/ldconfig` mode;
-- temporarily remove its execute permission during only the kernel/U-Boot
-  target transactions so libalpm skips the foreign-architecture exec;
-- restore the exact original mode immediately after, with EXIT cleanup as a
-  safety path;
-- no replacement ldconfig run is needed because no shared libraries change;
-- verify `/boot/kernel8.img` ownership through `pacman -Ql linux-uconsole`;
-- verify `/boot/config.txt` is absent from all local package `files` records.
+- do not parse human-readable `pacman -Ql` formatting;
+- find exactly one installed
+  `var/lib/pacman/local/linux-uconsole-*/files` record;
+- require exact root-relative entry `boot/kernel8.img`;
+- continue requiring `boot/config.txt` to appear in no installed package
+  `files` record;
+- print relevant boot entries from the linux-uconsole record if the assertion
+  fails.
 
-No CPU limit was added or changed. Stage 9B continues to use `nproc` and the
-actual runner allocation.
+libalpm defines package file-list paths as install-root-relative with no
+leading slash, which matches the local database representation.
+
+No kernel source, config, patch, PKGBUILD, rootfs input, package transaction,
+boot policy, CI timeout or CPU parallelism changed.
 
 ### Repository privacy/publication policy
 
@@ -466,6 +465,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 4.1 / Stage 9B local-database ownership correction
+
+- Recorded successful real package build and complete target package
+  transaction through `pacman -Dk` and `pacman -Qk`.
+- Recorded `linux-uconsole`: 2765 files, 0 missing.
+- Removed dependence on exact human-readable `pacman -Ql` formatting.
+- Validate `boot/kernel8.img` directly in the installed linux-uconsole local
+  package `files` record.
+- Continue proving `boot/config.txt` is image-policy-owned by requiring it to
+  be absent from all package `files` records.
+- No functional build, package, rootfs, boot or parallelism behavior changed.
+- Stage 9B remains CI-pending.
+
 
 ### 2026-11-05 — Revision 4.0 / Stage 9B cross-architecture pacman correction
 

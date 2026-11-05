@@ -235,3 +235,33 @@ Correction:
 
 No kernel rebuild settings, package contents, rootfs input, dependency policy,
 boot policy or CPU parallelism changed.
+
+## Local-database ownership correction
+
+A subsequent Stage 9B run completed the expensive path successfully:
+
+- real aarch64 `linux-uconsole` package build;
+- stock kernel/U-Boot removal;
+- `linux-uconsole` installation;
+- target `ldconfig` suppression/restoration;
+- target pacman database consistency;
+- `pacman -Qk linux-uconsole`: 2765 files, 0 missing.
+
+The run failed only at the final ownership assertion because the validator
+depended on one exact human-readable `pacman -Ql` output string.
+
+That is unnecessary. libalpm defines package file-list names as paths relative
+to the install root with no leading slash. The target pacman local database
+stores that authoritative file list in the installed package's `files` record.
+
+The corrected validator now:
+
+1. finds exactly one
+   `/var/lib/pacman/local/linux-uconsole-*/files` record in the target rootfs;
+2. requires the exact root-relative line `boot/kernel8.img`;
+3. retains the inverse check that `boot/config.txt` appears in no package
+   `files` record;
+4. prints relevant boot records if the kernel ownership check ever fails.
+
+This changes only the final validation method. The package build, package
+transaction, rootfs, kernel, boot policy and CPU parallelism are unchanged.
