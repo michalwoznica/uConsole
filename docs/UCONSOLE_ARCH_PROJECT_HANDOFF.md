@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.2  
-**Current phase:** Stage 9B pacman-managed rootfs integration complete; Stage 9C final boot command line/initramfs policy is next
+**Document revision:** 4.3  
+**Current phase:** Stage 9C direct-root boot contract implemented; CI validation pending
 
 ---
 
@@ -395,61 +395,67 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 
-Final Stage 9B evidence:
+### Stage 9C — final boot command line/initramfs policy: IMPLEMENTED, CI PENDING
 
-- authenticated rootfs reuse: PASS;
-- real aarch64 `linux-uconsole` package build: PASS;
-- package:
-  `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst`;
-- remove `linux-aarch64`: PASS;
-- remove `uboot-raspberrypi`: PASS;
-- install/register `linux-uconsole 6.18.60-1`: PASS;
-- retain Raspberry Pi firmware/bootloader, mkinitcpio and linux-firmware:
-  PASS;
-- target pacman DB consistency: PASS;
-- `pacman -Qk linux-uconsole`:
-  2765 files, 0 missing;
-- authoritative local pacman file DB records `boot/kernel8.img`: PASS;
-- no package owns `boot/config.txt`: PASS;
-- kernel image / CM4 DTB / uConsole DTBO / module tree / preset:
-  PASS;
-- project boot config installation: PASS;
-- U-Boot boot-script residue absent: PASS.
+Selected first-image boot architecture:
 
-Cross-architecture transaction lessons:
+- Raspberry Pi CM4 firmware directly loads `kernel8.img`;
+- U-Boot remains removed;
+- no firmware-loaded initramfs;
+- kernel mounts ext4 root directly from CM4 microSD;
+- deterministic DOS/MBR disk identifier: `0x55434f4e`;
+- boot PARTUUID: `55434f4e-01`;
+- root PARTUUID: `55434f4e-02`;
+- boot partition mountpoint: `/boot`;
+- root partition mountpoint: `/`.
 
-- suppress target ALPM hooks and target-architecture `ldconfig` while the
-  x86_64 host pacman mutates the AArch64 rootfs;
-- restore them immediately afterward;
-- do not use `pacman -Qo` with an unadjusted target path under `--sysroot`;
-- use the target pacman local database `files` record for authoritative
-  install-root-relative ownership validation.
+Final cmdline:
 
-CI parallelism remains dynamic via `nproc`; no explicit core cap exists.
+`8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw`
+
+Reasons:
+
+- exact pinned bcm2711 baseline has MMC/SDHCI/BCM2835 microSD support built in;
+- exact pinned baseline has ext4 built in;
+- therefore the first ext4 microSD root does not require initramfs modules;
+- `CONFIG_BLK_DEV_INITRD=y` and the mkinitcpio preset are retained for future
+  optional use;
+- `8250.nr_uarts=1` preserves the original uConsole expansion-UART behavior
+  after project policy moved bootargs out of Device Tree;
+- normal image has no serial console;
+- GPIO14/15 remain assigned to the expansion UART;
+- no `quiet`/splash on the first physical validation image.
+
+New files:
+
+- `image/archlinuxarm/image-layout.lock`;
+- `image/archlinuxarm/boot/cmdline-uconsole-cm4.txt`;
+- `image/archlinuxarm/rootfs/fstab-uconsole-cm4`;
+- `scripts/validate-arch-boot-contract.sh`;
+- `.github/workflows/validate-arch-boot-contract.yml`;
+- `docs/STAGE9C_BOOT_CONTRACT.md`.
+
+Stage 9C validator also fetches the exact pinned bcm2711 defconfig and requires
+the direct-root storage/filesystem stack to remain built in.
+
+CI timeout follows project policy: 360 minutes.
 
 ### Repository privacy/publication policy
 
-The repository is intended to become public after physical uConsole
-validation. Treat Git history as permanently public: never commit user or host
-identifiers, usernames, account IDs, machine-specific absolute paths or other
-PII. Continue privacy audits before every checkpoint.
+Treat Git history as permanently public. Never commit user/host identifiers,
+usernames, account IDs, machine-specific absolute paths or other PII.
+Continue privacy audits before every checkpoint.
 
-### NEXT: Stage 9C — final boot command line and initramfs policy
+### NEXT
 
-Stage 9C should:
+Push the Stage 9C candidate and inspect:
 
-1. define final `/boot/cmdline.txt`;
-2. decide direct-root boot versus initramfs;
-3. verify root filesystem/storage drivers are available early enough;
-4. choose reproducible root-device addressing;
-5. define console/serial policy;
-6. define first-boot verbosity/debug policy;
-7. confirm direct Raspberry Pi firmware -> `kernel8.img` boot chain;
-8. validate config/cmdline composition in CI;
-9. stop before creating partitions or a flashable image.
+`Validate uConsole Arch boot contract`
+
+Stage 9C closes only after that workflow passes.
 
 After Stage 9C, Stage 10 constructs the first reproducible partitioned
-microSD image.
+microSD image using the locked DOS disk identifier and PARTUUID values.
 
 ---
 
@@ -468,6 +474,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 4.3 / Stage 9C candidate
+
+- Defined deterministic DOS/MBR image identity `0x55434f4e`.
+- Defined stable boot/root PARTUUIDs.
+- Added final one-line Raspberry Pi kernel command line.
+- Selected direct ext4 microSD root boot without firmware-loaded initramfs.
+- Preserved `8250.nr_uarts=1` as explicit boot policy while leaving the
+  expansion UART free of serial-console use.
+- Added deterministic `/etc/fstab` policy.
+- Added exact pinned-kernel checks for built-in microSD/ext4 root support.
+- No kernel source or PKGBUILD changed.
+- Stage 9C remains CI-pending.
+
 
 ### 2026-11-05 — Revision 4.2 / Stage 9B complete
 

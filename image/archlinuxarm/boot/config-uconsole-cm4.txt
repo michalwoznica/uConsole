@@ -25,3 +25,6 @@ dtoverlay=vc4-kms-v3d-pi4,cma-384
 
 # Kernel file installed by the linux-uconsole package.
 kernel=kernel8.img
+
+# Stage 9C policy: direct ext4 root boot, no firmware-loaded initramfs.
+# GPIO14/15 remain the uConsole expansion UART; no serial console is enabled.

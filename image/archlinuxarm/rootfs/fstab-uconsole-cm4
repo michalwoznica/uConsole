@@ -1,0 +1,5 @@
+# uConsole CM4 Arch Linux ARM filesystem policy.
+# Stable PARTUUIDs are defined by image/archlinuxarm/image-layout.lock.
+
+PARTUUID=55434f4e-02  /      ext4  defaults  0  1
+PARTUUID=55434f4e-01  /boot  vfat  defaults  0  2

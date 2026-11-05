@@ -1,0 +1,20 @@
+# Deterministic Stage 10 image identity and partition contract.
+#
+# DOS/MBR is intentionally used for the first uConsole microSD image because
+# it matches the traditional Raspberry Pi/Arch Linux ARM two-partition layout.
+# The fixed disk identifier makes PARTUUID values reproducible.
+
+PARTITION_TABLE=dos
+DISK_IDENTIFIER_HEX=0x55434f4e
+
+BOOT_PARTITION_NUMBER=1
+ROOT_PARTITION_NUMBER=2
+
+BOOT_PARTUUID=55434f4e-01
+ROOT_PARTUUID=55434f4e-02
+
+BOOT_FILESYSTEM=vfat
+ROOT_FILESYSTEM=ext4
+
+BOOT_MOUNTPOINT=/boot
+ROOT_MOUNTPOINT=/

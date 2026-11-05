@@ -176,3 +176,8 @@ file/database ownership checks pass.
 
 Next: Stage 9C — final boot command line and initramfs policy before first
 partitioned microSD image construction.
+
+Stage 9C (boot command line and initramfs policy) is implemented and awaiting
+CI. The first image uses a deterministic two-partition MBR identity and boots
+directly from Raspberry Pi firmware into `kernel8.img`, mounting an ext4
+microSD root without a firmware-loaded initramfs.

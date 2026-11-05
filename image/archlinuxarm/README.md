@@ -54,3 +54,15 @@ pacman-managed `linux-uconsole` package; `linux-aarch64` and
 `uboot-raspberrypi` are removed, retained firmware/boot packages remain
 registered, `/boot/kernel8.img` is owned by `linux-uconsole`, and
 `/boot/config.txt` remains deliberately image-policy-owned.
+
+## Stage 9C boot contract
+
+The first image boots directly through Raspberry Pi firmware into
+`kernel8.img` and mounts its ext4 microSD root without an initramfs.
+
+Stable image identity is defined in `image-layout.lock`.
+`cmdline-uconsole-cm4.txt` and `rootfs/fstab-uconsole-cm4` both use the same
+deterministic PARTUUID contract.
+
+The normal image does not use a serial console; GPIO14/15 remain the uConsole
+expansion UART.

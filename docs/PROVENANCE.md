@@ -336,3 +336,29 @@ Important evidence:
 - direct Raspberry Pi firmware boot layout validated.
 
 Stage 9B is complete.
+
+## Stage 9C boot contract
+
+Stage 9C adds no new third-party source.
+
+The boot policy is grounded in:
+
+- the exact pinned Raspberry Pi Linux `bcm2711_defconfig`;
+- Raspberry Pi firmware `config.txt`/`cmdline.txt` behavior;
+- the project-owned uConsole overlay;
+- ClockworkPi's original uConsole CM4 lineage for the
+  `8250.nr_uarts=1` requirement.
+
+First-image boot policy:
+
+- direct firmware -> `kernel8.img`;
+- direct ext4 root mount from CM4 microSD;
+- no firmware-loaded initramfs;
+- deterministic DOS disk identifier `0x55434f4e`;
+- root `PARTUUID=55434f4e-02`;
+- local `tty1` console only;
+- GPIO14/15 retained as expansion UART.
+
+Detailed contract: `docs/STAGE9C_BOOT_CONTRACT.md`.
+
+Stage 9C CI validation is **pending**.

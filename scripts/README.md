@@ -52,3 +52,9 @@ Stage 9B adds:
   ARM rootfs, cross-build the real aarch64 `linux-uconsole` package, perform
   the pacman-managed stock-kernel/U-Boot replacement, install boot policy, and
   verify the resulting rootfs/package database.
+
+Stage 9C adds:
+
+- `validate-arch-boot-contract.sh` — validate deterministic PARTUUID identity,
+  one-line Raspberry Pi cmdline policy, fstab/config composition and the exact
+  pinned kernel's built-in direct-root prerequisites.

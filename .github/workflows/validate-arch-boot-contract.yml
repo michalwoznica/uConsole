@@ -1,0 +1,39 @@
+name: Validate uConsole Arch boot contract
+
+on:
+  push:
+    paths:
+      - 'kernel/source.lock'
+      - 'image/archlinuxarm/image-layout.lock'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
+      - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
+      - 'scripts/validate-arch-boot-contract.sh'
+      - 'docs/STAGE9C_BOOT_CONTRACT.md'
+      - '.github/workflows/validate-arch-boot-contract.yml'
+  pull_request:
+    paths:
+      - 'kernel/source.lock'
+      - 'image/archlinuxarm/image-layout.lock'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
+      - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
+      - 'scripts/validate-arch-boot-contract.sh'
+      - 'docs/STAGE9C_BOOT_CONTRACT.md'
+      - '.github/workflows/validate-arch-boot-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-boot-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Validate Stage 9C boot contract
+        run: bash ./scripts/validate-arch-boot-contract.sh
