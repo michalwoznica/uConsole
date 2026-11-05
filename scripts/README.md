@@ -23,3 +23,10 @@ Stage 7 adds:
 - `validate-kernel-config-package.sh` — compose the full pinned source tree,
   execute the actual PKGBUILD `prepare()` path, resolve the uConsole kernel
   config, and stop before the Stage 8 full build.
+
+Stage 8 adds:
+
+- `validate-full-kernel-build.sh` — execute the real staged PKGBUILD
+  `prepare()`, `build()` and `package()` paths, validate the built kernel
+  image/modules/DTBs, apply the uConsole DTBO to the CM4 DTB, and inspect the
+  temporary package root.

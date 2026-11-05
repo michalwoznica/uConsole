@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.8  
-**Current phase:** Stage 7 kernel configuration and Arch packaging complete; Stage 8 full build-only validation is next
+**Document revision:** 2.9  
+**Current phase:** Stage 8 full build-only validation implemented; CI pending
 
 ---
 
@@ -389,60 +389,54 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 7 — kernel configuration and Arch packaging: COMPLETE
 
-Final Stage 7 architecture:
+### Stage 8 — full build-only validation: IMPLEMENTED, CI PENDING
 
-- Raspberry Pi `bcm2711_defconfig` is the platform baseline;
-- `kernel/config/uconsole-cm4.config` is the auditable project delta;
-- the staged `linux-uconsole` PKGBUILD is the Arch package definition;
-- authoritative project sources remain under `kernel/`;
-- `scripts/stage-arch-kernel-package.sh` creates a self-contained makepkg
-  workspace;
-- Arch package architecture remains `aarch64`;
-- Linux Kbuild architecture is explicitly `arm64`;
-- expected release is `6.18.60-1-uconsole`;
-- boot/image policy remains outside the kernel package.
+Stage 8 reuses the exact Stage 7 Arch package path.
 
-Final Stage 7 CI result:
+Validator:
 
-- repository policy checks: PASS;
-- package workspace staging: PASS;
-- exact source fetch: PASS;
-- PKGBUILD syntax/policy assertions: PASS;
-- actual PKGBUILD `prepare()` composition: PASS;
-- patches 0001-0005 with `--fuzz=0`: PASS;
-- uConsole config merge and resolution: PASS;
-- expected kernel release `6.18.60-1-uconsole`: PASS;
-- composed source identity checks: PASS;
-- `make prepare`: PASS.
+`scripts/validate-full-kernel-build.sh`
 
-Stage 7 therefore proves the complete source/configuration/package composition
-path, but intentionally does not yet prove a full kernel compile.
+Workflow:
 
-### NEXT: Stage 8 — full build-only validation
+`.github/workflows/validate-full-kernel-build.yml`
 
-Stage 8 should:
+The validator:
 
-1. reuse the exact Stage 7 staged PKGBUILD composition path;
-2. run the actual kernel `build()` path:
-   - `Image`
-   - modules
+1. stages the deterministic `linux-uconsole` makepkg workspace;
+2. fetches the exact pinned kernel/CWU50/OCP8178 inputs;
+3. executes the actual PKGBUILD `prepare()`;
+4. executes the actual PKGBUILD `build()`:
+   - `Image`;
+   - modules;
    - DTBs;
-3. verify the project modules exist:
-   - `panel-cwu50.ko`
-   - `ocp8178_bl.ko`
-   - `uconsole-amp-switch.ko`
-   - relevant AXP20x modules;
-4. verify the uConsole DTBO is produced;
-5. verify the CM4 base DTB is produced;
-6. apply the uConsole DTBO to the CM4 base DTB with `fdtoverlay`;
-7. exercise the package install path into a temporary package root;
-8. verify:
-   - `/boot/kernel8.img`;
-   - DTBs and overlays;
-   - `/usr/lib/modules/6.18.60-1-uconsole/...`;
-   - mkinitcpio preset;
-9. avoid building a flashable image yet;
-10. update provenance and this handoff before Stage 8 closure.
+5. executes the actual PKGBUILD `package()` into a temporary root;
+6. verifies source build artifacts;
+7. verifies required uConsole/AXP20x/TI ADC modules;
+8. verifies the uConsole DTBO and CM4 DTB;
+9. applies the built DTBO to the built CM4 DTB with `fdtoverlay`;
+10. verifies package-root outputs:
+    - `/boot/kernel8.img`;
+    - CM4 DTB;
+    - uConsole DTBO;
+    - `/usr/lib/modules/6.18.60-1-uconsole`;
+    - required packaged `.ko*` modules;
+    - module `pkgbase`;
+    - mkinitcpio preset;
+11. verifies no build/source symlink leakage.
+
+CI uses bounded `MAKEFLAGS=-j2` and a 90-minute job timeout.
+
+Stage 8 adds no new kernel functionality. It is a complete build/package proof
+for the composition already selected in Stages 1-7.
+
+### NEXT
+
+Push the Stage 8 candidate and inspect:
+
+`Validate full uConsole kernel build`
+
+Stage 8 closes only when that workflow passes.
 
 If Stage 8 passes, Stage 9 begins Arch Linux ARM rootfs/image-builder
 integration.
@@ -464,6 +458,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.9 / Stage 8 candidate
+
+- Added the first complete build-only validation of the Stage 7 composition.
+- Reused the actual staged PKGBUILD `prepare()`, `build()` and `package()`
+  functions instead of adding a parallel build recipe.
+- Added checks for kernel Image, uConsole modules, AXP20x modules, TI ADC,
+  CM4 DTB and uConsole DTBO.
+- Added built-DTB overlay application with `fdtoverlay`.
+- Added package-root verification for kernel8.img, DTBs/DTBO, modules and
+  mkinitcpio preset.
+- Stage 8 remains open until the full-build workflow passes.
+
 
 ### 2026-11-05 — Revision 2.8 / Stage 7 complete
 
