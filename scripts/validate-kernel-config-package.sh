@@ -48,13 +48,27 @@ bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
 
 bash -n "$package_stage/PKGBUILD"
 
-grep -q '^pkgbase=linux-uconsole$' "$package_stage/PKGBUILD"
-grep -q "^pkgver=${RPI_LINUX_VERSION}$" "$package_stage/PKGBUILD"
-grep -q "^_commit=${RPI_LINUX_COMMIT}$" "$package_stage/PKGBUILD"
-grep -q 'make bcm2711_defconfig' "$package_stage/PKGBUILD"
-grep -q 'merge_config.sh -m .config' "$package_stage/PKGBUILD"
-grep -q 'INSTALL_DTBS_PATH="${pkgdir}/boot"' "$package_stage/PKGBUILD"
-grep -q '"${pkgdir}/boot/kernel8.img"' "$package_stage/PKGBUILD"
+assert_pkgbuild() {
+    local description="$1"
+    local pattern="$2"
+
+    if ! grep -qE "$pattern" "$package_stage/PKGBUILD"; then
+        printf 'ERROR: PKGBUILD invariant failed: %s\n' "$description" >&2
+        exit 1
+    fi
+}
+
+assert_pkgbuild     'package base is linux-uconsole'     '^pkgbase=linux-uconsole$'
+assert_pkgbuild     'package version matches pinned Raspberry Pi Linux version'     "^pkgver=${RPI_LINUX_VERSION}$"
+assert_pkgbuild     'package commit matches kernel/source.lock'     "^_commit=${RPI_LINUX_COMMIT}$"
+assert_pkgbuild     'bcm2711_defconfig is generated with Linux Kbuild ARCH=arm64'     'make[[:space:]]+ARCH=arm64[[:space:]]+bcm2711_defconfig'
+assert_pkgbuild     'project config fragment is merged'     'merge_config\.sh[[:space:]]+-m[[:space:]]+\.config'
+assert_pkgbuild     'olddefconfig is resolved with Linux Kbuild ARCH=arm64'     'make[[:space:]]+ARCH=arm64[[:space:]]+olddefconfig'
+assert_pkgbuild     'kernelrelease is queried with Linux Kbuild ARCH=arm64'     'make[[:space:]]+-s[[:space:]]+ARCH=arm64[[:space:]]+kernelrelease'
+assert_pkgbuild     'full build uses Linux Kbuild ARCH=arm64'     'make[[:space:]]+ARCH=arm64[[:space:]]+Image[[:space:]]+modules[[:space:]]+dtbs'
+assert_pkgbuild     'module installation uses Linux Kbuild ARCH=arm64'     'make[[:space:]]+ARCH=arm64[[:space:]]+INSTALL_MOD_PATH='
+assert_pkgbuild     'DTB installation uses Linux Kbuild ARCH=arm64'     'make[[:space:]]+ARCH=arm64[[:space:]]+INSTALL_DTBS_PATH='
+assert_pkgbuild     'kernel image installs as /boot/kernel8.img'     'boot/kernel8\.img'
 
 # Comments may legitimately explain that the package is init-system neutral.
 # Enforce this policy only against executable/non-comment PKGBUILD content.

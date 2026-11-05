@@ -164,3 +164,29 @@ The correction makes this distinction explicit:
 
 No kernel source, patches, config fragment, boot policy, or package file layout
 changed.
+
+## Static-assertion correction
+
+The third Stage 7 CI run stopped immediately after package staging.
+
+This was another validator-only issue: after the Kbuild architecture fix, the
+PKGBUILD correctly changed from:
+
+`make bcm2711_defconfig`
+
+to:
+
+`make ARCH=arm64 bcm2711_defconfig`
+
+but the validator still searched for the old literal string. Because the
+script runs with `set -e`, that plain `grep -q` failure terminated the workflow
+without an explanatory error.
+
+The validator now:
+
+- checks the corrected `ARCH=arm64` make commands;
+- verifies all important prepare/build/install Kbuild invocations;
+- reports a named PKGBUILD invariant on failure instead of exiting silently.
+
+No PKGBUILD, kernel config, boot policy, source pin, patch, or package behavior
+changed in this correction.

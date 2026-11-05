@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.6  
-**Current phase:** Stage 7 Kbuild architecture collision corrected; composition/config/package CI validation pending
+**Document revision:** 2.7  
+**Current phase:** Stage 7 static PKGBUILD assertions corrected; composition/config/package CI validation pending
 
 ---
 
@@ -387,49 +387,53 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-### Stage 7 — kernel configuration and Arch packaging: KBUILD ARCH CORRECTED, VALIDATION PENDING
+### Stage 7 — kernel configuration and Arch packaging: STATIC ASSERTIONS CORRECTED, VALIDATION PENDING
 
-Second Stage 7 CI result:
+Third Stage 7 CI result:
 
 - repository policy: PASS;
 - package staging: PASS;
-- exact Stage 7 source fetch: PASS;
-- PKGBUILD `prepare()` path entered;
-- patches 0001-0005 all applied successfully;
-- failure occurred at the first kernel `make` invocation.
-
-Observed error:
-
-`arch/aarch64/Makefile: No such file or directory`
+- workflow exited immediately afterward;
+- source fetching and PKGBUILD composition were not reached.
 
 Root cause:
 
-The validator originally stored `ARCH=arm64` in a shell variable named
-`arch`. Sourcing the PKGBUILD then executed its standard
-`arch=('aarch64')` package declaration, overwriting that validator variable.
-The validator subsequently exported `ARCH=aarch64`.
+The previous Kbuild architecture correction changed the valid PKGBUILD command
+from:
 
-Linux Kbuild requires `ARCH=arm64`; `aarch64` is the Arch package/userspace
-architecture name.
+`make bcm2711_defconfig`
+
+to:
+
+`make ARCH=arm64 bcm2711_defconfig`
+
+but the Stage 7 validator still contained the old literal `grep -q`. Under
+`set -e`, that failed silently.
 
 Correction:
 
-- keep PKGBUILD `arch=('aarch64')`;
-- use `kernel_arch` in the validator;
-- explicitly pass `ARCH=arm64` to every kernel `make` invocation in the
-  PKGBUILD, including prepare, build and package/install phases;
-- retain cross-compiler handling independently.
+- replace plain PKGBUILD greps with named `assert_pkgbuild` checks;
+- assert `ARCH=arm64` for:
+  - `bcm2711_defconfig`;
+  - `olddefconfig`;
+  - `kernelrelease`;
+  - `Image modules dtbs`;
+  - module installation;
+  - DTB installation;
+- retain checks for package identity, pinned version/commit, config merge and
+  `/boot/kernel8.img`;
+- each static invariant now prints an explicit error before exiting.
 
-No source pins, project patches, kernel config, boot policy or package layout
-changed.
+No PKGBUILD or build behavior changed.
 
 ### NEXT
 
-Push this correction and inspect
+Push this validator-only correction and inspect
 `Validate kernel config and Arch package`.
 
-Stage 7 closes only when the workflow resolves the full config, verifies the
-expected `6.18.60-1-uconsole` kernel release, and passes `make prepare`.
+The next meaningful boundary is the actual PKGBUILD `prepare()` path. Stage 7
+closes only when composition/configuration succeeds, the expected
+`6.18.60-1-uconsole` release is verified, and `make prepare` passes.
 
 ---
 
@@ -448,6 +452,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.7 / Stage 7 static-assertion correction
+
+- Diagnosed the post-staging exit as a stale validator assertion.
+- Updated Stage 7 PKGBUILD checks for the corrected `ARCH=arm64` Kbuild
+  commands.
+- Added named assertion failures so future static-policy errors are explicit.
+- No PKGBUILD, kernel config, boot policy, source pin, patch, or package
+  behavior changed.
+- Stage 7 remains validation-pending.
+
 
 ### 2026-11-05 — Revision 2.6 / Stage 7 Kbuild architecture correction
 
