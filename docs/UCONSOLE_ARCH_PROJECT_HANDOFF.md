@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 3.5  
-**Current phase:** Stage 9A keyring representation normalized for gpgv; CI validation pending
+**Document revision:** 3.6  
+**Current phase:** Stage 9A cryptographic verification proven; structural audit converted to archive-native read-only mode; CI validation pending
 
 ---
 
@@ -391,42 +391,53 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 8 — full build-only validation: COMPLETE
 
-### Stage 9A — pin/authenticate Arch Linux ARM rootfs: KEYRING FORMAT CORRECTED, CI PENDING
+### Stage 9A — pin/authenticate Arch Linux ARM rootfs: ARCHIVE-NATIVE AUDIT, CI PENDING
 
-Third Stage 9A CI result:
+Fourth Stage 9A CI result:
 
 - rootfs lock policy: PASS;
-- versioned 2026.08 rootfs download: PASS;
+- versioned 2026.08 download: PASS;
 - exact archive size: PASS;
 - published MD5: PASS;
 - keyring extraction: PASS;
-- detached-signature verification reached;
-- `gpgv` identified signature key:
+- ASCII-armored keyring normalization: PASS;
+- detached `gpgv` verification: PASS;
+- exact expected Arch Linux ARM identity: PASS;
+- signer:
   `68B3537F39A313B3E574D06777193F152BDBE6A6`;
-- `gpgv` then failed with:
-  `invalid packet (ctb=2d)` and `NO_PUBKEY`.
+- primary:
+  `68B3537F39A313B3E574D06777193F152BDBE6A6`;
+- SHA-256:
+  `f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`;
+- failure occurred only during full filesystem extraction.
 
-Interpretation:
+Observed extraction issue:
 
-`0x2d` is ASCII `-`, consistent with the extracted pacman keyring being
-ASCII-armored (`-----BEGIN PGP PUBLIC KEY BLOCK-----`) while `gpgv --keyring`
-expects a binary OpenPGP keyring.
+- `bsdtar` could not restore `security.capability` xattrs on the unprivileged
+  GitHub runner;
+- examples: `newuidmap`, `newgidmap`;
+- partial extraction also produced restrictive paths that the cleanup trap
+  could not remove as the runner user.
+
+This is not a rootfs authenticity or content failure.
 
 Correction:
 
-- extract the original pacman keyring to a source file;
-- detect ASCII armor;
-- if armored, run `gpg --dearmor` into a temporary binary keyring;
-- if already binary, copy unchanged;
-- pass the normalized binary keyring to `gpgv`;
-- retain the exact `VALIDSIG` signer/primary fingerprint gate.
+- Stage 9A no longer performs full rootfs extraction;
+- audit authenticated archive member names directly;
+- stream pacman `/var/lib/pacman/local/*/desc` files with `bsdtar -xOf`;
+- derive installed package inventory without executing AArch64 binaries;
+- derive `/boot` top-level inventory directly from archive names;
+- restore no ownership, permissions, capabilities, ACLs or xattrs.
 
-The rootfs version, mirror, byte size, published MD5, detached signature,
-official fingerprint and trust policy remain unchanged.
+This is a cleaner Stage 9A boundary: provenance and inventory are read-only.
+
+Stage 9B will define the real rootfs extraction/mutation method for image
+construction.
 
 ### NEXT
 
-Push this Stage 9A keyring-format correction and rerun:
+Push this Stage 9A archive-audit correction and rerun:
 
 `Validate pinned Arch Linux ARM rootfs`
 
@@ -453,6 +464,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 3.6 / Stage 9A archive-native audit correction
+
+- Recorded successful cryptographic authentication of the pinned 2026.08
+  rootfs with the exact official Arch Linux ARM signing fingerprint.
+- Recorded SHA-256
+  `f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`.
+- Diagnosed the remaining failure as unprivileged restoration of Linux
+  capability xattrs during full extraction.
+- Removed full rootfs extraction from Stage 9A.
+- Added archive-native structure, pacman database and boot inventory audit.
+- Stage 9A remains validation-pending.
+
 
 ### 2026-11-05 — Revision 3.5 / Stage 9A keyring-format correction
 

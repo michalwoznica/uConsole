@@ -11,7 +11,6 @@ trap 'rm -rf "$workdir"' EXIT
 archive="$workdir/$ROOTFS_FILENAME"
 md5_file="$archive$ROOTFS_MD5_SUFFIX"
 sig_file="$archive$ROOTFS_SIGNATURE_SUFFIX"
-rootfs="$workdir/rootfs"
 keyring_source="$workdir/archlinuxarm-source.gpg"
 keyring="$workdir/archlinuxarm-binary.gpg"
 
@@ -164,45 +163,62 @@ printf 'Signature validated against expected Arch Linux ARM identity: %s\n' \
 printf 'Recording stronger local digest for diagnostics...\n'
 sha256sum "$archive"
 
-printf 'Extracting authenticated rootfs for structural audit...\n'
-mkdir -p "$rootfs"
-bsdtar -xpf "$archive" -C "$rootfs"
+printf 'Auditing authenticated rootfs archive structure without extraction...\n'
+archive_index="$workdir/archive-index.txt"
+bsdtar -tf "$archive" |
+    sed -e 's#^\./##' -e 's#/$##' \
+    > "$archive_index"
 
-required_paths=(
+required_files=(
     usr/bin/pacman
     usr/bin/systemctl
     etc/pacman.conf
     etc/os-release
     usr/share/pacman/keyrings/archlinuxarm.gpg
-    var/lib/pacman/local
-    boot
 )
 
-for relative_path in "${required_paths[@]}"; do
-    if [[ ! -e "$rootfs/$relative_path" ]]; then
-        printf 'ERROR: expected rootfs path missing: /%s\n' \
+for relative_path in "${required_files[@]}"; do
+    if ! grep -Fxq "$relative_path" "$archive_index"; then
+        printf 'ERROR: expected rootfs file missing from archive: /%s\n' \
             "$relative_path" >&2
         exit 1
     fi
 done
 
-printf 'Reading package inventory directly from pacman local database...\n'
+for required_tree in var/lib/pacman/local boot; do
+    if ! grep -qE "^${required_tree}(/|$)" "$archive_index"; then
+        printf 'ERROR: expected rootfs tree missing from archive: /%s\n' \
+            "$required_tree" >&2
+        exit 1
+    fi
+done
+
+printf 'Reading package inventory directly from archived pacman database...\n'
 inventory="$workdir/package-inventory.txt"
 : > "$inventory"
 
-for desc in "$rootfs"/var/lib/pacman/local/*/desc; do
-    [[ -f "$desc" ]] || continue
-    awk '
-        $0 == "%NAME%" {
-            if (getline > 0) {
-                print
+while IFS= read -r desc_member; do
+    [[ -n "$desc_member" ]] || continue
+    bsdtar -xOf "$archive" "$desc_member" |
+        awk '
+            $0 == "%NAME%" {
+                if (getline > 0) {
+                    print
+                }
+                exit
             }
-            exit
-        }
-    ' "$desc" >> "$inventory"
-done
+        ' >> "$inventory"
+done < <(
+    bsdtar -tf "$archive" |
+        grep -E '^(\./)?var/lib/pacman/local/[^/]+/desc$'
+)
 
 sort -u -o "$inventory" "$inventory"
+
+if [[ ! -s "$inventory" ]]; then
+    printf 'ERROR: pacman local package inventory is empty.\n' >&2
+    exit 1
+fi
 
 for required_package in pacman archlinuxarm-keyring; do
     if ! grep -qx "$required_package" "$inventory"; then
@@ -219,6 +235,16 @@ grep -E \
 printf '=== END INVENTORY ===\n\n'
 
 printf 'Boot directory top-level entries:\n'
-find "$rootfs/boot" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort
+sed -e 's#^\./##' "$archive_index" |
+    awk '
+        /^boot\/[^/]+\/?$/ {
+            sub(/^boot\//, "")
+            sub(/\/$/, "")
+            if (length($0) > 0) {
+                print
+            }
+        }
+    ' |
+    sort -u
 
-printf 'PASS: Stage 9A pinned rootfs provenance and structure validated.\n'
+printf 'PASS: Stage 9A pinned rootfs provenance and archive structure validated.\n'

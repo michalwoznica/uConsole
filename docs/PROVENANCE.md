@@ -273,3 +273,14 @@ pacman keyring directly and reported `invalid packet (ctb=2d)`.
 The validator now normalizes an ASCII-armored `archlinuxarm.gpg` with
 `gpg --dearmor` before passing it to `gpgv`. Binary keyring input is left
 unchanged. The `VALIDSIG` fingerprint requirement remains authoritative.
+
+### Stage 9A archive-native audit
+
+The fourth Stage 9A run cryptographically authenticated the pinned rootfs with
+the official Arch Linux ARM signing key. Full extraction then failed only
+because the unprivileged CI environment could not restore Linux capability
+xattrs.
+
+Stage 9A now performs its structural and package-database audit directly from
+the authenticated tar archive. No filesystem metadata is restored during this
+read-only provenance checkpoint.

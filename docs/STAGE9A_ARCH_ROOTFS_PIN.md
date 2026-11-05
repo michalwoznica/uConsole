@@ -202,3 +202,42 @@ The validator is now format-aware:
 This changes only keyring representation handling. The rootfs release,
 checksum, expected size, signature, signing fingerprint and trust policy are
 unchanged.
+
+## Archive-native structural audit correction
+
+The fourth Stage 9A CI run successfully completed the cryptographic trust
+path:
+
+- exact expected archive size: PASS;
+- published MD5: PASS;
+- ASCII-armored keyring normalization: PASS;
+- detached `gpgv` signature verification: PASS;
+- exact expected signing fingerprint: PASS;
+- SHA-256 diagnostic digest:
+  `f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967`.
+
+The workflow then failed only while fully extracting the authenticated rootfs
+on the unprivileged GitHub runner. `bsdtar -p` attempted to restore Linux
+`security.capability` extended attributes for tools such as `newuidmap` and
+`newgidmap`, which the runner environment did not permit. The partially
+extracted tree also contained restrictive modes that made the cleanup trap
+noisy.
+
+A full filesystem extraction is not required for Stage 9A.
+
+The validator now performs the structural audit directly against the
+authenticated tar archive:
+
+1. list archive members and normalize `./` prefixes;
+2. require the expected pacman/systemd/config/keyring paths;
+3. require `/var/lib/pacman/local` and `/boot` archive trees;
+4. stream each pacman `desc` file with `bsdtar -xOf` rather than restoring it;
+5. build the installed package inventory from those streamed records;
+6. derive the boot top-level inventory from archive member names.
+
+This avoids restoring ownership, permissions, capabilities, ACLs or xattrs in
+Stage 9A and better matches its read-only provenance/inventory boundary.
+
+Stage 9B, which actually mutates a rootfs tree, will define an extraction
+method appropriate for image construction rather than reusing this audit-only
+path.
