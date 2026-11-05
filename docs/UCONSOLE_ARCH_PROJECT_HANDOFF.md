@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-04  
-**Document revision:** 2.1  
-**Current phase:** Stage 6 audio/headphone switching implemented; CI validation pending
+**Document revision:** 2.2  
+**Current phase:** Stage 6 driver/overlay policy passed; exact-source integration patch corrected; CI validation pending
 
 ---
 
@@ -385,62 +385,35 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
 
-### Stage 6 — audio/headphone speaker switching: IMPLEMENTED, VALIDATION PENDING
+### Stage 6 — audio/headphone speaker switching: INTEGRATION PATCH CORRECTED, VALIDATION PENDING
 
-Hardware:
+First Stage 6 CI result:
 
-- GPIO10 = `HP_DET`; physical high means headphones inserted;
-- GPIO11 = `PA_EN`; physical high enables the internal speaker amplifier;
-- GPIO12/13 = PWM audio signal.
+- driver/overlay policy checks: PASS;
+- pinned Raspberry Pi Linux fetch: PASS;
+- Kconfig integration hunk: FAIL before compilation;
+- Makefile integration hunk: FAIL before compilation.
 
-Architecture:
+The failure is limited to integration patch context, not the driver design.
 
-- keep stock Raspberry Pi `dtparam=audio=on`;
-- keep stock `dtoverlay=audremap,pins_12_13`;
-- do not duplicate those boot settings inside the uConsole overlay;
-- add only the uConsole-specific automatic speaker cutoff.
+Correction:
 
-Driver:
-
-`kernel/drivers/uconsole-amp-switch.c`
-
-Design:
-
-- project-owned GPL-2.0-only driver;
-- one semantic headphone-detect GPIO;
-- one semantic amplifier-enable GPIO;
-- threaded rising/falling-edge IRQ;
-- `*_cansleep()` GPIO API used from threaded context;
-- speaker starts disabled until initial detect state is read;
-- speaker disabled during shutdown.
-
-This intentionally modernizes PotatoMania's proven behavioral design rather
-than copying its generic hard-IRQ implementation.
-
-Overlay:
-
-- compatible: `clockworkpi,uconsole-amplifier-switch`;
-- `headphone-detect-gpios = <&gpio 10 GPIO_ACTIVE_HIGH>`;
-- `amplifier-enable-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>`.
-
-Explicitly deferred:
-
-- PipeWire/ALSA userspace;
-- separate remembered speaker/headphone volumes;
-- boot-image `audio=on` / `audremap` configuration;
-- physical audio quality/pop testing.
-
-Validation workflows expected for this commit:
-
-1. `Validate uConsole audio switch`
-2. `Validate uConsole CM4 overlay` because the shared overlay changed.
-
-Stage 6 closes only when the new driver compiles for ARM64 and the shared
-overlay remains green.
+- Kconfig hunk rebuilt from exact CI-emitted lines around
+  `SENSORS_LIS3LV02D` and `BCM2835_SMI`;
+- Makefile hunk narrowed to only the exact adjacent
+  `CONFIG_BCM2835_SMI` and `CONFIG_DUMMY_IRQ` lines;
+- strict `--fuzz=0` retained;
+- driver source unchanged;
+- threaded-IRQ design unchanged;
+- GPIO10/GPIO11 overlay node unchanged.
 
 ### NEXT
 
-Push the Stage 6 candidate and inspect both workflows.
+Push this correction and inspect `Validate uConsole audio switch`.
+
+Stage 6 closes only when the integration patch applies,
+`CONFIG_UCONSOLE_AMP_SWITCH=m` resolves, and
+`drivers/misc/uconsole-amp-switch.o` compiles successfully.
 
 ---
 
@@ -459,6 +432,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.2 / Stage 6 integration-patch correction
+
+- Recorded that Stage 6 driver/overlay policy checks passed.
+- Rebuilt Kconfig integration from exact CI-emitted lines.
+- Narrowed the Makefile hunk to the exact two adjacent lines shown by CI,
+  removing the mismatching `CONFIG_ATMEL_SSC` context.
+- Improved validator diagnostics for the integration anchors.
+- No driver, overlay, or functional design changes were made.
+- Stage 6 remains validation-pending.
+
 
 ### 2026-11-04 — Revision 2.1 / Stage 6 candidate
 

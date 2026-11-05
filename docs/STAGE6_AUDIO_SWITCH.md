@@ -101,3 +101,14 @@ The Stage 6 workflow must:
 
 Because the shared uConsole overlay changed, the Stage 4 overlay workflow is
 also expected to run and must remain green.
+
+## Integration-patch correction
+
+The first Stage 6 CI run passed driver/overlay policy checks and failed only
+while applying the Kconfig/Makefile integration patch.
+
+The corrected Kconfig hunk uses only exact CI-emitted lines. The Makefile hunk
+is narrower still: it is anchored only on `CONFIG_BCM2835_SMI` and
+`CONFIG_DUMMY_IRQ`, the two exact adjacent lines printed by CI.
+
+No driver, overlay, or functional behavior changed.

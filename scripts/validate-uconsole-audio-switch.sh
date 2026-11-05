@@ -54,11 +54,13 @@ cp "$driver_src" "$driver_dst"
 printf 'Checking Stage 6 integration patch against exact pinned source...\n'
 if ! patch --directory="$linux_src" --strip=1 --forward --fuzz=0 --dry-run \
     < "$patch_file"; then
-    printf 'ERROR: Stage 6 integration patch does not apply.\\n' >&2
-    printf 'Kconfig anchor:\\n' >&2
-    grep -n -A8 -B4 '^config BCM2835_SMI' "$linux_src/drivers/misc/Kconfig" >&2 || true
-    printf 'Makefile anchor:\\n' >&2
-    grep -n -A3 -B3 'CONFIG_BCM2835_SMI' "$linux_src/drivers/misc/Makefile" >&2 || true
+    printf 'ERROR: Stage 6 integration patch does not apply.\n' >&2
+    printf 'Exact Kconfig anchor:\n' >&2
+    grep -n -A6 -B4 '^config BCM2835_SMI' \
+        "$linux_src/drivers/misc/Kconfig" >&2 || true
+    printf 'Exact Makefile anchor:\n' >&2
+    grep -n -A2 -B1 'CONFIG_BCM2835_SMI' \
+        "$linux_src/drivers/misc/Makefile" >&2 || true
     exit 1
 fi
 
