@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 2.4  
-**Current phase:** Stage 7 kernel configuration and Arch packaging implemented; CI validation pending
+**Document revision:** 2.5  
+**Current phase:** Stage 7 validator false positive corrected; composition/config/package CI validation pending
 
 ---
 
@@ -387,75 +387,41 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Stage 6 — audio/headphone speaker switching: COMPLETE
 
-### Stage 7 — kernel configuration and Arch packaging: IMPLEMENTED, VALIDATION PENDING
+### Stage 7 — kernel configuration and Arch packaging: VALIDATOR CORRECTED, VALIDATION PENDING
 
-Configuration architecture:
+First Stage 7 CI result:
 
-- exact Raspberry Pi `bcm2711_defconfig` remains the platform baseline;
-- project delta is `kernel/config/uconsole-cm4.config`;
-- no copied full `.config`;
-- expected package kernel release is `6.18.60-1-uconsole`.
+- repository-policy checks started;
+- package workspace staging: PASS;
+- workflow stopped at init-system policy check;
+- source fetch/composition/config validation was not reached.
 
-The fragment explicitly enables:
+Root cause:
 
-- VC4/MIPI DSI + CWU50;
-- OCP8178;
-- AXP221 I2C MFD/ADC/battery/charger/regulator/power key;
-- TI ADC101C;
-- spidev expansion support;
-- Raspberry Pi PWM audio;
-- uConsole amplifier switch;
-- Landlock.
+The PKGBUILD is init-system neutral. The validator's raw text grep matched an
+explanatory comment containing the words `systemd/OpenRC`:
 
-Arch package:
+`without adding a project-specific systemd/OpenRC hook.`
 
-`image/archlinuxarm/packages/linux-uconsole/PKGBUILD`
+Correction:
 
-Responsibilities:
-
-- compose exact pinned kernel + project source inputs;
-- apply patches 0001-0005 with `--fuzz=0`;
-- merge the project config fragment;
-- build/install `kernel8.img`, DTBs/overlays and modules;
-- integrate with Arch mkinitcpio;
-- remain free of systemd/OpenRC policy.
-
-Authoritative source files are not duplicated into the package directory.
-`scripts/stage-arch-kernel-package.sh` creates a self-contained makepkg
-workspace.
-
-Arch boot policy:
-
-`image/archlinuxarm/boot/config-uconsole-cm4.txt`
-
-Contains:
-
-- 64-bit mode;
-- CM4 USB host mode;
-- uConsole overlay;
-- Pi4/CM4 VC4 KMS;
-- PWM audio remap on GPIO12/13;
-- `kernel8.img`.
-
-It does not contain old GPIO11 speaker forcing, SD overclocking or
-init-system-specific logic.
-
-Validation workflow:
-
-`.github/workflows/validate-kernel-config-package.yml`
-
-It must execute the actual PKGBUILD `prepare()` path against the exact pinned
-source, verify the resolved config and kernel release, and pass `make prepare`.
-It intentionally does not perform a full kernel build.
+- keep the explanatory PKGBUILD comment;
+- remove comment-only lines before applying the forbidden init-system grep;
+- executable/non-comment PKGBUILD content is still checked for
+  `systemctl`, `systemd`, `rc-service`, and `openrc`;
+- no package behavior changed;
+- no kernel config changed;
+- no boot policy changed;
+- no source pins or patches changed.
 
 ### NEXT
 
-Push the Stage 7 candidate and inspect `Validate kernel config and Arch
-package`.
+Push this validator-only correction and inspect
+`Validate kernel config and Arch package`.
 
-If it passes, create the Stage 7 completion checkpoint. Stage 8 will then be
-the first complete build-only validation of Image, modules and DTBs from this
-composition/package path.
+Stage 7 closes only when the workflow proceeds through the actual PKGBUILD
+`prepare()` composition path, verifies the resolved configuration and expected
+kernel release, and passes `make prepare`.
 
 ---
 
@@ -474,6 +440,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-05 — Revision 2.5 / Stage 7 validator correction
+
+- Diagnosed the initial Stage 7 CI failure as a validator false positive.
+- Confirmed the only init-system match in the PKGBUILD was an explanatory
+  comment.
+- Changed the policy check to ignore comment-only lines while preserving the
+  same ban on init-system references in executable package content.
+- No package, kernel, boot-policy, source-pin, or patch behavior changed.
+- Stage 7 remains validation-pending.
+
 
 ### 2026-11-05 — Revision 2.4 / Stage 7 candidate
 

@@ -56,7 +56,10 @@ grep -q 'merge_config.sh -m .config' "$package_stage/PKGBUILD"
 grep -q 'INSTALL_DTBS_PATH="${pkgdir}/boot"' "$package_stage/PKGBUILD"
 grep -q '"${pkgdir}/boot/kernel8.img"' "$package_stage/PKGBUILD"
 
-if grep -qE 'systemctl|systemd|rc-service|openrc' "$package_stage/PKGBUILD"; then
+# Comments may legitimately explain that the package is init-system neutral.
+# Enforce this policy only against executable/non-comment PKGBUILD content.
+if sed -E '/^[[:space:]]*#/d' "$package_stage/PKGBUILD" |
+    grep -qE 'systemctl|systemd|rc-service|openrc'; then
     printf 'ERROR: init-system policy leaked into shared kernel package.\n' >&2
     exit 1
 fi

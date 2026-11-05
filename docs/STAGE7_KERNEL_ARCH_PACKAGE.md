@@ -125,3 +125,19 @@ Stage 7 CI must prove:
 - `make prepare` succeeds.
 
 Stage 7 does not compile `Image`, modules, or DTBs. That is Stage 8.
+
+## Validator false-positive correction
+
+The first Stage 7 CI run stopped during repository-policy validation before
+source composition.
+
+The package itself was init-system neutral. The validator matched the words
+`systemd/OpenRC` inside a comment explaining that no project-specific
+init-system hook is added.
+
+The policy check now removes comment-only PKGBUILD lines before searching for
+forbidden init-system references. Executable package content remains subject
+to the same restriction.
+
+No package behavior, kernel configuration, boot policy, source pin, or patch
+changed.
