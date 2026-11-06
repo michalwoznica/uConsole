@@ -399,3 +399,10 @@ issue only: Ubuntu 24.04's sfdisk rejected the candidate's command-line
 `--sector-size` option. The corrected builder sets and verifies the 512-byte
 logical sector size on the loop block device via `losetup`, then invokes
 sfdisk without that option. Image geometry and identity are unchanged.
+
+### Stage 10 FAT label correction
+
+The second Stage 10 run proved deterministic image partitioning but exposed a
+FAT-format constraint: `UCONSOLEBOOT` is 12 characters while FAT volume labels
+are limited to 11. The boot label is now `UCONBOOT`. Mount and boot identity
+continue to use deterministic PARTUUID values.

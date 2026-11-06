@@ -100,7 +100,7 @@ The partition table is written with `sfdisk` using an explicit DOS label ID.
 Boot filesystem:
 
 - FAT32;
-- label `UCONSOLEBOOT`;
+- label `UCONBOOT`;
 - volume ID `55434F01`.
 
 Root filesystem:
@@ -240,3 +240,23 @@ Correction:
 
 No image geometry, disk identifier, PARTUUID, filesystem identity, boot policy,
 kernel package, rootfs input or CPU policy changed.
+
+## Second CI correction — FAT volume label length
+
+The second Stage 10 image-construction run proved the host-side partitioning
+path: sparse image creation, explicit 512-byte loop sectors, deterministic
+DOS/MBR partitioning, exact disk identifier, exact partition geometry, and
+detach/reattach with partition scanning all reached the filesystem step.
+
+The run then failed at FAT filesystem creation because the configured boot
+volume label `UCONSOLEBOOT` contained 12 characters. FAT volume labels are
+limited to 11 characters.
+
+Correction:
+
+- boot FAT label changed to `UCONBOOT` (8 characters).
+
+The label is informational only. The boot/root mount contract uses PARTUUID,
+so no `cmdline.txt`, `/etc/fstab`, partition identity or boot behavior changes.
+All partition geometry, disk/PARTUUID identity, root filesystem identity,
+kernel/rootfs/package inputs, and boot policy remain unchanged.
