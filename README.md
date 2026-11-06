@@ -199,6 +199,12 @@ generating the target module metadata with host-side `depmod`, the same image
 booted to the Arch Linux ARM login prompt with CWU50, OCP8178 and VC4/DRM
 active.
 
-Those two corrections are now folded into the Stage 10 build pipeline. The
-next checkpoint is a fresh CI image build followed by an untouched physical
-boot proving that no manual card repair is required.
+Those two corrections are now folded into the Stage 10 build pipeline and have
+been revalidated end to end. The corrected CI workflow passed, the published
+artifact hashes were verified, and a freshly flashed untouched image booted on
+the physical uConsole to the visible Arch Linux ARM login console with no
+manual `depmod` or `config.txt` repair. Live inspection confirmed CWU50,
+OCP8178 and VC4/DRM active, with the DSI connector and backlight class present.
+
+Stage 10 corrected-image physical boot/display validation is therefore PASS.
+Broader hardware validation continues separately in Stage 11.

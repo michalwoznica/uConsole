@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-06
-**Document revision:** 5.0
-**Current phase:** Stage 11 physical validation in progress; Stage 10 display/module-integration corrections implemented, fresh CI image revalidation pending
+**Document revision:** 5.1
+**Current phase:** Corrected Stage 10 image physically validated for boot/display; Stage 11 broader hardware validation in progress
 
 ---
 
@@ -376,8 +376,6 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Still unproven / incomplete
 
-- fresh CI-built image booting on clean media with the Stage 10 corrections
-  and no manual repair;
 - Wi-Fi and Bluetooth validation;
 - audio output and headphone/speaker switching validation;
 - battery/charging/fuel-gauge validation;
@@ -446,7 +444,7 @@ Workflow artifact name:
 Expected artifact contents include the compressed `.img.zst`, raw/compressed
 SHA-256 files, Stage 10 manifest and exact `linux-uconsole` package.
 
-### Stage 10 physical display/module integration correction: IMPLEMENTED; CI PENDING
+### Stage 10 physical display/module integration correction: COMPLETE / PHYSICALLY VALIDATED
 
 The first physical boot of the untouched Stage 10 artifact produced a brief
 backlight flash followed by a black panel. A current official ClockworkPi CM4
@@ -484,6 +482,28 @@ The repository correction now:
 No kernel source/patch, DT overlay, package version, rootfs pin, partition
 geometry, PARTUUID, filesystem identity or direct-root boot policy changed.
 
+Fresh corrected-image revalidation subsequently passed end to end:
+
+- corrected Stage 10 CI workflows: PASS;
+- workflow artifact ZIP SHA-256:
+  `27919add8106ca637ae0416f1b473e014734aa1b77300bac50c2c3e1b8c88051`;
+- compressed image checksum verification: PASS;
+- kernel package SHA-256:
+  `ca53afee2b42af14dab64fc31de2f283cd10051867a8d25a05b8069f1dbca1fb`;
+- raw image SHA-256:
+  `e2ca929b5cf4e9d263ea9fe2705d49e71e2133e463735dc6127a7017fcda8721`;
+- compressed image SHA-256:
+  `b75f6284503dc7f0ea6266006fb0a8ef18fb162ed1bc81da2e4a107a2821ce99`;
+- freshly flashed untouched media booted with no manual repair: PASS;
+- visible boot output and Arch login console: PASS;
+- interactive login as the stock Arch Linux ARM user: PASS;
+- live CWU50/OCP8178 module loading: PASS;
+- VC4/DRM DSI connector and backlight class presence: PASS.
+
+The early old-panel/regulator retry messages observed from CWU50 resolve during
+probe; the panel subsequently binds and renders the console. They are recorded
+as non-blocking runtime behavior rather than a Stage 10 failure.
+
 ### Repository privacy/publication policy
 
 Treat Git history as permanently public. Never commit user/host identifiers,
@@ -501,19 +521,14 @@ Already physically proven:
 - built-in keyboard sufficient for login and shell commands;
 - controlled systemd shutdown from the diagnostic service.
 
-### NEXT — corrected-image revalidation
+### NEXT — broader Stage 11 hardware validation
 
-Keep the next checkpoint narrow:
-
-1. push this Stage 10 physical-correction checkpoint;
-2. run `Build first uConsole Arch microSD image`;
-3. require generated `modules.dep`/`modules.alias` and the GPIO9 directive in
-   the workflow output;
-4. preserve the new artifact/manifest/checksums;
-5. flash the new image to clean media without modifying it;
-6. confirm it reaches the visible login console with no manual `depmod` or
-   boot-config repair;
-7. only after that continue the broader Stage 11 hardware matrix.
+The corrected-image boot/display gate is closed. Continue with bounded physical
+checks of the remaining hardware/features, one area at a time, while keeping
+the validated Stage 10 artifact immutable. Candidate areas include Wi-Fi,
+battery/charging reporting, audio/headphone switching, USB/peripherals and
+power-management behavior. Record each result independently and avoid mixing
+unrelated fixes into one checkpoint.
 
 ---
 
@@ -532,6 +547,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 5.1 / corrected Stage 10 physical revalidation PASS
+
+- Recorded successful corrected Stage 10 CI workflows.
+- Preserved and independently verified the corrected artifact ZIP, kernel
+  package, raw image and compressed-image SHA-256 values.
+- Recorded a fresh flash to clean media with no post-build modification.
+- Confirmed untouched physical boot to visible Arch Linux ARM login console.
+- Confirmed interactive login succeeded.
+- Confirmed live `panel_cwu50`, `ocp8178_bl`, VC4/DRM, DSI connector and
+  backlight-class state.
+- Closed the Stage 10 display/module-integration correction as physically
+  validated and moved the immediate project focus to the broader Stage 11
+  hardware matrix.
+- Added no photos, captured device logs, user/host identifiers or other PII to
+  the repository; only textual validation conclusions and non-personal
+  artifact identities were recorded.
+
 
 ### 2026-11-06 — Revision 5.0 / Stage 10 physical display/module correction
 

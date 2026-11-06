@@ -1,8 +1,7 @@
 # Stage 10 — first reproducible partitioned microSD image
 
-**Status:** image construction complete; first physical boot exposed two
-integration defects; corrections are implemented and fresh CI/physical
-revalidation is pending.
+**Status:** image construction complete; physical integration defects corrected;
+corrected CI artifact and untouched-media boot/display revalidation PASS.
 
 ## Goal
 
@@ -14,7 +13,9 @@ components:
 - completed Stage 9B package transition;
 - completed Stage 9C boot contract.
 
-This stage still stops before physical flashing/boot testing.
+The original image-construction boundary stopped before physical flashing and
+boot testing. This report now also records the bounded physical-validation
+correction and its successful corrected-image revalidation.
 
 ## Runner architecture
 
@@ -306,7 +307,7 @@ Final proven contract:
 
 The original Stage 10 image-construction workflow completed and published its
 artifact. Physical validation then exposed the integration defects documented
-below. The corrected pipeline requires a fresh CI image and untouched-media
+below. The corrected pipeline required a fresh CI image and untouched-media
 physical revalidation before promotion.
 
 ## First physical validation — display integration correction
@@ -368,13 +369,35 @@ This correction does not change the kernel source, uConsole DT overlay,
 partition geometry, PARTUUIDs, filesystem identities, rootfs pin, package
 version or direct-root boot policy.
 
-### Revalidation boundary
+### Corrected-image revalidation result
 
-The repaired physical card proves the diagnosis and the required runtime
-state. The corrected build pipeline is not yet declared complete until:
+The corrected pipeline passed the complete revalidation boundary:
 
-1. `Build first uConsole Arch microSD image` passes from the corrected source;
-2. the new artifact contains the generated module metadata and GPIO9 boot
-   directive without manual modification;
-3. that fresh image is flashed to clean media and reaches the login console on
-   the physical uConsole without any post-build repair.
+1. `Build first uConsole Arch microSD image` passed from the corrected source;
+2. the published artifact was preserved and its compressed-image, raw-image
+   and kernel-package SHA-256 values matched the manifest;
+3. the corrected image was freshly flashed to clean media and was not modified
+   afterward;
+4. the physical uConsole booted to the visible Arch Linux ARM login console
+   without manual `depmod` or boot-config repair;
+5. interactive login succeeded;
+6. live inspection showed `panel_cwu50` and `ocp8178_bl` loaded, VC4/DRM
+   active, a DSI connector present and the backlight class device created.
+
+Corrected Stage 10 physical boot/display validation: **PASS**.
+
+Preserved corrected-artifact identities:
+
+- workflow artifact ZIP SHA-256:
+  `27919add8106ca637ae0416f1b473e014734aa1b77300bac50c2c3e1b8c88051`;
+- `linux-uconsole-6.18.60-1-aarch64.pkg.tar.zst` SHA-256:
+  `ca53afee2b42af14dab64fc31de2f283cd10051867a8d25a05b8069f1dbca1fb`;
+- raw image SHA-256:
+  `e2ca929b5cf4e9d263ea9fe2705d49e71e2133e463735dc6127a7017fcda8721`;
+- compressed image SHA-256:
+  `b75f6284503dc7f0ea6266006fb0a8ef18fb162ed1bc81da2e4a107a2821ce99`.
+
+The repeated early CWU50 old-panel/regulator retry messages observed during
+boot are transient probe/dependency retries: the panel subsequently binds,
+DRM initializes and the console is rendered. They are not treated as a Stage
+10 blocker.

@@ -433,6 +433,9 @@ directive, the same image booted to a visible Arch console with CWU50,
 OCP8178 and VC4/DRM active.
 
 The correction changes no source pin, kernel patch, DT overlay, package
-version, partition identity or rootfs identity. A fresh CI image and untouched
-physical boot remain required before the corrected Stage 10 image is promoted
-as the new validated artifact.
+version, partition identity or rootfs identity. The corrected CI image has now
+passed untouched-media physical revalidation: it boots to the visible Arch
+login console without manual repair, and live inspection confirms CWU50,
+OCP8178 and VC4/DRM active with the DSI connector and backlight class present.
+
+Corrected Stage 10 physical boot/display validation: **PASS**.
