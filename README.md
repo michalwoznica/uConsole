@@ -185,7 +185,11 @@ Next: Stage 10 — construct and validate the first reproducible partitioned
 microSD image from the authenticated rootfs, real `linux-uconsole` package and
 the completed Stage 9C boot contract.
 
-Stage 10 (first partitioned microSD image) is implemented and awaiting CI. It
+Stage 10 (first partitioned microSD image) is complete. It
 constructs an 8 GiB two-partition image, validates the exact MBR/PARTUUID and
 filesystem/boot/package state, compresses the image with zstd, and uploads the
 image, checksums, manifest and exact kernel package as a workflow artifact.
+
+Physical uConsole validation is the next project phase. The validated Stage 10
+workflow artifact should be reviewed and preserved before flashing the first
+test microSD card.

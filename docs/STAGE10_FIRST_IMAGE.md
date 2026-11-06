@@ -1,6 +1,6 @@
 # Stage 10 — first reproducible partitioned microSD image
 
-**Status:** implemented; CI validation pending.
+**Status:** complete; first partitioned microSD image workflow passed and published its validated artifact.
 
 ## Goal
 
@@ -260,3 +260,48 @@ The label is informational only. The boot/root mount contract uses PARTUUID,
 so no `cmdline.txt`, `/etc/fstab`, partition identity or boot behavior changes.
 All partition geometry, disk/PARTUUID identity, root filesystem identity,
 kernel/rootfs/package inputs, and boot policy remain unchanged.
+
+## Final Stage 10 result
+
+The corrected `Build first uConsole Arch microSD image` workflow completed
+successfully.
+
+Final proven contract:
+
+- authenticated Arch Linux ARM 2026.08 rootfs preparation: PASS;
+- real aarch64 `linux-uconsole` package build: PASS;
+- Stage 9B package transition reproduction: PASS;
+- final Stage 9C boot/root policy installation: PASS;
+- sparse 8 GiB raw image creation: PASS;
+- explicit 512-byte loop logical-sector size: PASS;
+- deterministic DOS/MBR partition-table creation: PASS;
+- disk identifier `0x55434f4e`: PASS;
+- boot and root partition geometry: PASS;
+- loop detach/reattach with partition scanning: PASS;
+- FAT32 boot filesystem creation: PASS;
+- ext4 root filesystem creation: PASS;
+- boot PARTUUID `55434f4e-01`: PASS;
+- root PARTUUID `55434f4e-02`: PASS;
+- boot FAT label `UCONBOOT`: PASS;
+- root label `UCONSOLEROOT`: PASS;
+- fixed root filesystem UUID: PASS;
+- rootfs capacity/headroom validation: PASS;
+- ext4 root population preserving Unix metadata: PASS;
+- FAT boot population: PASS;
+- kernel image / DTB / uConsole DTBO / modules: PASS;
+- final `config.txt`, `cmdline.txt`, and `/etc/fstab`: PASS;
+- `linux-uconsole` local package database record: PASS;
+- no stock `linux-aarch64` / `uboot-raspberrypi` package residue: PASS;
+- no U-Boot boot-script residue: PASS;
+- FAT filesystem consistency check: PASS;
+- ext4 filesystem consistency check: PASS;
+- raw-image SHA-256 generation: PASS;
+- zstd image compression and integrity test: PASS;
+- compressed-image SHA-256 generation: PASS;
+- machine-readable manifest generation: PASS;
+- exact `linux-uconsole` package inclusion: PASS;
+- workflow artifact upload: PASS.
+
+Stage 10 is complete. The next phase is bounded physical validation on the
+real uConsole. Before flashing, preserve and review the workflow artifact,
+manifest and checksums.

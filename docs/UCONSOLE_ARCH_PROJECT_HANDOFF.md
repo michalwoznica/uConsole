@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.8  
-**Current phase:** Stage 10 deterministic partitioning proven; FAT boot-label length corrected; CI validation pending
+**Document revision:** 4.9  
+**Current phase:** Stage 10 first partitioned microSD image complete; physical uConsole validation is next
 
 ---
 
@@ -386,59 +386,71 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 ### Stage 9C — final boot command line/initramfs policy: COMPLETE
 
-### Stage 10 — first partitioned microSD image: FAT LABEL CORRECTED, CI PENDING
+### Stage 10 — first partitioned microSD image: COMPLETE
 
-Latest Stage 10 image-builder evidence:
+Final Stage 10 evidence:
 
-PASS:
+- authenticated rootfs preparation: PASS;
+- real aarch64 `linux-uconsole` build: PASS;
+- pacman-managed stock kernel/U-Boot replacement: PASS;
+- final boot/root policy installation: PASS;
+- 8 GiB raw image creation: PASS;
+- explicit 512-byte logical-sector loop device: PASS;
+- deterministic DOS/MBR partition table: PASS;
+- disk ID `0x55434f4e`: PASS;
+- boot partition: 512 MiB FAT32, PARTUUID `55434f4e-01`;
+- root partition: ext4, PARTUUID `55434f4e-02`;
+- boot FAT label `UCONBOOT`: PASS;
+- root label `UCONSOLEROOT`: PASS;
+- fixed root filesystem UUID: PASS;
+- rootfs capacity/headroom gate: PASS;
+- ext4 root population with Unix metadata: PASS;
+- FAT boot population: PASS;
+- kernel/DTB/uConsole DTBO/modules validation: PASS;
+- final config/cmdline/fstab validation: PASS;
+- `linux-uconsole` local package DB validation: PASS;
+- no stock kernel/U-Boot DB residue: PASS;
+- no U-Boot boot-script residue: PASS;
+- FAT fsck: PASS;
+- ext4 fsck: PASS;
+- raw image SHA-256: generated;
+- zstd compression/integrity: PASS;
+- compressed image SHA-256: generated;
+- manifest: generated;
+- exact `linux-uconsole` package: preserved;
+- workflow artifact upload: PASS.
 
-- integrated rootfs input validation;
-- sparse 8 GiB image creation;
-- explicit 512-byte loop logical sector size;
-- deterministic DOS/MBR partition-table creation;
-- disk identifier `0x55434f4e`;
-- boot partition start `8192`, size `1048576` sectors / 512 MiB, type `0x0c`, bootable;
-- root partition start `1056768`, size `15720448` sectors / 7.5 GiB, type `0x83`;
-- detach/reattach with `--partscan`.
+Workflow artifact name:
 
-The sfdisk reread warning was non-fatal because the builder intentionally
-detaches the loop device after table creation and reattaches it with
-`--partscan`; the workflow then advanced to filesystem creation.
+`uconsole-archlinuxarm-stage10`
 
-Failure:
+Expected artifact contents include the compressed `.img.zst`, raw/compressed
+SHA-256 files, Stage 10 manifest and exact `linux-uconsole` package.
 
-`mkfs.vfat: Label can be no longer than 11 characters`
+### Repository privacy/publication policy
 
-Root cause: configured boot FAT label `UCONSOLEBOOT` was 12 characters.
+Treat Git history as permanently public. Never commit user/host identifiers,
+usernames, account IDs, machine-specific absolute paths or other PII. Continue
+privacy audits before every checkpoint and before publication.
 
-Correction: boot FAT label is now `UCONBOOT` (8 characters).
+### NEXT — bounded physical uConsole validation
 
-The label is informational only. Boot/root identity remains PARTUUID-based.
+Before flashing:
 
-Unchanged Stage 10 contract:
+1. download and preserve the successful Stage 10 workflow artifact;
+2. review the Stage 10 manifest and both SHA-256 files;
+3. verify the downloaded `.img.zst` checksum locally;
+4. preserve the exact kernel package from the same artifact;
+5. only then prepare a disposable/test microSD card.
 
-- disk ID `0x55434f4e`;
-- boot PARTUUID `55434f4e-01`;
-- root PARTUUID `55434f4e-02`;
-- boot FAT volume ID `55434F01`;
-- root label `UCONSOLEROOT`;
-- root filesystem UUID unchanged;
-- partition geometry unchanged;
-- kernel/rootfs/package inputs unchanged;
-- boot policy unchanged;
-- no U-Boot;
-- no firmware-loaded initramfs;
-- no explicit CPU cap;
-- 360-minute workflow timeout.
+First physical checkpoint:
 
-### NEXT
-
-Apply this correction and rerun:
-
-`Build first uConsole Arch microSD image`
-
-Stage 10 closes only after filesystem creation/population, consistency checks,
-compression, checksums, manifest and artifact upload all pass.
+1. flash the validated image;
+2. boot the uConsole without modifying the image first;
+3. observe firmware/kernel/userspace startup;
+4. record display, keyboard, Wi-Fi, battery, audio, USB and console behavior;
+5. collect boot logs only after the first untouched boot;
+6. do not mix functional fixes with image-construction changes.
 
 ---
 
@@ -457,6 +469,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 4.9 / Stage 10 complete
+
+- Recorded successful completion of the first real partitioned microSD image.
+- Confirmed deterministic MBR/PARTUUID and FAT/ext4 construction.
+- Confirmed populated root/boot filesystems and package/boot integrity.
+- Confirmed FAT/ext4 filesystem checks.
+- Confirmed zstd compression and compressed-image integrity.
+- Confirmed raw/compressed SHA-256 generation, manifest generation and exact
+  kernel-package preservation.
+- Confirmed workflow artifact upload.
+- Marked Stage 10 complete.
+- Set bounded physical uConsole validation as next.
+- Preserved privacy/public-history policy.
+
 
 ### 2026-11-06 — Revision 4.8 / Stage 10 FAT label correction
 

@@ -390,7 +390,7 @@ It composes previously pinned/proven inputs into the first partitioned image:
 Image geometry and filesystem identities are project-owned, deterministic and
 non-personal.
 
-Stage 10 CI validation is **pending**.
+Stage 10 CI validation: **PASS**. The first partitioned microSD image was constructed, populated, checked, compressed, checksummed, manifested and uploaded as a workflow artifact.
 
 ### Stage 10 sfdisk compatibility correction
 
@@ -406,3 +406,10 @@ The second Stage 10 run proved deterministic image partitioning but exposed a
 FAT-format constraint: `UCONSOLEBOOT` is 12 characters while FAT volume labels
 are limited to 11. The boot label is now `UCONBOOT`. Mount and boot identity
 continue to use deterministic PARTUUID values.
+
+### Stage 10 final validation
+
+The final Stage 10 image workflow passed. The validated workflow artifact
+contains the compressed microSD image, raw/compressed checksums, exact
+`linux-uconsole` package and machine-readable manifest. Stage 10 is complete;
+physical uConsole validation is next.

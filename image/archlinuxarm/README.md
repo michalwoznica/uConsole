@@ -83,3 +83,7 @@ microSD image:
 - compressed `.img.zst` workflow artifact plus checksums/manifest.
 
 No physical flashing is performed by CI.
+
+Stage 10 result: **PASS**. The first complete partitioned uConsole Arch image
+was built, populated, filesystem-checked, compressed, checksummed, manifested
+and uploaded as a CI artifact.
