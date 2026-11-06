@@ -58,3 +58,10 @@ Stage 9C adds:
 - `validate-arch-boot-contract.sh` — validate deterministic PARTUUID identity,
   one-line Raspberry Pi cmdline policy, fstab/config composition and the exact
   pinned kernel's built-in direct-root prerequisites.
+
+Stage 10 adds:
+
+- `build-stage10-rootfs.sh` — authenticate the pinned ARM rootfs, build/install
+  the real `linux-uconsole` package, and emit the completed target rootfs;
+- `build-stage10-image.sh` — create, populate, validate and compress the
+  deterministic partitioned microSD image.

@@ -1,0 +1,85 @@
+name: Build first uConsole Arch microSD image
+
+on:
+  push:
+    paths:
+      - 'kernel/**'
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'image/archlinuxarm/image-layout.lock'
+      - 'image/archlinuxarm/stage9a-stock-kernel-boot-packages.txt'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
+      - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
+      - 'image/archlinuxarm/packages/linux-uconsole/**'
+      - 'scripts/stage-arch-kernel-package.sh'
+      - 'scripts/build-stage10-rootfs.sh'
+      - 'scripts/build-stage10-image.sh'
+      - 'docs/STAGE10_FIRST_IMAGE.md'
+      - '.github/workflows/build-stage10-image.yml'
+  pull_request:
+    paths:
+      - 'kernel/**'
+      - 'image/archlinuxarm/rootfs.lock'
+      - 'image/archlinuxarm/image-layout.lock'
+      - 'image/archlinuxarm/stage9a-stock-kernel-boot-packages.txt'
+      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
+      - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
+      - 'image/archlinuxarm/packages/linux-uconsole/**'
+      - 'scripts/stage-arch-kernel-package.sh'
+      - 'scripts/build-stage10-rootfs.sh'
+      - 'scripts/build-stage10-image.sh'
+      - 'docs/STAGE10_FIRST_IMAGE.md'
+      - '.github/workflows/build-stage10-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Prepare host image tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             dosfstools             e2fsprogs             libarchive-tools             rsync             util-linux             zstd
+          docker version
+
+      - name: Prepare Stage 10 workspace
+        run: |
+          rm -rf "$RUNNER_TEMP/uconsole-stage10"
+          mkdir -p "$RUNNER_TEMP/uconsole-stage10"
+          chmod 0755 "$RUNNER_TEMP/uconsole-stage10"
+
+      - name: Build authenticated integrated ARM rootfs
+        run: |
+          docker run --rm             -v "$GITHUB_WORKSPACE:/repo:ro"             -v "$RUNNER_TEMP/uconsole-stage10:/work"             archlinux:base-devel             bash -lc '
+              set -euo pipefail
+              pacman -Syu --needed --noconfirm                 aarch64-linux-gnu-gcc                 bc bison curl dtc flex git gnupg inetutils kmod                 libarchive libcap libelf openssl patch perl python rsync
+              bash /repo/scripts/build-stage10-rootfs.sh                 /work/rootfs                 /work/packages
+            '
+
+      - name: Build and validate partitioned microSD image
+        run: |
+          sudo bash ./scripts/build-stage10-image.sh             "$RUNNER_TEMP/uconsole-stage10/rootfs"             "$RUNNER_TEMP/uconsole-stage10/packages"             "$RUNNER_TEMP/uconsole-stage10/artifacts"
+
+      - name: Show artifact sizes
+        run: |
+          ls -lh "$RUNNER_TEMP/uconsole-stage10/artifacts"
+          du -sh "$RUNNER_TEMP/uconsole-stage10/artifacts"
+
+      - name: Upload Stage 10 image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: uconsole-archlinuxarm-stage10
+          path: |
+            ${{ runner.temp }}/uconsole-stage10/artifacts/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

@@ -70,3 +70,16 @@ expansion UART.
 Stage 9C result: **PASS**. The deterministic boot identity, cmdline, fstab,
 direct-root kernel prerequisites and Raspberry Pi firmware boot composition
 all validate successfully.
+
+## Stage 10 first image
+
+Stage 10 materializes the completed Stage 9C contract into an 8 GiB raw
+microSD image:
+
+- 512 MiB FAT32 `/boot`;
+- remaining space ext4 `/`;
+- fixed DOS disk ID and PARTUUIDs;
+- fixed filesystem identities;
+- compressed `.img.zst` workflow artifact plus checksums/manifest.
+
+No physical flashing is performed by CI.

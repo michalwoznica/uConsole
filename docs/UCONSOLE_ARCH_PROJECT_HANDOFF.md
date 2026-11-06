@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.5  
-**Current phase:** Stage 9C boot contract complete; Stage 10 first reproducible partitioned microSD image is next
+**Document revision:** 4.6  
+**Current phase:** Stage 10 first partitioned microSD image implemented; CI validation pending
 
 ---
 
@@ -373,61 +373,97 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ## 12. Current step
 
-### Stages 0–8: COMPLETE
-
+### Stage 0 — repository bootstrap: COMPLETE
+### Stage 1 — Raspberry Pi Linux 6.18.60 baseline: COMPLETE
+### Stage 2 — CWU50 panel dry-port: COMPLETE
+### Stage 3 — OCP8178 backlight dry-port: COMPLETE
+### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
+### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
+### Stage 6 — audio/headphone speaker switching: COMPLETE
+### Stage 7 — kernel configuration and Arch packaging: COMPLETE
+### Stage 8 — full build-only validation: COMPLETE
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
-
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
-
 ### Stage 9C — final boot command line/initramfs policy: COMPLETE
 
-Final Stage 9C evidence:
+### Stage 10 — first partitioned microSD image: IMPLEMENTED, CI PENDING
 
-- deterministic DOS/MBR disk identifier `0x55434f4e`: PASS;
-- boot PARTUUID `55434f4e-01`: PASS;
-- root PARTUUID `55434f4e-02`: PASS;
-- exact one-line Raspberry Pi cmdline: PASS;
-- `8250.nr_uarts=1` and local `console=tty1`: PASS;
-- no serial console: PASS;
-- root addressed by PARTUUID with ext4 + rootwait: PASS;
-- no quiet/splash on the first validation image: PASS;
-- Raspberry Pi firmware config policy: PASS;
-- direct firmware -> `kernel8.img`: PASS;
-- no firmware-loaded initramfs: PASS;
-- deterministic fstab: PASS;
-- pinned BCM2711 microSD/storage and ext4 support built in: PASS;
-- no forced/extended compiled-in kernel command line: PASS.
+Stage 10 composes the proven inputs into the first real image artifact.
 
-Selected first-image boot chain:
+Image geometry:
 
-1. CM4 EEPROM bootloader;
-2. Raspberry Pi firmware;
-3. `/boot/config.txt`;
-4. CM4 DTB + uConsole/KMS overlays;
-5. `/boot/kernel8.img`;
-6. `/boot/cmdline.txt`;
-7. direct microSD discovery;
-8. direct ext4 root mount;
-9. Arch Linux userspace.
+- raw size: 8 GiB;
+- DOS/MBR disk ID: `0x55434f4e`;
+- logical sector: 512 bytes;
+- boot partition:
+  - starts at sector 8192;
+  - size 1048576 sectors / 512 MiB;
+  - FAT32 LBA;
+  - bootable;
+  - PARTUUID `55434f4e-01`;
+- root partition:
+  - starts at sector 1056768;
+  - extends to image end;
+  - ext4;
+  - PARTUUID `55434f4e-02`.
 
-No U-Boot and no firmware-loaded initramfs are part of the first-image path.
+Filesystem identities:
+
+- boot label `UCONSOLEBOOT`;
+- boot FAT volume ID `55434F01`;
+- root label `UCONSOLEROOT`;
+- root UUID `55434f4e-534f-4c45-8000-000000000002`.
+
+Architecture:
+
+1. standard `ubuntu-24.04` GitHub VM;
+2. disposable Arch `base-devel` Docker container prepares authenticated
+   target rootfs and real aarch64 `linux-uconsole` package;
+3. host VM uses loop devices and root mounts to construct image;
+4. ext4 root copy preserves numeric ownership, hardlinks, ACLs and xattrs;
+5. FAT boot files are copied separately with symlinks dereferenced;
+6. image partition/filesystem/package/boot state is validated;
+7. raw image is compressed with zstd;
+8. raw and compressed SHA-256 values are recorded;
+9. exact kernel package and machine-readable manifest are retained;
+10. workflow uploads artifact `uconsole-archlinuxarm-stage10`.
+
+Runner policy:
+
+- no explicit CPU cap;
+- package build uses `nproc`;
+- zstd uses all CPUs;
+- workflow timeout remains 360 minutes.
+
+Disk-space policy:
+
+- temporary kernel build tree is removed before image population;
+- root filesystem capacity is checked before copy;
+- at least 512 MiB post-copy headroom is required;
+- raw 8 GiB image is deleted after validated zstd compression.
+
+Reproducibility statement:
+
+Stage 10 fixes all source/input identity, partition identity, filesystem
+identity and policy inputs, but does not yet claim byte-identical images
+across builds because filesystem/package timestamps may vary. Each artifact
+gets exact checksums in its manifest.
 
 ### Repository privacy/publication policy
 
 Treat Git history as permanently public. Never commit user/host identifiers,
-usernames, account IDs, machine-specific absolute paths or other PII. Continue
-privacy audits before every checkpoint.
+usernames, account IDs, machine-specific absolute paths or other PII.
+Continue privacy audits before every checkpoint and artifact.
 
-### NEXT: Stage 10 — first reproducible partitioned microSD image
+### NEXT
 
-Stage 10 should construct the first real image artifact from the authenticated
-rootfs and proven `linux-uconsole` integration, create the locked DOS/MBR
-layout and PARTUUIDs, populate FAT `/boot` + ext4 `/`, install the proven Stage
-9C boot files and fstab, validate package/boot/filesystem/partition metadata,
-and produce an image artifact plus checksum before physical flashing.
+Push the Stage 10 candidate and run:
 
-Keep CI timeout at the hosting platform maximum and build parallelism dynamic
-via `nproc`.
+`Build first uConsole Arch microSD image`
+
+If it passes, download and preserve the workflow artifact plus manifest. Do
+not flash the image until the successful Stage 10 output has been reviewed
+and Stage 10 is wrapped as a final checkpoint.
 
 ---
 
@@ -446,6 +482,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 4.6 / Stage 10 image candidate
+
+- Added concrete 8 GiB image geometry to the deterministic layout contract.
+- Added fixed filesystem labels/IDs.
+- Added Stage 10 authenticated integrated-rootfs builder.
+- Added host-VM raw image constructor using loop devices, FAT32 and ext4.
+- Added package/boot/partition/filesystem validation.
+- Added zstd image artifact, raw/compressed checksums and manifest.
+- Added exact linux-uconsole package to workflow artifact.
+- Preserved dynamic `nproc` parallelism and 360-minute timeout.
+- Added explicit statement that Stage 10 is structurally reproducible but does
+  not yet claim byte-identical image checksums across independent builds.
+- Stage 10 remains CI-pending.
+
 
 ### 2026-11-06 — Revision 4.5 / Stage 9C complete
 

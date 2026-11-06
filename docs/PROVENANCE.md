@@ -375,3 +375,19 @@ All corrected Stage 9C workflows passed. The first-image boot contract is now
 fixed: Raspberry Pi firmware -> `kernel8.img`, no U-Boot, no firmware-loaded
 initramfs, direct ext4 root from CM4 microSD, deterministic PARTUUIDs, local
 tty1 console, and GPIO14/15 retained as the expansion UART.
+
+## Stage 10 image construction
+
+Stage 10 adds no new hardware-source lineage.
+
+It composes previously pinned/proven inputs into the first partitioned image:
+
+- authenticated Arch Linux ARM 2026.08 rootfs;
+- pinned Raspberry Pi Linux 6.18.60 source/patch/config package;
+- Stage 9B pacman transition;
+- Stage 9C boot contract.
+
+Image geometry and filesystem identities are project-owned, deterministic and
+non-personal.
+
+Stage 10 CI validation is **pending**.
