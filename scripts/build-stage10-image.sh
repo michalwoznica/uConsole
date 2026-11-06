@@ -109,29 +109,62 @@ printf 'Creating sparse %s-byte raw image...\n' "$IMAGE_SIZE_BYTES"
 rm -f "$image" "$compressed" "$manifest" "$raw_sha_file" "$compressed_sha_file"
 truncate -s "$IMAGE_SIZE_BYTES" "$image"
 
+printf 'Attaching raw image with explicit logical sector size...\n'
+loopdev="$(
+    losetup \
+        --find \
+        --show \
+        --sector-size "$LOGICAL_SECTOR_SIZE" \
+        "$image"
+)"
+
+actual_sector_size="$(blockdev --getss "$loopdev")"
+if [[ "$actual_sector_size" != "$LOGICAL_SECTOR_SIZE" ]]; then
+    printf 'ERROR: loop logical sector size mismatch: got %s expected %s\n' \
+        "$actual_sector_size" "$LOGICAL_SECTOR_SIZE" >&2
+    exit 1
+fi
+
 printf 'Writing deterministic DOS partition table...\n'
 sfdisk \
     --wipe always \
-    --sector-size "$LOGICAL_SECTOR_SIZE" \
-    "$image" <<EOF
+    "$loopdev" <<EOF
 label: dos
 label-id: $DISK_IDENTIFIER_HEX
 unit: sectors
+sector-size: $LOGICAL_SECTOR_SIZE
 
 start=$BOOT_START_SECTOR, size=$BOOT_SIZE_SECTORS, type=$BOOT_PARTITION_TYPE, bootable
 start=$ROOT_START_SECTOR, type=$ROOT_PARTITION_TYPE
 EOF
 
-actual_disk_id="$(sfdisk --disk-id "$image" | tr '[:upper:]' '[:lower:]')"
+actual_disk_id="$(sfdisk --disk-id "$loopdev" | tr '[:upper:]' '[:lower:]')"
 if [[ "$actual_disk_id" != "${DISK_IDENTIFIER_HEX,,}" ]]; then
     printf 'ERROR: disk identifier mismatch: got %s expected %s\n' \
         "$actual_disk_id" "${DISK_IDENTIFIER_HEX,,}" >&2
     exit 1
 fi
 
-printf 'Attaching image through loop device...\n'
-loopdev="$(losetup --find --partscan --show "$image")"
+printf 'Reattaching image with partition scanning enabled...\n'
+losetup -d "$loopdev"
+loopdev=""
+
+loopdev="$(
+    losetup \
+        --find \
+        --partscan \
+        --show \
+        --sector-size "$LOGICAL_SECTOR_SIZE" \
+        "$image"
+)"
 udevadm settle
+
+actual_sector_size="$(blockdev --getss "$loopdev")"
+if [[ "$actual_sector_size" != "$LOGICAL_SECTOR_SIZE" ]]; then
+    printf 'ERROR: reattached loop logical sector size mismatch: got %s expected %s\n' \
+        "$actual_sector_size" "$LOGICAL_SECTOR_SIZE" >&2
+    exit 1
+fi
 
 boot_part="${loopdev}p${BOOT_PARTITION_NUMBER}"
 root_part="${loopdev}p${ROOT_PARTITION_NUMBER}"

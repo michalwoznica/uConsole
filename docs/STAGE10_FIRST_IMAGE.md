@@ -218,3 +218,25 @@ Stage 10 is complete only when:
 `Build first uConsole Arch microSD image`
 
 passes and publishes the compressed image artifact.
+
+## First CI correction — sfdisk sector-size compatibility
+
+The first Stage 10 image-construction run reached the host image builder after
+the authenticated rootfs/package preparation step, then failed before
+partition creation because the Ubuntu 24.04 runner's sfdisk rejected the
+`--sector-size` command-line option.
+
+Correction:
+
+1. attach the sparse raw image to a loop device with an explicit 512-byte
+   logical sector size;
+2. verify that size with `blockdev --getss`;
+3. run sfdisk against the loop block device without the unsupported option;
+4. keep `sector-size: 512` in the sfdisk input header as explicit script
+   metadata;
+5. verify the DOS disk identifier;
+6. detach and reattach with both `--sector-size 512` and `--partscan`;
+7. verify the sector size again before formatting partitions.
+
+No image geometry, disk identifier, PARTUUID, filesystem identity, boot policy,
+kernel package, rootfs input or CPU policy changed.

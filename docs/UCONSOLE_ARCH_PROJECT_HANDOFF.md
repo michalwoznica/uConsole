@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.6  
-**Current phase:** Stage 10 first partitioned microSD image implemented; CI validation pending
+**Document revision:** 4.7  
+**Current phase:** Stage 10 image construction reached host partitioning; sfdisk sector-size compatibility corrected; CI validation pending
 
 ---
 
@@ -386,84 +386,57 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 ### Stage 9C — final boot command line/initramfs policy: COMPLETE
 
-### Stage 10 — first partitioned microSD image: IMPLEMENTED, CI PENDING
+### Stage 10 — first partitioned microSD image: SFDISK COMPATIBILITY CORRECTED, CI PENDING
 
-Stage 10 composes the proven inputs into the first real image artifact.
+First Stage 10 image-builder failure:
 
-Image geometry:
+PASS before failure:
+- Stage 10 workflow reached the host image builder;
+- image-layout contract: PASS;
+- integrated rootfs inputs: PASS;
+- sparse 8 GiB raw image creation: PASS.
 
-- raw size: 8 GiB;
-- DOS/MBR disk ID: `0x55434f4e`;
-- logical sector: 512 bytes;
-- boot partition:
-  - starts at sector 8192;
-  - size 1048576 sectors / 512 MiB;
-  - FAT32 LBA;
-  - bootable;
-  - PARTUUID `55434f4e-01`;
-- root partition:
-  - starts at sector 1056768;
-  - extends to image end;
-  - ext4;
-  - PARTUUID `55434f4e-02`.
+Failure:
+`sfdisk: unrecognized option '--sector-size'`
 
-Filesystem identities:
+Root cause:
+The Ubuntu 24.04 runner's sfdisk build does not expose the command-line
+`--sector-size` switch used by the first candidate.
 
-- boot label `UCONSOLEBOOT`;
-- boot FAT volume ID `55434F01`;
-- root label `UCONSOLEROOT`;
-- root UUID `55434f4e-534f-4c45-8000-000000000002`.
+Correction:
+- attach the raw image to a loop device first;
+- set logical sector size explicitly with `losetup --sector-size 512`;
+- verify `blockdev --getss` reports 512;
+- write the exact DOS partition table with sfdisk against the loop block device;
+- include `sector-size: 512` in the sfdisk input header;
+- verify disk ID;
+- detach and reattach with `--sector-size 512 --partscan`;
+- verify sector size again;
+- continue with the unchanged FAT/ext4 construction path.
 
-Architecture:
-
-1. standard `ubuntu-24.04` GitHub VM;
-2. disposable Arch `base-devel` Docker container prepares authenticated
-   target rootfs and real aarch64 `linux-uconsole` package;
-3. host VM uses loop devices and root mounts to construct image;
-4. ext4 root copy preserves numeric ownership, hardlinks, ACLs and xattrs;
-5. FAT boot files are copied separately with symlinks dereferenced;
-6. image partition/filesystem/package/boot state is validated;
-7. raw image is compressed with zstd;
-8. raw and compressed SHA-256 values are recorded;
-9. exact kernel package and machine-readable manifest are retained;
-10. workflow uploads artifact `uconsole-archlinuxarm-stage10`.
-
-Runner policy:
-
+Unchanged Stage 10 contract:
+- raw image: 8 GiB;
+- boot partition: 512 MiB FAT32 at sector 8192;
+- root partition: ext4 to end;
+- disk ID: `0x55434f4e`;
+- boot PARTUUID: `55434f4e-01`;
+- root PARTUUID: `55434f4e-02`;
+- boot/root filesystem identities unchanged;
+- kernel/rootfs/package inputs unchanged;
+- no U-Boot;
+- no firmware-loaded initramfs;
 - no explicit CPU cap;
-- package build uses `nproc`;
-- zstd uses all CPUs;
-- workflow timeout remains 360 minutes.
+- 360-minute workflow timeout.
 
-Disk-space policy:
-
-- temporary kernel build tree is removed before image population;
-- root filesystem capacity is checked before copy;
-- at least 512 MiB post-copy headroom is required;
-- raw 8 GiB image is deleted after validated zstd compression.
-
-Reproducibility statement:
-
-Stage 10 fixes all source/input identity, partition identity, filesystem
-identity and policy inputs, but does not yet claim byte-identical images
-across builds because filesystem/package timestamps may vary. Each artifact
-gets exact checksums in its manifest.
-
-### Repository privacy/publication policy
-
-Treat Git history as permanently public. Never commit user/host identifiers,
-usernames, account IDs, machine-specific absolute paths or other PII.
-Continue privacy audits before every checkpoint and artifact.
+The other workflow from the same push may continue; this correction affects
+only Stage 10 host image partitioning.
 
 ### NEXT
-
-Push the Stage 10 candidate and run:
-
+Apply this correction and rerun:
 `Build first uConsole Arch microSD image`
 
-If it passes, download and preserve the workflow artifact plus manifest. Do
-not flash the image until the successful Stage 10 output has been reviewed
-and Stage 10 is wrapped as a final checkpoint.
+Stage 10 closes only after partitioning, filesystem population, filesystem
+checks, compression, checksums, manifest and artifact upload all pass.
 
 ---
 
@@ -482,6 +455,16 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 4.7 / Stage 10 sfdisk compatibility correction
+
+- Recorded first Stage 10 host image-builder failure.
+- Diagnosed unsupported sfdisk `--sector-size` option on the Ubuntu 24.04 runner.
+- Moved explicit 512-byte logical-sector configuration to the loop device via `losetup --sector-size`.
+- Added pre/post partition-scan sector-size verification with `blockdev`.
+- Kept all partition geometry, disk/PARTUUID identity and image policy unchanged.
+- Stage 10 remains CI-pending.
+
 
 ### 2026-11-06 — Revision 4.6 / Stage 10 image candidate
 

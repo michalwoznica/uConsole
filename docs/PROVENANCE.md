@@ -391,3 +391,11 @@ Image geometry and filesystem identities are project-owned, deterministic and
 non-personal.
 
 Stage 10 CI validation is **pending**.
+
+### Stage 10 sfdisk compatibility correction
+
+The first Stage 10 host image-builder run exposed a util-linux compatibility
+issue only: Ubuntu 24.04's sfdisk rejected the candidate's command-line
+`--sector-size` option. The corrected builder sets and verifies the 512-byte
+logical sector size on the loop block device via `losetup`, then invokes
+sfdisk without that option. Image geometry and identity are unchanged.
