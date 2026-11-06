@@ -1,6 +1,6 @@
 # Stage 9C — final boot command line and initramfs policy
 
-**Status:** implemented; CI validation pending.
+**Status:** complete; all Stage 9C validation workflows passed.
 
 ## Goal
 
@@ -202,3 +202,15 @@ while allowing the explicitly required `PARTUUID=...` form.
 
 No boot policy, PARTUUID value, cmdline, fstab content, kernel configuration or
 image-layout contract changed.
+
+## Final Stage 9C result
+
+All workflows triggered by the corrected Stage 9C candidate completed successfully.
+
+Proven: deterministic DOS/MBR identity and PARTUUIDs; exact one-line kernel
+command line; expansion-UART/no-serial-console policy; Raspberry Pi firmware
+configuration; direct `kernel8.img` boot; no firmware-loaded initramfs;
+deterministic fstab; built-in CM4 microSD and ext4 root prerequisites; and no
+forced/extended compiled-in kernel command line.
+
+Stage 9C is complete.

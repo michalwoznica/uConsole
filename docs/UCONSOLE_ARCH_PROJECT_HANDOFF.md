@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
 **Status date:** 2026-11-05  
-**Document revision:** 4.4  
-**Current phase:** Stage 9C direct-root boot contract implemented; fstab validator false positive corrected; CI validation pending
+**Document revision:** 4.5  
+**Current phase:** Stage 9C boot contract complete; Stage 10 first reproducible partitioned microSD image is next
 
 ---
 
@@ -373,81 +373,61 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ## 12. Current step
 
-### Stage 0 — repository bootstrap: COMPLETE
-
-### Stage 1 — Raspberry Pi Linux 6.18.60 baseline: COMPLETE
-
-### Stage 2 — CWU50 panel dry-port: COMPLETE
-
-### Stage 3 — OCP8178 backlight dry-port: COMPLETE
-
-### Stage 4 — cleaned uConsole CM4 device-tree overlay: COMPLETE
-
-### Stage 5 — minimal AXP20x/AXP221 battery delta: COMPLETE
-
-### Stage 6 — audio/headphone speaker switching: COMPLETE
-
-### Stage 7 — kernel configuration and Arch packaging: COMPLETE
-
-### Stage 8 — full build-only validation: COMPLETE
+### Stages 0–8: COMPLETE
 
 ### Stage 9A — pin/authenticate Arch Linux ARM rootfs: COMPLETE
 
 ### Stage 9B — pacman-managed uConsole rootfs integration: COMPLETE
 
-### Stage 9C — final boot command line/initramfs policy: VALIDATOR CORRECTION, CI PENDING
+### Stage 9C — final boot command line/initramfs policy: COMPLETE
 
-First Stage 9C workflow result:
+Final Stage 9C evidence:
 
-PASS before failure:
+- deterministic DOS/MBR disk identifier `0x55434f4e`: PASS;
+- boot PARTUUID `55434f4e-01`: PASS;
+- root PARTUUID `55434f4e-02`: PASS;
+- exact one-line Raspberry Pi cmdline: PASS;
+- `8250.nr_uarts=1` and local `console=tty1`: PASS;
+- no serial console: PASS;
+- root addressed by PARTUUID with ext4 + rootwait: PASS;
+- no quiet/splash on the first validation image: PASS;
+- Raspberry Pi firmware config policy: PASS;
+- direct firmware -> `kernel8.img`: PASS;
+- no firmware-loaded initramfs: PASS;
+- deterministic fstab: PASS;
+- pinned BCM2711 microSD/storage and ext4 support built in: PASS;
+- no forced/extended compiled-in kernel command line: PASS.
 
-- deterministic image identity;
-- final Raspberry Pi kernel command line;
-- Raspberry Pi firmware boot policy;
-- exact deterministic fstab entries.
+Selected first-image boot chain:
 
-Failure:
+1. CM4 EEPROM bootloader;
+2. Raspberry Pi firmware;
+3. `/boot/config.txt`;
+4. CM4 DTB + uConsole/KMS overlays;
+5. `/boot/kernel8.img`;
+6. `/boot/cmdline.txt`;
+7. direct microSD discovery;
+8. direct ext4 root mount;
+9. Arch Linux userspace.
 
-`ERROR: device-name/UUID/LABEL addressing leaked into Stage 9C fstab.`
+No U-Boot and no firmware-loaded initramfs are part of the first-image path.
 
-Root cause:
+### Repository privacy/publication policy
 
-The generic guard used a raw `UUID=` substring search. The required
-`PARTUUID=...` entries naturally contain `UUID=`, so valid deterministic
-PARTUUID addressing was falsely rejected.
+Treat Git history as permanently public. Never commit user/host identifiers,
+usernames, account IDs, machine-specific absolute paths or other PII. Continue
+privacy audits before every checkpoint.
 
-Correction:
+### NEXT: Stage 10 — first reproducible partitioned microSD image
 
-The guard is now token-boundary aware and rejects only unstable addressing:
+Stage 10 should construct the first real image artifact from the authenticated
+rootfs and proven `linux-uconsole` integration, create the locked DOS/MBR
+layout and PARTUUIDs, populate FAT `/boot` + ext4 `/`, install the proven Stage
+9C boot files and fstab, validate package/boot/filesystem/partition metadata,
+and produce an image artifact plus checksum before physical flashing.
 
-- `/dev/mmcblk...`;
-- `/dev/sd...`;
-- `/dev/nvme...`;
-- standalone `UUID=...`;
-- standalone `LABEL=...`.
-
-Required `PARTUUID=...` entries remain accepted.
-
-No Stage 9C boot-policy content changed:
-
-- disk identifier remains `0x55434f4e`;
-- boot PARTUUID remains `55434f4e-01`;
-- root PARTUUID remains `55434f4e-02`;
-- cmdline remains unchanged;
-- direct ext4 root without firmware-loaded initramfs remains unchanged;
-- serial-console policy remains unchanged;
-- kernel config and PKGBUILD remain unchanged.
-
-The other existing workflows from the same push may continue; this correction
-does not alter their build inputs.
-
-### NEXT
-
-Apply this validator-only correction and rerun:
-
-`Validate uConsole Arch boot contract`
-
-Stage 9C closes only after that workflow passes.
+Keep CI timeout at the hosting platform maximum and build parallelism dynamic
+via `nproc`.
 
 ---
 
@@ -466,6 +446,16 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 4.5 / Stage 9C complete
+
+- Recorded successful completion of all corrected Stage 9C workflows.
+- Marked deterministic image identity, cmdline, fstab, firmware boot policy and direct-root kernel prerequisites as proven.
+- Confirmed no U-Boot and no firmware-loaded initramfs for the first image.
+- Preserved expansion-UART/no-serial-console policy.
+- Set Stage 10 first partitioned microSD image construction as next.
+- Retained dynamic `nproc` parallelism, maximum CI timeout and public-history privacy policy.
+
 
 ### 2026-11-05 — Revision 4.4 / Stage 9C PARTUUID validator correction
 

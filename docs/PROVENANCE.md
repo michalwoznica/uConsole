@@ -361,10 +361,17 @@ First-image boot policy:
 
 Detailed contract: `docs/STAGE9C_BOOT_CONTRACT.md`.
 
-Stage 9C CI validation is **pending**.
+Stage 9C CI validation: **PASS**. Deterministic image identity, command-line policy, direct-root prerequisites, fstab policy and Raspberry Pi firmware boot composition all validated.
 
 ### Stage 9C fstab-validator correction
 
 The first Stage 9C run exposed a validator-only false positive: a raw `UUID=`
 substring search also matched valid `PARTUUID=` entries. The guard is now
 token-boundary aware. Stage 9C boot policy itself is unchanged.
+
+### Stage 9C final validation
+
+All corrected Stage 9C workflows passed. The first-image boot contract is now
+fixed: Raspberry Pi firmware -> `kernel8.img`, no U-Boot, no firmware-loaded
+initramfs, direct ext4 root from CM4 microSD, deterministic PARTUUIDs, local
+tty1 console, and GPIO14/15 retained as the expansion UART.

@@ -66,3 +66,7 @@ deterministic PARTUUID contract.
 
 The normal image does not use a serial console; GPIO14/15 remain the uConsole
 expansion UART.
+
+Stage 9C result: **PASS**. The deterministic boot identity, cmdline, fstab,
+direct-root kernel prerequisites and Raspberry Pi firmware boot composition
+all validate successfully.
