@@ -82,6 +82,9 @@ test -s "$rootfs/boot/kernel8.img"
 test -s "$rootfs/boot/bcm2711-rpi-cm4.dtb"
 test -s "$rootfs/boot/overlays/clockworkpi-uconsole-cm4.dtbo"
 test -d "$rootfs/usr/lib/modules/$kernel_release"
+test -s "$rootfs/usr/lib/modules/$kernel_release/modules.dep"
+test -s "$rootfs/usr/lib/modules/$kernel_release/modules.alias"
+test -e "$rootfs/usr/lib/modules/$kernel_release/modules.devname"
 
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
@@ -261,6 +264,9 @@ test -s "$mount_root/boot/kernel8.img"
 test -s "$mount_root/boot/bcm2711-rpi-cm4.dtb"
 test -s "$mount_root/boot/overlays/clockworkpi-uconsole-cm4.dtbo"
 test -d "$mount_root/usr/lib/modules/$kernel_release"
+test -s "$mount_root/usr/lib/modules/$kernel_release/modules.dep"
+test -s "$mount_root/usr/lib/modules/$kernel_release/modules.alias"
+test -e "$mount_root/usr/lib/modules/$kernel_release/modules.devname"
 
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \

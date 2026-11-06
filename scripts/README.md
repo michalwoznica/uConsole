@@ -62,6 +62,9 @@ Stage 9C adds:
 Stage 10 adds:
 
 - `build-stage10-rootfs.sh` — authenticate the pinned ARM rootfs, build/install
-  the real `linux-uconsole` package, and emit the completed target rootfs;
+  the real `linux-uconsole` package, explicitly generate target kmod metadata
+  with host-side `depmod` after the hook-suppressed cross-architecture pacman
+  transaction, and emit the completed target rootfs;
 - `build-stage10-image.sh` — create, populate, validate and compress the
-  deterministic partitioned microSD image.
+  deterministic partitioned microSD image, including checks that generated
+  module dependency/alias metadata survives into the final root filesystem.

@@ -9,6 +9,10 @@ disable_overscan=1
 ignore_lcd=1
 max_framebuffers=2
 
+# Keep the uConsole backlight enable asserted from firmware handoff until the
+# OCP8178 backlight driver takes ownership of GPIO9.
+gpio=9=op,dh
+
 # CM4 USB2 host path used by uConsole peripherals.
 otg_mode=1
 

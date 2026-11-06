@@ -1,6 +1,8 @@
 # Stage 10 — first reproducible partitioned microSD image
 
-**Status:** complete; first partitioned microSD image workflow passed and published its validated artifact.
+**Status:** image construction complete; first physical boot exposed two
+integration defects; corrections are implemented and fresh CI/physical
+revalidation is pending.
 
 ## Goal
 
@@ -302,6 +304,77 @@ Final proven contract:
 - exact `linux-uconsole` package inclusion: PASS;
 - workflow artifact upload: PASS.
 
-Stage 10 is complete. The next phase is bounded physical validation on the
-real uConsole. Before flashing, preserve and review the workflow artifact,
-manifest and checksums.
+The original Stage 10 image-construction workflow completed and published its
+artifact. Physical validation then exposed the integration defects documented
+below. The corrected pipeline requires a fresh CI image and untouched-media
+physical revalidation before promotion.
+
+## First physical validation — display integration correction
+
+The preserved Stage 10 artifact was flashed unchanged to a physical CM4 Lite
+uConsole with the original display revision. The first boot reached Linux but
+the display remained black after a brief backlight flash.
+
+A known-good ClockworkPi image booted repeatedly on the same hardware, ruling
+out a panel, CM4, backlight or basic power fault.
+
+The bounded investigation established two independent Stage 10 integration
+defects:
+
+1. the generated `config.txt` did not assert GPIO9 during firmware handoff;
+2. the target rootfs contained `panel-cwu50.ko.xz` and `ocp8178_bl.ko.xz`, but
+   the cross-architecture pacman transaction had intentionally suppressed
+   target ALPM hooks/scriptlets and therefore also suppressed the normal
+   `depmod` hook. The installed module tree had only `modules.builtin`,
+   `modules.builtin.modinfo` and `modules.order`; `modules.dep`,
+   `modules.alias` and the other generated kmod metadata were absent.
+
+Physical diagnostic evidence before the correction showed:
+
+- the intended `6.18.60-1-uconsole` kernel and root filesystem booted;
+- the uConsole overlay applied and `/soc/dsi@7e700000/panel@0` existed;
+- `modinfo panel_cwu50` failed with `Module panel_cwu50 not found`;
+- no MIPI-DSI device, DRM connector or backlight class device appeared;
+- systemd explicitly reported missing `modules.devname`;
+- the DSI power dependency remained pending.
+
+The test card was then repaired with only the two required changes:
+
+- `gpio=9=op,dh` in `config.txt`;
+- host-side `depmod -b <target-root> 6.18.60-1-uconsole` against the installed
+  ARM64 module tree.
+
+After `depmod`, `modinfo` resolved both `panel_cwu50` and `ocp8178_bl` with
+their expected Device Tree aliases. The same card then booted successfully to
+the Arch Linux ARM login prompt. Live inspection showed the CWU50/OCP8178
+modules loaded, VC4/DRM active, a DSI connector present, and the backlight
+class device created. The physical display rendered boot output and the login
+console correctly.
+
+### Build-pipeline correction
+
+The Stage 10 source now reproduces that proven repair automatically:
+
+- `image/archlinuxarm/boot/config-uconsole-cm4.txt` asserts GPIO9 high as an
+  output during firmware boot;
+- `scripts/build-stage10-rootfs.sh` explicitly runs host-side `depmod` after
+  the cross-architecture pacman transaction and before rootfs validation;
+- rootfs validation requires generated module metadata and verifies that
+  `panel_cwu50` and `ocp8178_bl` resolve by name with their expected DT aliases;
+- `scripts/build-stage10-image.sh` verifies that the dependency/alias metadata
+  survives into both the integrated rootfs input and the populated image.
+
+This correction does not change the kernel source, uConsole DT overlay,
+partition geometry, PARTUUIDs, filesystem identities, rootfs pin, package
+version or direct-root boot policy.
+
+### Revalidation boundary
+
+The repaired physical card proves the diagnosis and the required runtime
+state. The corrected build pipeline is not yet declared complete until:
+
+1. `Build first uConsole Arch microSD image` passes from the corrected source;
+2. the new artifact contains the generated module metadata and GPIO9 boot
+   directive without manual modification;
+3. that fresh image is flashed to clean media and reaches the login console on
+   the physical uConsole without any post-build repair.

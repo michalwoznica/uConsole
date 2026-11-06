@@ -190,6 +190,15 @@ constructs an 8 GiB two-partition image, validates the exact MBR/PARTUUID and
 filesystem/boot/package state, compresses the image with zstd, and uploads the
 image, checksums, manifest and exact kernel package as a workflow artifact.
 
-Physical uConsole validation is the next project phase. The validated Stage 10
-workflow artifact should be reviewed and preserved before flashing the first
-test microSD card.
+The first physical Stage 10 boot exposed two image-integration defects rather
+than a kernel/overlay failure: the firmware boot policy did not assert the
+GPIO9 backlight-enable line, and the cross-architecture pacman transaction
+suppressed the normal depmod hook, leaving the installed module tree without
+`modules.dep`/`modules.alias` metadata. After adding `gpio=9=op,dh` and
+generating the target module metadata with host-side `depmod`, the same image
+booted to the Arch Linux ARM login prompt with CWU50, OCP8178 and VC4/DRM
+active.
+
+Those two corrections are now folded into the Stage 10 build pipeline. The
+next checkpoint is a fresh CI image build followed by an untouched physical
+boot proving that no manual card repair is required.

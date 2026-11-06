@@ -303,6 +303,16 @@ if [[ -d "$custom_hooks_saved" ]]; then
     mv "$custom_hooks_saved" "$custom_hooks"
 fi
 
+printf 'Generating target kernel module dependency metadata...\n'
+if ! command -v depmod >/dev/null 2>&1; then
+    printf 'ERROR: host depmod is required to prepare the target module tree.\n' >&2
+    exit 1
+fi
+
+depmod \
+    -b "$output_rootfs" \
+    "$kernel_release"
+
 printf 'Installing final Stage 9C boot/root policy into rootfs tree...\n'
 install -Dm644 \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
@@ -344,6 +354,36 @@ test -s "$output_rootfs/boot/kernel8.img"
 test -s "$output_rootfs/boot/bcm2711-rpi-cm4.dtb"
 test -s "$output_rootfs/boot/overlays/clockworkpi-uconsole-cm4.dtbo"
 test -d "$output_rootfs/usr/lib/modules/$kernel_release"
+
+module_dir="$output_rootfs/usr/lib/modules/$kernel_release"
+for generated in \
+    modules.dep \
+    modules.dep.bin \
+    modules.alias \
+    modules.alias.bin \
+    modules.symbols \
+    modules.symbols.bin
+do
+    test -e "$module_dir/$generated"
+done
+test -e "$module_dir/modules.devname"
+
+panel_modinfo="$workdir/panel-cwu50.modinfo"
+backlight_modinfo="$workdir/ocp8178-bl.modinfo"
+
+modinfo \
+    -b "$output_rootfs" \
+    -k "$kernel_release" \
+    panel_cwu50 > "$panel_modinfo"
+modinfo \
+    -b "$output_rootfs" \
+    -k "$kernel_release" \
+    ocp8178_bl > "$backlight_modinfo"
+
+grep -Eq '^name:[[:space:]]+panel_cwu50$' "$panel_modinfo"
+grep -Eq '^alias:[[:space:]]+of:N\*T\*Ccw,cwu50$' "$panel_modinfo"
+grep -Eq '^name:[[:space:]]+ocp8178_bl$' "$backlight_modinfo"
+grep -Eq '^alias:[[:space:]]+of:N\*T\*Cocp8178-backlight$' "$backlight_modinfo"
 
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \

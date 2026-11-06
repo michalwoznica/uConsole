@@ -413,3 +413,26 @@ The final Stage 10 image workflow passed. The validated workflow artifact
 contains the compressed microSD image, raw/compressed checksums, exact
 `linux-uconsole` package and machine-readable manifest. Stage 10 is complete;
 physical uConsole validation is next.
+
+### Stage 10 physical-validation correction
+
+Physical validation added no new third-party source lineage. It exposed two
+project-owned image-integration omissions:
+
+- GPIO9 must be asserted high from Raspberry Pi firmware boot so the uConsole
+  backlight remains enabled until the OCP8178 driver binds;
+- because the Stage 10 cross-architecture pacman transaction deliberately
+  suppresses target hooks/scriptlets, the build must explicitly generate kmod
+  dependency/alias metadata with host-side `depmod -b` after installing the
+  ARM64 `linux-uconsole` package.
+
+The diagnosis was physically proven on the original-display uConsole: before
+`depmod`, the CWU50/OCP8178 module files existed but could not be resolved or
+autoloaded; after generating the metadata and adding the GPIO9 firmware
+directive, the same image booted to a visible Arch console with CWU50,
+OCP8178 and VC4/DRM active.
+
+The correction changes no source pin, kernel patch, DT overlay, package
+version, partition identity or rootfs identity. A fresh CI image and untouched
+physical boot remain required before the corrected Stage 10 image is promoted
+as the new validated artifact.

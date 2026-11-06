@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
-**Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)  
-**Status date:** 2026-11-05  
-**Document revision:** 4.9  
-**Current phase:** Stage 10 first partitioned microSD image complete; physical uConsole validation is next
+**Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
+**Status date:** 2026-11-06
+**Document revision:** 5.0
+**Current phase:** Stage 11 physical validation in progress; Stage 10 display/module-integration corrections implemented, fresh CI image revalidation pending
 
 ---
 
@@ -357,17 +357,36 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - Patch-based packaging is practical.
 - Arch-first / ARMtix-later can share the same kernel/hardware layer.
 
-### Not yet proven by this project
+### Proven by this project
 
-- CWU50 compile compatibility against the pinned 6.18.60 baseline.
-- OCP8178 port against that baseline.
-- cleaned DT overlay.
-- minimum AXP patch.
-- audio driver integration.
-- full kernel build.
-- physical uConsole boot.
-- hardware reliability.
-- final image reproducibility.
+- CWU50 compile compatibility against the pinned 6.18.60 baseline;
+- OCP8178 compile compatibility against that baseline;
+- cleaned CM4 DT overlay compilation/application;
+- minimum AXP20x battery delta integration;
+- audio-switch driver integration;
+- full kernel/modules/DTB build and package construction;
+- authenticated Arch Linux ARM rootfs integration;
+- deterministic partition/boot contract;
+- first physical uConsole boot into Arch Linux ARM userspace;
+- physical CWU50 display output after correcting Stage 10 backlight/module
+  integration;
+- physical OCP8178 backlight operation;
+- VC4/DRM with a live DSI connector on the physical device;
+- built-in keyboard sufficient for local console login and commands.
+
+### Still unproven / incomplete
+
+- fresh CI-built image booting on clean media with the Stage 10 corrections
+  and no manual repair;
+- Wi-Fi and Bluetooth validation;
+- audio output and headphone/speaker switching validation;
+- battery/charging/fuel-gauge validation;
+- power-button behavior;
+- broader USB/SD/GPU functional and reliability testing;
+- reboot/shutdown reliability beyond the diagnostic shutdown test;
+- long-duration hardware reliability;
+- byte-for-byte image reproducibility across independent builds;
+- ARMtix/OpenRC image target.
 
 ---
 
@@ -427,30 +446,74 @@ Workflow artifact name:
 Expected artifact contents include the compressed `.img.zst`, raw/compressed
 SHA-256 files, Stage 10 manifest and exact `linux-uconsole` package.
 
+### Stage 10 physical display/module integration correction: IMPLEMENTED; CI PENDING
+
+The first physical boot of the untouched Stage 10 artifact produced a brief
+backlight flash followed by a black panel. A current official ClockworkPi CM4
+image was tested repeatedly on the same uConsole and displayed normally,
+ruling out a basic hardware/display fault.
+
+The investigation proved that the Stage 10 image itself reached Linux and
+userspace, and that the uConsole DT overlay applied, but the display modules
+were not autoloaded. The installed target module directory contained
+`panel-cwu50.ko.xz` and `ocp8178_bl.ko.xz` but lacked the depmod-generated
+`modules.dep`, `modules.alias`, `modules.devname` and related metadata. This
+was caused by the intentional suppression of target ALPM hooks/scriptlets in
+the cross-architecture pacman transaction; the normal kernel depmod hook was
+therefore skipped as a side effect.
+
+The manually repaired test card proved the required correction:
+
+1. adding `gpio=9=op,dh` to `config.txt` made the backlight remain asserted;
+2. running host-side `depmod -b <target-root> 6.18.60-1-uconsole` generated the
+   missing module metadata;
+3. `modinfo` then resolved both `panel_cwu50` and `ocp8178_bl` with their DT
+   aliases;
+4. the same card booted to the Arch login prompt with visible console output;
+5. live inspection showed CWU50/OCP8178 loaded, VC4/DRM active, a DSI connector
+   present and the backlight class device created.
+
+The repository correction now:
+
+- asserts GPIO9 in the generated boot config;
+- runs host-side `depmod` explicitly after the cross-architecture kernel
+  package transaction;
+- validates the generated kmod metadata and CWU50/OCP8178 module aliases;
+- validates that the metadata survives into the populated image.
+
+No kernel source/patch, DT overlay, package version, rootfs pin, partition
+geometry, PARTUUID, filesystem identity or direct-root boot policy changed.
+
 ### Repository privacy/publication policy
 
 Treat Git history as permanently public. Never commit user/host identifiers,
 usernames, account IDs, machine-specific absolute paths or other PII. Continue
 privacy audits before every checkpoint and before publication.
 
-### NEXT — bounded physical uConsole validation
+### Stage 11 — physical hardware validation: IN PROGRESS
 
-Before flashing:
+Already physically proven:
 
-1. download and preserve the successful Stage 10 workflow artifact;
-2. review the Stage 10 manifest and both SHA-256 files;
-3. verify the downloaded `.img.zst` checksum locally;
-4. preserve the exact kernel package from the same artifact;
-5. only then prepare a disposable/test microSD card.
+- kernel/rootfs boot to Arch Linux ARM login console;
+- CWU50 panel output;
+- OCP8178 backlight;
+- VC4/DRM DSI path;
+- built-in keyboard sufficient for login and shell commands;
+- controlled systemd shutdown from the diagnostic service.
 
-First physical checkpoint:
+### NEXT — corrected-image revalidation
 
-1. flash the validated image;
-2. boot the uConsole without modifying the image first;
-3. observe firmware/kernel/userspace startup;
-4. record display, keyboard, Wi-Fi, battery, audio, USB and console behavior;
-5. collect boot logs only after the first untouched boot;
-6. do not mix functional fixes with image-construction changes.
+Keep the next checkpoint narrow:
+
+1. push this Stage 10 physical-correction checkpoint;
+2. run `Build first uConsole Arch microSD image`;
+3. require generated `modules.dep`/`modules.alias` and the GPIO9 directive in
+   the workflow output;
+4. preserve the new artifact/manifest/checksums;
+5. flash the new image to clean media without modifying it;
+6. confirm it reaches the visible login console with no manual `depmod` or
+   boot-config repair;
+7. only after that continue the broader Stage 11 hardware matrix.
 
 ---
 
@@ -469,6 +532,27 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-06 — Revision 5.0 / Stage 10 physical display/module correction
+
+- Recorded the first physical Stage 10 boot and official-image control test.
+- Confirmed hardware/display path works with the official ClockworkPi image.
+- Confirmed the custom Stage 10 image boots Linux/userspace despite the black
+  display.
+- Diagnosed missing target kmod metadata after the intentionally hook-suppressed
+  cross-architecture pacman transaction.
+- Confirmed `panel-cwu50.ko.xz` and `ocp8178_bl.ko.xz` were present but could
+  not be resolved before `depmod`.
+- Physically proved that `gpio=9=op,dh` plus target-root `depmod` restores the
+  visible CWU50/OCP8178/VC4/DRM display stack and reaches the Arch login prompt.
+- Folded GPIO9 assertion and explicit host-side `depmod` into the Stage 10
+  builders.
+- Added rootfs/image gates for generated module metadata and module aliases.
+- Marked Stage 11 physical validation in progress, with fresh corrected-image
+  CI/physical revalidation as the immediate bounded next step.
+- Preserved kernel/overlay/package/rootfs/partition identities and public-history
+  privacy policy.
+
 
 ### 2026-11-06 — Revision 4.9 / Stage 10 complete
 
