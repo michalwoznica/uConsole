@@ -52,7 +52,7 @@ fi
 
 cmdline="${cmdline_lines[0]}"
 
-expected_cmdline="8250.nr_uarts=1 console=tty1 root=PARTUUID=${ROOT_PARTUUID} rootfstype=ext4 rootwait rw"
+expected_cmdline="8250.nr_uarts=1 console=tty1 root=PARTUUID=${ROOT_PARTUUID} rootfstype=ext4 rootwait rw loglevel=3"
 if [[ "$cmdline" != "$expected_cmdline" ]]; then
     printf 'ERROR: cmdline does not match the Stage 9C boot contract.\n' >&2
     printf 'Expected: %s\n' "$expected_cmdline" >&2

@@ -1,0 +1,13 @@
+networkmanager
+usbutils
+alsa-utils
+bluez
+bluez-utils
+evtest
+i2c-tools
+ethtool
+lm_sensors
+stress-ng
+raspberrypi-utils
+iperf3
+memtester

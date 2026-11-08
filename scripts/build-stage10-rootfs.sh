@@ -21,6 +21,8 @@ source "$repo_root/image/archlinuxarm/rootfs.lock"
 
 kernel_release="6.18.60-1-uconsole"
 jobs="${JOBS:-$(nproc)}"
+package_list="$repo_root/image/archlinuxarm/rootfs/uconsole-base-packages.txt"
+mapfile -t image_packages < "$package_list"
 
 if ! [[ "$jobs" =~ ^[1-9][0-9]*$ ]]; then
     printf 'ERROR: JOBS must be a positive integer, got: %s\n' "$jobs" >&2
@@ -252,10 +254,11 @@ grep -Fxq 'conflict = uboot-raspberrypi' "$pkginfo"
 printf 'Preparing cross-architecture pacman transaction...\n'
 system_hooks="$output_rootfs/usr/share/libalpm/hooks"
 system_hooks_saved="$output_rootfs/usr/share/libalpm/hooks.stage10-saved"
+system_hooks_updated="$output_rootfs/usr/share/libalpm/hooks.stage10-updated"
 custom_hooks="$output_rootfs/etc/pacman.d/hooks"
 custom_hooks_saved="$output_rootfs/etc/pacman.d/hooks.stage10-saved"
 
-if [[ -e "$system_hooks_saved" || -e "$custom_hooks_saved" ]]; then
+if [[ -e "$system_hooks_saved" || -e "$system_hooks_updated" || -e "$custom_hooks_saved" ]]; then
     printf 'ERROR: unexpected Stage 10 hook-save path already exists.\n' >&2
     exit 1
 fi
@@ -278,6 +281,19 @@ fi
 target_ldconfig_mode="$(stat -Lc '%a' "$target_ldconfig")"
 chmod a-x "$target_ldconfig"
 
+printf 'Updating Arch userspace and installing uConsole console/validation tools...\n'
+pacman_target \
+    --noconfirm \
+    --noscriptlet \
+    --needed \
+    -Syu \
+    "${image_packages[@]}"
+
+# Keep hooks installed by the updated packages, but prevent them from running
+# during the following foreign-architecture kernel replacement transaction.
+mv "$system_hooks" "$system_hooks_updated"
+mkdir -p "$system_hooks"
+
 printf 'Replacing stock kernel/U-Boot with linux-uconsole...\n'
 pacman_target \
     --noconfirm \
@@ -295,10 +311,14 @@ pacman_target \
 
 restore_target_ldconfig
 
-rm -rf "$system_hooks" "$custom_hooks"
+rm -rf "$system_hooks"
+mv "$system_hooks_updated" "$system_hooks"
 if [[ -d "$system_hooks_saved" ]]; then
-    mv "$system_hooks_saved" "$system_hooks"
+    cp -an "$system_hooks_saved/." "$system_hooks/"
+    rm -rf "$system_hooks_saved"
 fi
+
+rm -rf "$custom_hooks"
 if [[ -d "$custom_hooks_saved" ]]; then
     mv "$custom_hooks_saved" "$custom_hooks"
 fi
@@ -324,6 +344,31 @@ install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/fstab-uconsole-cm4" \
     "$output_rootfs/etc/fstab"
 
+printf 'Configuring console-first userspace defaults...\n'
+install -Dm644 \
+    "$repo_root/image/archlinuxarm/rootfs/NetworkManager-uconsole.conf" \
+    "$output_rootfs/etc/NetworkManager/conf.d/10-uconsole.conf"
+install -Dm644 \
+    "$repo_root/image/archlinuxarm/rootfs/sysctl-uconsole.conf" \
+    "$output_rootfs/etc/sysctl.d/50-uconsole-console.conf"
+
+ln -sfn ../run/systemd/resolve/stub-resolv.conf \
+    "$output_rootfs/etc/resolv.conf"
+
+systemctl --root="$output_rootfs" disable \
+    systemd-networkd.service \
+    systemd-networkd-wait-online.service \
+    systemd-network-generator.service \
+    systemd-networkd.socket \
+    systemd-networkd-varlink.socket \
+    systemd-networkd-varlink-metrics.socket \
+    systemd-networkd-resolve-hook.socket >/dev/null
+
+systemctl --root="$output_rootfs" enable \
+    NetworkManager.service \
+    systemd-resolved.service \
+    bluetooth.service >/dev/null
+
 printf 'Validating integrated Stage 10 rootfs tree...\n'
 pacman_target -Q linux-uconsole |
     grep -Fxq 'linux-uconsole 6.18.60-1'
@@ -346,6 +391,16 @@ for retained in \
 do
     pacman_target -Q "$retained" >/dev/null
 done
+
+for pkg in "${image_packages[@]}"; do
+    pacman_target -Q "$pkg" >/dev/null
+done
+
+[[ "$(readlink "$output_rootfs/etc/resolv.conf")" == "../run/systemd/resolve/stub-resolv.conf" ]]
+systemctl --root="$output_rootfs" is-enabled NetworkManager.service | grep -Fxq enabled
+systemctl --root="$output_rootfs" is-enabled systemd-resolved.service | grep -Fxq enabled
+systemctl --root="$output_rootfs" is-enabled bluetooth.service | grep -Fxq enabled
+[[ "$(systemctl --root="$output_rootfs" is-enabled systemd-networkd.service 2>/dev/null || true)" == "disabled" ]]
 
 pacman_target -Dk
 pacman_target -Qk linux-uconsole

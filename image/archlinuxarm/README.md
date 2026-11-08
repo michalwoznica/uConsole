@@ -87,3 +87,19 @@ No physical flashing is performed by CI.
 Stage 10 result: **PASS**. The first complete partitioned uConsole Arch image
 was built, populated, filesystem-checked, compressed, checksummed, manifested
 and uploaded as a CI artifact.
+
+## Stage 11 console-first usability baseline
+
+Physical validation showed that the minimal upstream rootfs lacks several
+command-line tools needed both for practical administration and for uConsole
+hardware validation. The final image therefore installs the packages listed in
+`rootfs/uconsole-base-packages.txt`.
+
+NetworkManager is the default manager for normal network interfaces. The image
+enables `NetworkManager.service`, keeps `systemd-resolved` for DNS, wires
+`/etc/resolv.conf` to the resolved stub, and disables systemd-networkd services.
+This provides persistent console networking through `nmcli`/`nmtui` without
+requiring a graphical environment.
+
+The image also sets kernel console logging to level 3 so routine device/kernel
+messages remain in logs instead of overwriting the interactive tty.

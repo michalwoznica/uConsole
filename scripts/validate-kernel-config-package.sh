@@ -28,6 +28,8 @@ grep -q '^CONFIG_UCONSOLE_AMP_SWITCH=m$' \
     "$repo_root/kernel/config/uconsole-cm4.config"
 grep -q '^CONFIG_SECURITY_LANDLOCK=y$' \
     "$repo_root/kernel/config/uconsole-cm4.config"
+grep -q '^CONFIG_LSM="landlock"$' \
+    "$repo_root/kernel/config/uconsole-cm4.config"
 
 boot_config="$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt"
 grep -q '^arm_64bit=1$' "$boot_config"
@@ -128,6 +130,7 @@ required_config=(
     CONFIG_SND_BCM2835=m
     CONFIG_UCONSOLE_AMP_SWITCH=m
     CONFIG_SECURITY_LANDLOCK=y
+    'CONFIG_LSM="landlock"'
 )
 
 for setting in "${required_config[@]}"; do

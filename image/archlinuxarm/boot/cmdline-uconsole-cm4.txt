@@ -1,1 +1,1 @@
-8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw
+8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw loglevel=3

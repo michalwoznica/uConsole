@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-06
-**Document revision:** 5.1
-**Current phase:** Corrected Stage 10 image physically validated for boot/display; Stage 11 broader hardware validation in progress
+**Status date:** 2026-11-08
+**Document revision:** 5.2
+**Current phase:** Stage 11 console-usability image correction prepared; broader hardware validation resumes on the rebuilt image
 
 ---
 
@@ -373,10 +373,13 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - physical OCP8178 backlight operation;
 - VC4/DRM with a live DSI connector on the physical device;
 - built-in keyboard sufficient for local console login and commands.
+- Wi-Fi hardware/driver can associate and pass IPv4 traffic on the physical device;
+- pacman 7 download sandbox works when Landlock is activated;
+- console printk level 3 prevents routine kernel/device messages from overwriting tty1.
 
 ### Still unproven / incomplete
 
-- Wi-Fi and Bluetooth validation;
+- full Wi-Fi throughput/reliability validation and Bluetooth validation;
 - audio output and headphone/speaker switching validation;
 - battery/charging/fuel-gauge validation;
 - power-button behavior;
@@ -521,14 +524,24 @@ Already physically proven:
 - built-in keyboard sufficient for login and shell commands;
 - controlled systemd shutdown from the diagnostic service.
 
-### NEXT — broader Stage 11 hardware validation
+### NEXT — rebuild once with Stage 11 usability fixes, then resume hardware validation
 
-The corrected-image boot/display gate is closed. Continue with bounded physical
-checks of the remaining hardware/features, one area at a time, while keeping
-the validated Stage 10 artifact immutable. Candidate areas include Wi-Fi,
-battery/charging reporting, audio/headphone switching, USB/peripherals and
-power-management behavior. Record each result independently and avoid mixing
-unrelated fixes into one checkpoint.
+Physical testing exposed base-image usability gaps that unnecessarily slowed
+validation. The next image revision folds those findings into the build:
+
+- activate Landlock by default with `CONFIG_LSM="landlock"` so pacman 7's
+  download sandbox works without a boot-time workaround;
+- use console log level 3 so routine kernel/device messages stay out of tty1;
+- install a compact console-first administration/validation package set,
+  including NetworkManager (`nmcli`/`nmtui`), USB, ALSA, Bluetooth, input,
+  I2C, Ethernet, thermal, stress, Raspberry Pi, throughput and memory tools;
+- make NetworkManager the default manager for normal interfaces;
+- keep `systemd-resolved` and explicitly wire `/etc/resolv.conf` to its stub;
+- disable systemd-networkd services so two network managers do not compete.
+
+After the rebuilt image boots and networking/package management are usable,
+continue the remaining Stage 11 hardware matrix directly rather than spending
+more time bootstrapping diagnostic tools.
 
 ---
 
@@ -547,6 +560,27 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-08 — Revision 5.2 / Stage 11 console-usability image correction
+
+- Recorded that physical Wi-Fi association and IPv4 connectivity work.
+- Identified missing persistent DNS/network-management ergonomics in the bare
+  image as a userspace-image gap rather than a uConsole Wi-Fi driver failure.
+- Added NetworkManager as the default console-friendly network manager while
+  retaining `systemd-resolved` and disabling systemd-networkd services.
+- Added the 13-package console/validation baseline: `networkmanager`,
+  `usbutils`, `alsa-utils`, `bluez`, `bluez-utils`, `evtest`, `i2c-tools`,
+  `ethtool`, `lm_sensors`, `stress-ng`, `raspberrypi-utils`, `iperf3` and
+  `memtester`.
+- Changed rootfs construction to perform a full `pacman -Syu` transaction when
+  installing that package set, avoiding unsupported partial upgrades against
+  the pinned rootfs's aging repository metadata.
+- Recorded the pacman 7 sandbox failure and physical proof that Landlock works
+  when activated; added `CONFIG_LSM="landlock"` to the kernel configuration.
+- Made console log level 3 part of the image policy to keep routine kernel
+  messages from overwriting tty1 while preserving them in logs.
+- No graphical environment or GUI-only management package was added; the image
+  remains a console-first starting point.
 
 ### 2026-11-06 — Revision 5.1 / corrected Stage 10 physical revalidation PASS
 

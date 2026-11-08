@@ -73,7 +73,7 @@ Exact partition sizes are a Stage 10 image-construction decision.
 
 `image/archlinuxarm/boot/cmdline-uconsole-cm4.txt` contains exactly one line:
 
-`8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw`
+`8250.nr_uarts=1 console=tty1 root=PARTUUID=55434f4e-02 rootfstype=ext4 rootwait rw loglevel=3`
 
 Policy:
 
@@ -86,7 +86,8 @@ Policy:
 - root filesystem is explicitly ext4;
 - `rootwait` allows the kernel to wait for microSD discovery;
 - `rw` requests a read-write root mount;
-- no `quiet` or splash option is used for first physical validation.
+- `loglevel=3` keeps routine kernel messages off the interactive console while retaining them in the kernel log;
+- no `quiet` or splash option is used.
 
 The Raspberry Pi firmware requires `cmdline.txt` parameters on a single line.
 
