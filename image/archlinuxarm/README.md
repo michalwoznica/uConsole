@@ -108,17 +108,19 @@ The Stage 10 rootfs builder uses host-side `pacman --sysroot` from inside a
 disposable x86_64 Docker container. That builder invocation disables only
 pacman's filesystem download sandbox because GitHub-hosted Docker cannot apply
 the Landlock ruleset to the mounted target sysroot. Package signatures remain
-verified: the disposable builder creates a dedicated temporary pacman keyring,
-initializes its local signing key, imports the Arch and authenticated Arch Linux
-ARM distribution trust roots, and uses that build-only keyring for the
-cross-architecture transaction. The stock
-`linux-aarch64` and `uboot-raspberrypi` packages are excluded from the full
-userspace upgrade because they are replaced by `linux-uconsole` immediately
-afterward.
+verified. Before the cross-architecture transaction, the builder initializes a
+temporary keyring at the staged target's normal `/etc/pacman.d/gnupg` path and
+populates it from the Arch and authenticated Arch Linux ARM distribution trust
+roots. This is the keyring path visible to pacman while operating inside the
+`--sysroot`. The stock `linux-aarch64` and `uboot-raspberrypi` packages are
+excluded from the full userspace upgrade because they are replaced by
+`linux-uconsole` immediately afterward.
 
-The builder does not copy its generated/private pacman signing material into
-the distributed image. Instead, `uconsole-pacman-keyring-init.service` runs once
-on the first boot, before the login console, to initialize a unique local
-pacman keyring and populate the packaged Arch and Arch Linux ARM trust roots.
-The booted uConsole therefore retains normal package-signature verification and
-normal pacman sandboxing backed by the uConsole kernel's enabled Landlock LSM.
+The temporary build keyring contains generated local private signing material,
+so the builder deletes the entire target GPG directory after all pacman
+transactions and package-database checks finish.
+`uconsole-pacman-keyring-init.service` then runs once on first boot, before the
+login console, to initialize a unique local pacman keyring and populate the
+packaged Arch and Arch Linux ARM trust roots. The booted uConsole therefore
+retains normal package-signature verification and normal pacman sandboxing
+backed by the uConsole kernel's enabled Landlock LSM.

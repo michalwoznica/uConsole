@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-09
-**Document revision:** 5.5
-**Current phase:** Stage 11 console-usability image rebuild correction; broader hardware validation resumes after the corrected image build passes
+**Document revision:** 5.6
+**Current phase:** Stage 11 console-usability image rebuild correction; CI pacman sysroot keyring path fix pending validation, then broader hardware validation resumes
 
 ---
 
@@ -562,6 +562,28 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-09 — Revision 5.6 / CI pacman sysroot keyring path correction
+
+- Recorded the next console-usability image-build failure: the temporary pacman
+  keyring was initialized successfully outside the target root, but the
+  subsequent `pacman --sysroot` transaction still reported `Public keyring not
+  found`, `keyring is not writable`, and `required key missing from keyring`.
+- Root cause: the build keyring lived under the outer Docker work directory,
+  while `pacman --sysroot` operates from the staged target root. The explicitly
+  supplied external GPG path was therefore not the correct keyring location for
+  the target-root transaction.
+- Moved the temporary verification keyring to the staged target's normal
+  `/etc/pacman.d/gnupg` location, initialize/populate it there before package
+  operations, and let `pacman --sysroot` use its normal target GPGDir. Package
+  signature verification remains enabled.
+- Added pre-transaction checks for the generated public keyring/trust database.
+- After all pacman operations and package-database validation complete, the
+  builder removes the temporary target GPG directory so no CI-generated private
+  key ships in the image. The existing first-boot service remains responsible
+  for creating a unique pacman keyring on each installed uConsole.
+- No package-set, NetworkManager, DNS, Landlock kernel, console logging, boot,
+  partition, or hardware-support policy changed in this correction.
 
 ### 2026-11-09 — Revision 5.5 / CI pacman keyring initialization ordering fix
 

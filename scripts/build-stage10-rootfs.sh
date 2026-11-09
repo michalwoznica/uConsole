@@ -56,7 +56,7 @@ keyring_source="$workdir/archlinuxarm-source.gpg"
 keyring="$workdir/archlinuxarm-binary.gpg"
 package_stage="$workdir/linux-uconsole-package"
 build_home="$workdir/build-home"
-builder_gpgdir="$workdir/pacman-gnupg"
+target_gpgdir="$output_rootfs/etc/pacman.d/gnupg"
 host_keyring_dir="/usr/share/pacman/keyrings"
 target_keyring_dir="$output_rootfs/usr/share/pacman/keyrings"
 
@@ -178,7 +178,7 @@ fi
 printf 'Extracting authenticated rootfs...\n'
 bsdtar -xpf "$archive" -C "$output_rootfs"
 
-printf 'Preparing host pacman keyring for Arch Linux ARM package verification...\n'
+printf 'Preparing temporary target pacman keyring for Arch Linux ARM package verification...\n'
 for keyring_file in \
     archlinuxarm.gpg \
     archlinuxarm-trusted \
@@ -193,9 +193,15 @@ do
         "$host_keyring_dir/$keyring_file"
 done
 
-install -d -m700 "$builder_gpgdir"
-pacman-key --gpgdir "$builder_gpgdir" --init
-pacman-key --gpgdir "$builder_gpgdir" --populate archlinux archlinuxarm
+# pacman --sysroot operates from inside the target root. Initialize the
+# temporary verification keyring at the target's normal GPGDir so package
+# signature checks use a writable, visible keyring during image composition.
+rm -rf "$target_gpgdir"
+install -d -m700 "$target_gpgdir"
+pacman-key --gpgdir "$target_gpgdir" --init
+pacman-key --gpgdir "$target_gpgdir" --populate archlinux archlinuxarm
+test -s "$target_gpgdir/pubring.gpg"
+test -s "$target_gpgdir/trustdb.gpg"
 
 pacman_target() {
     # This pacman process runs inside the disposable x86_64 Docker builder,
@@ -206,7 +212,6 @@ pacman_target() {
     pacman \
         --sysroot "$output_rootfs" \
         --arch aarch64 \
-        --gpgdir "$builder_gpgdir" \
         --disable-sandbox-filesystem \
         "$@"
 }
@@ -439,6 +444,11 @@ systemctl --root="$output_rootfs" is-enabled uconsole-pacman-keyring-init.servic
 
 pacman_target -Dk
 pacman_target -Qk linux-uconsole
+
+# The build-time keyring contains a generated private local signing key.
+# Do not ship it. First boot creates a unique pacman keyring for the device.
+rm -rf "$target_gpgdir"
+test ! -e "$target_gpgdir"
 
 test -s "$output_rootfs/boot/kernel8.img"
 test -s "$output_rootfs/boot/bcm2711-rpi-cm4.dtb"
