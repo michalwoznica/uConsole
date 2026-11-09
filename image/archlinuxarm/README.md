@@ -103,3 +103,10 @@ requiring a graphical environment.
 
 The image also sets kernel console logging to level 3 so routine device/kernel
 messages remain in logs instead of overwriting the interactive tty.
+
+The Stage 10 rootfs builder uses host-side `pacman --sysroot` from inside a
+disposable x86_64 Docker container. That builder invocation disables only
+pacman's filesystem download sandbox because GitHub-hosted Docker cannot apply
+the Landlock ruleset to the mounted target sysroot. This does not change the
+target image's `pacman.conf`; the booted uConsole keeps normal pacman sandboxing
+with Landlock enabled in the uConsole kernel.

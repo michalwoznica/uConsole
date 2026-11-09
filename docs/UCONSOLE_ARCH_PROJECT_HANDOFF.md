@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-08
-**Document revision:** 5.2
-**Current phase:** Stage 11 console-usability image correction prepared; broader hardware validation resumes on the rebuilt image
+**Status date:** 2026-11-09
+**Document revision:** 5.3
+**Current phase:** Stage 11 console-usability image rebuild correction; broader hardware validation resumes after the corrected image build passes
 
 ---
 
@@ -560,6 +560,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-09 — Revision 5.3 / CI pacman Landlock sysroot correction
+
+- Recorded the first Stage 11 console-usability image-build failure after the
+  kernel package completed successfully.
+- Isolated the failure to host-side pacman running inside the disposable
+  GitHub Actions Docker container: its download process could not apply a
+  Landlock filesystem ruleset to the target `--sysroot`.
+- Distinguished this from the target uConsole Landlock fix: the target kernel
+  is not running during rootfs composition, so its `CONFIG_LSM="landlock"`
+  cannot affect the builder's pacman process.
+- Added `--disable-sandbox-filesystem` only to the rootfs builder's host-side
+  pacman wrapper. This preserves syscall sandboxing where available and leaves
+  the generated target `/etc/pacman.conf` unchanged.
+- Retained normal pacman sandboxing on the booted image, backed by the uConsole
+  kernel's enabled Landlock LSM.
 
 ### 2026-11-08 — Revision 5.2 / Stage 11 console-usability image correction
 

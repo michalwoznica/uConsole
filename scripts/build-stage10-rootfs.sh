@@ -176,9 +176,15 @@ printf 'Extracting authenticated rootfs...\n'
 bsdtar -xpf "$archive" -C "$output_rootfs"
 
 pacman_target() {
+    # This pacman process runs inside the disposable x86_64 Docker builder,
+    # not under the target uConsole kernel. GitHub-hosted Docker does not
+    # permit pacman to apply its Landlock filesystem sandbox to this sysroot,
+    # so disable only that host-side download restriction. The generated
+    # target /etc/pacman.conf is unchanged and retains normal sandboxing.
     pacman \
         --sysroot "$output_rootfs" \
         --arch aarch64 \
+        --disable-sandbox-filesystem \
         "$@"
 }
 
