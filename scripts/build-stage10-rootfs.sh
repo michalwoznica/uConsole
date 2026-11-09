@@ -56,7 +56,7 @@ keyring_source="$workdir/archlinuxarm-source.gpg"
 keyring="$workdir/archlinuxarm-binary.gpg"
 package_stage="$workdir/linux-uconsole-package"
 build_home="$workdir/build-home"
-builder_gpgdir="/etc/pacman.d/gnupg"
+builder_gpgdir="$workdir/pacman-gnupg"
 host_keyring_dir="/usr/share/pacman/keyrings"
 target_keyring_dir="$output_rootfs/usr/share/pacman/keyrings"
 
@@ -193,7 +193,9 @@ do
         "$host_keyring_dir/$keyring_file"
 done
 
-pacman-key --populate archlinuxarm
+install -d -m700 "$builder_gpgdir"
+pacman-key --gpgdir "$builder_gpgdir" --init
+pacman-key --gpgdir "$builder_gpgdir" --populate archlinux archlinuxarm
 
 pacman_target() {
     # This pacman process runs inside the disposable x86_64 Docker builder,

@@ -108,9 +108,10 @@ The Stage 10 rootfs builder uses host-side `pacman --sysroot` from inside a
 disposable x86_64 Docker container. That builder invocation disables only
 pacman's filesystem download sandbox because GitHub-hosted Docker cannot apply
 the Landlock ruleset to the mounted target sysroot. Package signatures remain
-verified: the disposable builder imports the Arch Linux ARM distribution
-keyring from the authenticated target rootfs into its own pacman keyring and
-uses that host keyring for the cross-architecture transaction. The stock
+verified: the disposable builder creates a dedicated temporary pacman keyring,
+initializes its local signing key, imports the Arch and authenticated Arch Linux
+ARM distribution trust roots, and uses that build-only keyring for the
+cross-architecture transaction. The stock
 `linux-aarch64` and `uboot-raspberrypi` packages are excluded from the full
 userspace upgrade because they are replaced by `linux-uconsole` immediately
 afterward.

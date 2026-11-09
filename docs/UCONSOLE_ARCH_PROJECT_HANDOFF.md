@@ -2,7 +2,7 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-09
-**Document revision:** 5.4
+**Document revision:** 5.5
 **Current phase:** Stage 11 console-usability image rebuild correction; broader hardware validation resumes after the corrected image build passes
 
 ---
@@ -562,6 +562,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-09 — Revision 5.5 / CI pacman keyring initialization ordering fix
+
+- Recorded the next console-usability image-build failure: the kernel package
+  built successfully, but CI stopped while preparing the build-host pacman
+  keyring because `pacman-key --populate` was invoked before a local key had
+  been created. Pacman reported `There is no secret key available to sign
+  with` and explicitly required `pacman-key --init`.
+- Corrected the build-only keyring sequence to create an isolated temporary
+  GnuPG directory under the rootfs-builder work directory, run `pacman-key
+  --init`, then populate both the Arch and Arch Linux ARM distribution trust
+  roots before any target-rootfs package transaction.
+- Kept this keyring strictly build-local. The generated image continues to
+  create its own unique pacman keyring on first boot through
+  `uconsole-pacman-keyring-init.service`; no CI private key is copied into the
+  image.
+- No target package set, NetworkManager policy, Landlock kernel policy, or
+  console logging policy changed in this correction.
 
 ### 2026-11-09 — Revision 5.4 / CI pacman keyring and first-boot trust correction
 
