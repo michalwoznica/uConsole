@@ -2,7 +2,7 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-09
-**Document revision:** 5.3
+**Document revision:** 5.4
 **Current phase:** Stage 11 console-usability image rebuild correction; broader hardware validation resumes after the corrected image build passes
 
 ---
@@ -537,7 +537,9 @@ validation. The next image revision folds those findings into the build:
   I2C, Ethernet, thermal, stress, Raspberry Pi, throughput and memory tools;
 - make NetworkManager the default manager for normal interfaces;
 - keep `systemd-resolved` and explicitly wire `/etc/resolv.conf` to its stub;
-- disable systemd-networkd services so two network managers do not compete.
+- disable systemd-networkd services so two network managers do not compete;
+- initialize a unique pacman keyring automatically on first boot so package
+  signature verification works without any manual bootstrap command.
 
 After the rebuilt image boots and networking/package management are usable,
 continue the remaining Stage 11 hardware matrix directly rather than spending
@@ -560,6 +562,27 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-09 — Revision 5.4 / CI pacman keyring and first-boot trust correction
+
+- Recorded the second Stage 11 console-usability image-build failure after the
+  Landlock builder correction: repository synchronization and package downloads
+  succeeded, but the target `--sysroot` had no initialized pacman keyring and
+  signature verification stopped with `keyring is not writable` /
+  `required key missing from keyring`.
+- Kept package signature verification enabled. The disposable x86_64 builder
+  now imports the authenticated rootfs's `archlinuxarm` distribution keyring
+  into the builder's own initialized pacman keyring and explicitly points the
+  cross-architecture pacman transaction at that host keyring.
+- Deliberately do not copy the builder's local/private signing material into
+  the published image. Added `uconsole-pacman-keyring-init.service`, enabled in
+  the image, to run `pacman-key --init` and populate the packaged Arch + Arch
+  Linux ARM trust roots once on first boot before the login console. Each
+  flashed installation therefore creates its own local pacman keyring.
+- Excluded `linux-aarch64` and `uboot-raspberrypi` from the full userspace
+  upgrade because the build removes them immediately afterward when installing
+  `linux-uconsole`; this avoids needless download/installation work without
+  weakening the rest of the rolling userspace update.
 
 ### 2026-11-09 — Revision 5.3 / CI pacman Landlock sysroot correction
 

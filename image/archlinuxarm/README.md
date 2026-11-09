@@ -107,6 +107,17 @@ messages remain in logs instead of overwriting the interactive tty.
 The Stage 10 rootfs builder uses host-side `pacman --sysroot` from inside a
 disposable x86_64 Docker container. That builder invocation disables only
 pacman's filesystem download sandbox because GitHub-hosted Docker cannot apply
-the Landlock ruleset to the mounted target sysroot. This does not change the
-target image's `pacman.conf`; the booted uConsole keeps normal pacman sandboxing
-with Landlock enabled in the uConsole kernel.
+the Landlock ruleset to the mounted target sysroot. Package signatures remain
+verified: the disposable builder imports the Arch Linux ARM distribution
+keyring from the authenticated target rootfs into its own pacman keyring and
+uses that host keyring for the cross-architecture transaction. The stock
+`linux-aarch64` and `uboot-raspberrypi` packages are excluded from the full
+userspace upgrade because they are replaced by `linux-uconsole` immediately
+afterward.
+
+The builder does not copy its generated/private pacman signing material into
+the distributed image. Instead, `uconsole-pacman-keyring-init.service` runs once
+on the first boot, before the login console, to initialize a unique local
+pacman keyring and populate the packaged Arch and Arch Linux ARM trust roots.
+The booted uConsole therefore retains normal package-signature verification and
+normal pacman sandboxing backed by the uConsole kernel's enabled Landlock LSM.

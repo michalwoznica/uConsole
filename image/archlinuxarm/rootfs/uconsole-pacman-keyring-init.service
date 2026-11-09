@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize pacman keyring on first boot
+After=systemd-random-seed.service
+Before=getty.target
+ConditionPathExists=!/etc/pacman.d/gnupg/pubring.gpg
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pacman-key --init
+ExecStart=/usr/bin/pacman-key --populate archlinux archlinuxarm
+
+[Install]
+WantedBy=multi-user.target

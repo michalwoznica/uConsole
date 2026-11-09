@@ -56,6 +56,9 @@ keyring_source="$workdir/archlinuxarm-source.gpg"
 keyring="$workdir/archlinuxarm-binary.gpg"
 package_stage="$workdir/linux-uconsole-package"
 build_home="$workdir/build-home"
+builder_gpgdir="/etc/pacman.d/gnupg"
+host_keyring_dir="/usr/share/pacman/keyrings"
+target_keyring_dir="$output_rootfs/usr/share/pacman/keyrings"
 
 download_from_base() {
     local base_url="$1"
@@ -175,6 +178,23 @@ fi
 printf 'Extracting authenticated rootfs...\n'
 bsdtar -xpf "$archive" -C "$output_rootfs"
 
+printf 'Preparing host pacman keyring for Arch Linux ARM package verification...\n'
+for keyring_file in \
+    archlinuxarm.gpg \
+    archlinuxarm-trusted \
+    archlinuxarm-revoked
+do
+    if [[ ! -f "$target_keyring_dir/$keyring_file" ]]; then
+        printf 'ERROR: target keyring file missing: %s\n' "$keyring_file" >&2
+        exit 1
+    fi
+    install -Dm644 \
+        "$target_keyring_dir/$keyring_file" \
+        "$host_keyring_dir/$keyring_file"
+done
+
+pacman-key --populate archlinuxarm
+
 pacman_target() {
     # This pacman process runs inside the disposable x86_64 Docker builder,
     # not under the target uConsole kernel. GitHub-hosted Docker does not
@@ -184,6 +204,7 @@ pacman_target() {
     pacman \
         --sysroot "$output_rootfs" \
         --arch aarch64 \
+        --gpgdir "$builder_gpgdir" \
         --disable-sandbox-filesystem \
         "$@"
 }
@@ -292,6 +313,7 @@ pacman_target \
     --noconfirm \
     --noscriptlet \
     --needed \
+    --ignore linux-aarch64,uboot-raspberrypi \
     -Syu \
     "${image_packages[@]}"
 
@@ -357,6 +379,9 @@ install -Dm644 \
 install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/sysctl-uconsole.conf" \
     "$output_rootfs/etc/sysctl.d/50-uconsole-console.conf"
+install -Dm644 \
+    "$repo_root/image/archlinuxarm/rootfs/uconsole-pacman-keyring-init.service" \
+    "$output_rootfs/usr/lib/systemd/system/uconsole-pacman-keyring-init.service"
 
 ln -sfn ../run/systemd/resolve/stub-resolv.conf \
     "$output_rootfs/etc/resolv.conf"
@@ -373,7 +398,8 @@ systemctl --root="$output_rootfs" disable \
 systemctl --root="$output_rootfs" enable \
     NetworkManager.service \
     systemd-resolved.service \
-    bluetooth.service >/dev/null
+    bluetooth.service \
+    uconsole-pacman-keyring-init.service >/dev/null
 
 printf 'Validating integrated Stage 10 rootfs tree...\n'
 pacman_target -Q linux-uconsole |
@@ -406,6 +432,7 @@ done
 systemctl --root="$output_rootfs" is-enabled NetworkManager.service | grep -Fxq enabled
 systemctl --root="$output_rootfs" is-enabled systemd-resolved.service | grep -Fxq enabled
 systemctl --root="$output_rootfs" is-enabled bluetooth.service | grep -Fxq enabled
+systemctl --root="$output_rootfs" is-enabled uconsole-pacman-keyring-init.service | grep -Fxq enabled
 [[ "$(systemctl --root="$output_rootfs" is-enabled systemd-networkd.service 2>/dev/null || true)" == "disabled" ]]
 
 pacman_target -Dk
