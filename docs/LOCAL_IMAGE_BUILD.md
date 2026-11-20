@@ -25,9 +25,14 @@ sudo pacman -S --needed \
   zstd
 ```
 
-The build script uses **rootful Podman** (`sudo podman`) deliberately. Image
-composition must preserve target numeric UID/GID ownership exactly; a rootless
-container would place the build in a user namespace and remap those IDs.
+The build script uses **rootful Podman** deliberately. Image composition must
+preserve target numeric UID/GID ownership exactly; a rootless container would
+place the build in a user namespace and remap those IDs.
+
+The script requests `sudo` authentication once at startup, before long-running
+work begins. It refreshes that credential in the background for the lifetime of
+the build, while all later privileged calls are non-interactive. An unattended
+build therefore does not stop hours later waiting for another password prompt.
 
 For local Podman builds the container also uses host networking. This avoids
 rootful Podman's bridge DNS path interfering with package retrieval while still

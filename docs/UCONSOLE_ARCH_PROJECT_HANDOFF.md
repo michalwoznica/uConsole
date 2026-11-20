@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-20
-**Document revision:** 5.8
-**Current phase:** Stage 11 console-usability image rebuild correction; local Podman build path active, with rootful Podman host networking required for reliable package DNS on the current build host
+**Document revision:** 5.9
+**Current phase:** Stage 11 console-usability image rebuild correction; local Podman build path active, with upfront sudo authentication/keepalive and rootful Podman host networking
 
 ---
 
@@ -562,6 +562,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-20 — Revision 5.9 / unattended local-build sudo handling
+
+- First long local build reached image composition after the initial sudo
+  timestamp had expired and stopped waiting for a second password prompt.
+- Local/shared host orchestration now authenticates sudo once before any
+  long-running work and refreshes the timestamp every 60 seconds for the
+  duration of the build.
+- All subsequent privileged calls in the host script use non-interactive sudo,
+  so a credential problem fails immediately instead of blocking unattended.
+- No kernel, target rootfs, image contents, package set or networking policy
+  changed.
+
 
 ### 2026-11-20 — Revision 5.8 / local Podman bridge-DNS correction
 

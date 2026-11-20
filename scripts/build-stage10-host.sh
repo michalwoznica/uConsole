@@ -16,7 +16,7 @@ fi
 
 case "$container_runtime" in
     podman)
-        container_cmd=(sudo podman)
+        container_cmd=(sudo -n podman)
         container_run_args=(--network host)
         ;;
     docker)
@@ -70,7 +70,26 @@ fi
 
 # Image construction needs real host numeric ownership and loop/mount access.
 # Rootful Podman preserves the same UID/GID semantics as Docker on GitHub Actions.
+# Authenticate once before any long-running work, then refresh the sudo timestamp
+# in the background so an unattended build never stops later for a password.
+printf 'Authenticating sudo for unattended image build...\n'
 sudo -v
+
+sudo_keepalive_pid=""
+cleanup_sudo_keepalive() {
+    if [[ -n "$sudo_keepalive_pid" ]]; then
+        kill "$sudo_keepalive_pid" 2>/dev/null || true
+        wait "$sudo_keepalive_pid" 2>/dev/null || true
+    fi
+}
+trap cleanup_sudo_keepalive EXIT
+
+(
+    while sleep 60; do
+        sudo -n -v || exit 1
+    done
+) &
+sudo_keepalive_pid=$!
 
 printf 'Container runtime: %s\n' "$container_runtime"
 printf 'Parallel build jobs: %s\n' "$jobs"
@@ -78,7 +97,7 @@ printf 'Workspace: %s\n' "$workdir"
 printf 'Artifacts: %s\n' "$artifact_dir"
 printf 'Cache: %s\n' "$cache_dir"
 
-sudo rm -rf "$workdir" "$artifact_dir"
+sudo -n rm -rf "$workdir" "$artifact_dir"
 mkdir -p "$workdir" "$artifact_dir" "$cache_dir/kernel-packages"
 chmod 0755 "$workdir" "$artifact_dir" "$cache_dir" "$cache_dir/kernel-packages"
 
@@ -150,7 +169,7 @@ container_status=$?
 set -e
 
 mapfile -t built_packages < <(
-    sudo find "$workdir/packages" -maxdepth 1 -type f \
+    sudo -n find "$workdir/packages" -maxdepth 1 -type f \
         -name 'linux-uconsole-*-aarch64.pkg.tar*' \
         ! -name '*.sig' \
         2>/dev/null \
@@ -160,8 +179,8 @@ mapfile -t built_packages < <(
 if [[ "${#built_packages[@]}" -eq 1 ]]; then
     built_name="$(basename "${built_packages[0]}")"
     if [[ ! -s "$kernel_cache_dir/$built_name" ]]; then
-        sudo cp -a "${built_packages[0]}" "$kernel_cache_dir/$built_name"
-        sudo chown "$(id -u):$(id -g)" "$kernel_cache_dir/$built_name"
+        sudo -n cp -a "${built_packages[0]}" "$kernel_cache_dir/$built_name"
+        sudo -n chown "$(id -u):$(id -g)" "$kernel_cache_dir/$built_name"
         printf 'Cached linux-uconsole package for later local builds: %s\n' "$built_name"
     fi
 fi
@@ -173,12 +192,12 @@ if [[ "$container_status" -ne 0 ]]; then
 fi
 
 printf 'Building and validating partitioned microSD image...\n'
-sudo bash "$repo_root/scripts/build-stage10-image.sh" \
+sudo -n bash "$repo_root/scripts/build-stage10-image.sh" \
     "$workdir/rootfs" \
     "$workdir/packages" \
     "$artifact_dir"
 
-sudo chown -R "$(id -u):$(id -g)" "$artifact_dir"
+sudo -n chown -R "$(id -u):$(id -g)" "$artifact_dir"
 
 printf '\nPASS: local uConsole image build complete.\n'
 printf 'Artifacts:\n'
