@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$(id -u)" -ne 0 ]]; then
-    printf 'ERROR: Stage 10 image builder must run as root on the CI VM.\n' >&2
+    printf 'ERROR: Stage 10 image builder must run as root on the build host.\n' >&2
     exit 1
 fi
 

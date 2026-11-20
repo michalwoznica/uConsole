@@ -42,7 +42,11 @@ No explicit CPU cap is introduced.
 ## Rootfs/package construction
 
 `scripts/build-stage10-rootfs.sh` runs inside a disposable
-`archlinux:base-devel` Docker container.
+`archlinux:base-devel` container. `scripts/build-stage10-host.sh` is the shared
+host orchestration entry point: GitHub Actions selects Docker, while local Arch
+Linux development uses rootful Podman by default. Rootful local composition is
+required so the staged rootfs retains exact numeric UID/GID ownership before
+it is copied into the final filesystem image.
 
 It repeats the proven Stage 9B contract rather than consuming an opaque prior
 workflow artifact:
@@ -64,6 +68,25 @@ workflow artifact:
 14. verify package DB, installed files and boot artifacts.
 
 The integrated rootfs is emitted into the Stage 10 workspace.
+
+
+## Local build path
+
+The same complete image can be built locally from an Arch Linux host with:
+
+```bash
+bash ./scripts/build-stage10-host.sh
+```
+
+The default local outputs are written under `out/stage10/`; intermediate state
+and the input-keyed `linux-uconsole` package cache live under ignored `build/`
+paths. If image/userspace composition fails after the kernel package has
+already been produced, a retry reuses that unchanged package rather than
+recompiling the kernel. `UCONSOLE_REBUILD_KERNEL=1` forces a clean kernel
+package rebuild when required.
+
+Exact local prerequisites and override variables are documented in
+`docs/LOCAL_IMAGE_BUILD.md`.
 
 ## Concrete image geometry
 

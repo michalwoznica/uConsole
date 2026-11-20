@@ -14,6 +14,7 @@ on:
       - 'scripts/stage-arch-kernel-package.sh'
       - 'scripts/build-stage10-rootfs.sh'
       - 'scripts/build-stage10-image.sh'
+      - 'scripts/build-stage10-host.sh'
       - 'docs/STAGE10_FIRST_IMAGE.md'
       - '.github/workflows/build-stage10-image.yml'
   pull_request:
@@ -29,6 +30,7 @@ on:
       - 'scripts/stage-arch-kernel-package.sh'
       - 'scripts/build-stage10-rootfs.sh'
       - 'scripts/build-stage10-image.sh'
+      - 'scripts/build-stage10-host.sh'
       - 'docs/STAGE10_FIRST_IMAGE.md'
       - '.github/workflows/build-stage10-image.yml'
   workflow_dispatch:
@@ -48,26 +50,23 @@ jobs:
       - name: Prepare host image tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y             dosfstools             e2fsprogs             libarchive-tools             rsync             util-linux             zstd
+          sudo apt-get install -y \
+            dosfstools \
+            e2fsprogs \
+            libarchive-tools \
+            rsync \
+            util-linux \
+            zstd
           docker version
 
-      - name: Prepare Stage 10 workspace
+      - name: Build and validate uConsole image
+        env:
+          CONTAINER_RUNTIME: docker
+          UCONSOLE_BUILD_DIR: ${{ runner.temp }}/uconsole-stage10
+          UCONSOLE_ARTIFACT_DIR: ${{ runner.temp }}/uconsole-stage10/artifacts
+          UCONSOLE_CACHE_DIR: ${{ runner.temp }}/uconsole-stage10-cache
         run: |
-          rm -rf "$RUNNER_TEMP/uconsole-stage10"
-          mkdir -p "$RUNNER_TEMP/uconsole-stage10"
-          chmod 0755 "$RUNNER_TEMP/uconsole-stage10"
-
-      - name: Build authenticated integrated ARM rootfs
-        run: |
-          docker run --rm             -v "$GITHUB_WORKSPACE:/repo:ro"             -v "$RUNNER_TEMP/uconsole-stage10:/work"             archlinux:base-devel             bash -lc '
-              set -euo pipefail
-              pacman -Syu --needed --noconfirm                 aarch64-linux-gnu-gcc                 bc bison curl dtc flex git gnupg inetutils kmod                 libarchive libcap libelf openssl patch perl python rsync
-              bash /repo/scripts/build-stage10-rootfs.sh                 /work/rootfs                 /work/packages
-            '
-
-      - name: Build and validate partitioned microSD image
-        run: |
-          sudo bash ./scripts/build-stage10-image.sh             "$RUNNER_TEMP/uconsole-stage10/rootfs"             "$RUNNER_TEMP/uconsole-stage10/packages"             "$RUNNER_TEMP/uconsole-stage10/artifacts"
+          bash ./scripts/build-stage10-host.sh
 
       - name: Show artifact sizes
         run: |

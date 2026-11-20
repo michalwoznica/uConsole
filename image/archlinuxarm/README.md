@@ -124,3 +124,18 @@ login console, to initialize a unique local pacman keyring and populate the
 packaged Arch and Arch Linux ARM trust roots. The booted uConsole therefore
 retains normal package-signature verification and normal pacman sandboxing
 backed by the uConsole kernel's enabled Landlock LSM.
+
+## Local image build
+
+The complete image can also be built on an Arch Linux development host through
+`scripts/build-stage10-host.sh`. The local path uses rootful Podman so numeric
+ownership in the staged rootfs matches the Docker/GitHub Actions build model.
+GitHub Actions now calls the same host orchestration script with Docker rather
+than duplicating the container/rootfs/image commands in workflow YAML.
+
+Local artifacts are written to `out/stage10/` by default. A kernel package
+whose source/config/package inputs have not changed is cached under
+`build/stage10-cache/`, allowing userspace/image-composition failures to be
+retried without another full kernel compilation.
+
+See `docs/LOCAL_IMAGE_BUILD.md` for the exact host dependencies and command.

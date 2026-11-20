@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-09
-**Document revision:** 5.6
-**Current phase:** Stage 11 console-usability image rebuild correction; CI pacman sysroot keyring path fix pending validation, then broader hardware validation resumes
+**Status date:** 2026-11-10
+**Document revision:** 5.7
+**Current phase:** Stage 11 console-usability image rebuild correction; GitHub-hosted Actions quota exhausted, local Podman image-build path added so validation can continue immediately
 
 ---
 
@@ -562,6 +562,31 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-10 — Revision 5.7 / shared local Podman image-build path
+
+- Recorded GitHub-hosted Actions quota exhaustion as an infrastructure blocker,
+  not a project/build result.
+- Added `scripts/build-stage10-host.sh` as the shared host-level image-build
+  entry point.
+- Local Arch builds use rootful Podman; GitHub Actions uses Docker but now calls
+  the same orchestration script.
+- Rootful Podman is intentional so target rootfs numeric UID/GID ownership is
+  preserved rather than remapped through a rootless user namespace.
+- Added an input-keyed local cache for completed `linux-uconsole` packages.
+  Image/rootfs retries can therefore reuse an unchanged kernel package instead
+  of recompiling the kernel after failures later in the pipeline.
+- Added optional `UCONSOLE_PREBUILT_KERNEL_PACKAGE` support to the rootfs builder;
+  the package is still subjected to the existing PKGINFO contract checks before
+  installation.
+- Added `docs/LOCAL_IMAGE_BUILD.md` with Arch/Podman prerequisites, output paths,
+  cache behavior and force-rebuild controls.
+- Local build outputs remain under already-gitignored `build/` and `out/` trees.
+- Current unvalidated build correction remains the Stage 11 pacman sysroot
+  keyring-path change from revision 5.6; local image construction is now the
+  next validation path.
+
+
 
 ### 2026-11-09 — Revision 5.6 / CI pacman sysroot keyring path correction
 

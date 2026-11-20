@@ -204,11 +204,11 @@ test -s "$target_gpgdir/pubring.gpg"
 test -s "$target_gpgdir/trustdb.gpg"
 
 pacman_target() {
-    # This pacman process runs inside the disposable x86_64 Docker builder,
-    # not under the target uConsole kernel. GitHub-hosted Docker does not
-    # permit pacman to apply its Landlock filesystem sandbox to this sysroot,
-    # so disable only that host-side download restriction. The generated
-    # target /etc/pacman.conf is unchanged and retains normal sandboxing.
+    # This pacman process runs inside the disposable x86_64 build container,
+    # not under the target uConsole kernel. Do not depend on the build host's
+    # Landlock/container policy while composing a foreign-architecture sysroot;
+    # disable only that build-time filesystem restriction. The generated target
+    # /etc/pacman.conf is unchanged and retains normal sandboxing.
     pacman \
         --sysroot "$output_rootfs" \
         --arch aarch64 \
@@ -227,38 +227,51 @@ do
     pacman_target -Q "$pkg" >/dev/null
 done
 
-printf 'Staging linux-uconsole package workspace...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
-mkdir -p "$build_home"
+prebuilt_kernel_package="${UCONSOLE_PREBUILT_KERNEL_PACKAGE:-}"
 
-if ! id -u uconsole-build >/dev/null 2>&1; then
-    useradd \
-        --no-create-home \
-        --home-dir "$build_home" \
-        --shell /bin/bash \
-        uconsole-build
+if [[ -n "$prebuilt_kernel_package" ]]; then
+    printf 'Using prebuilt linux-uconsole package: %s\n' \
+        "$(basename "$prebuilt_kernel_package")"
+    if [[ ! -s "$prebuilt_kernel_package" ]]; then
+        printf 'ERROR: prebuilt linux-uconsole package is missing or empty: %s\n' \
+            "$prebuilt_kernel_package" >&2
+        exit 1
+    fi
+    cp -a "$prebuilt_kernel_package" "$output_package_dir/"
+else
+    printf 'Staging linux-uconsole package workspace...\n'
+    bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+    mkdir -p "$build_home"
+
+    if ! id -u uconsole-build >/dev/null 2>&1; then
+        useradd \
+            --no-create-home \
+            --home-dir "$build_home" \
+            --shell /bin/bash \
+            uconsole-build
+    fi
+
+    chown -R uconsole-build:uconsole-build \
+        "$package_stage" "$output_package_dir" "$build_home"
+
+    printf 'Cross-building real aarch64 linux-uconsole package with makepkg (-j%s)...\n' "$jobs"
+    runuser -u uconsole-build -- \
+        env \
+            HOME="$build_home" \
+            CARCH=aarch64 \
+            ARCH=arm64 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            MAKEFLAGS="-j${jobs}" \
+            PKGDEST="$output_package_dir" \
+            makepkg \
+                --ignorearch \
+                --nodeps \
+                --cleanbuild \
+                --force \
+                --noconfirm \
+                --nocheck \
+                --dir "$package_stage"
 fi
-
-chown -R uconsole-build:uconsole-build \
-    "$package_stage" "$output_package_dir" "$build_home"
-
-printf 'Cross-building real aarch64 linux-uconsole package with makepkg (-j%s)...\n' "$jobs"
-runuser -u uconsole-build -- \
-    env \
-        HOME="$build_home" \
-        CARCH=aarch64 \
-        ARCH=arm64 \
-        CROSS_COMPILE=aarch64-linux-gnu- \
-        MAKEFLAGS="-j${jobs}" \
-        PKGDEST="$output_package_dir" \
-        makepkg \
-            --ignorearch \
-            --nodeps \
-            --cleanbuild \
-            --force \
-            --noconfirm \
-            --nocheck \
-            --dir "$package_stage"
 
 mapfile -t package_files < <(
     find "$output_package_dir" -maxdepth 1 -type f \

@@ -68,3 +68,16 @@ Stage 10 adds:
 - `build-stage10-image.sh` — create, populate, validate and compress the
   deterministic partitioned microSD image, including checks that generated
   module dependency/alias metadata survives into the final root filesystem.
+
+## Shared local/CI image build entry point
+
+Stage 11 adds:
+
+- `build-stage10-host.sh` — orchestrate the complete Stage 10 image build from
+  a Linux host. GitHub Actions calls it with Docker; local Arch development
+  calls the same script with rootful Podman by default. It preserves the
+  existing authenticated-rootfs and image-builder contracts and caches a
+  completed `linux-uconsole` package by kernel-input hash so post-kernel image
+  failures can be retried without recompiling an unchanged kernel.
+
+Local usage is documented in `docs/LOCAL_IMAGE_BUILD.md`.
