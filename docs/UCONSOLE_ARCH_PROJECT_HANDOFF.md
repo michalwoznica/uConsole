@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-10
-**Document revision:** 5.7
-**Current phase:** Stage 11 console-usability image rebuild correction; GitHub-hosted Actions quota exhausted, local Podman image-build path added so validation can continue immediately
+**Status date:** 2026-11-20
+**Document revision:** 5.8
+**Current phase:** Stage 11 console-usability image rebuild correction; local Podman build path active, with rootful Podman host networking required for reliable package DNS on the current build host
 
 ---
 
@@ -562,6 +562,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-20 — Revision 5.8 / local Podman bridge-DNS correction
+
+- First local image-build attempt failed before kernel compilation because
+  rootful Podman's default bridge could not resolve Arch package mirrors.
+- Host DNS was healthy, and `sudo podman run --network host ...` resolved and
+  synchronized Arch repositories successfully.
+- Local Podman image builds now add `--network host`; Docker/GitHub Actions
+  behavior is unchanged.
+- No kernel, rootfs package-set, or target image networking policy changed.
+
 
 ### 2026-11-10 — Revision 5.7 / shared local Podman image-build path
 

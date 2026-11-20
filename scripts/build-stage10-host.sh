@@ -17,9 +17,11 @@ fi
 case "$container_runtime" in
     podman)
         container_cmd=(sudo podman)
+        container_run_args=(--network host)
         ;;
     docker)
         container_cmd=(docker)
+        container_run_args=()
         ;;
     *)
         printf 'ERROR: CONTAINER_RUNTIME must be podman or docker, got: %s\n' \
@@ -128,6 +130,7 @@ fi
 
 set +e
 "${container_cmd[@]}" run --rm \
+    "${container_run_args[@]}" \
     "${container_env[@]}" \
     -v "$repo_root:/repo:ro" \
     -v "$workdir:/work" \

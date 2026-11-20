@@ -29,6 +29,10 @@ The build script uses **rootful Podman** (`sudo podman`) deliberately. Image
 composition must preserve target numeric UID/GID ownership exactly; a rootless
 container would place the build in a user namespace and remap those IDs.
 
+For local Podman builds the container also uses host networking. This avoids
+rootful Podman's bridge DNS path interfering with package retrieval while still
+leaving GitHub Actions/Docker networking unchanged.
+
 The source repository is mounted read-only into the disposable
 `docker.io/library/archlinux:base-devel` container. The integrated ARM rootfs
 and kernel package are emitted into an ignored `build/` workspace. The final
