@@ -1,6 +1,6 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12C2 locked rebuild implemented; first local validation exposed and corrected read-only baseline cleanup bug; rerun pending  
+**Status:** Stage 12C COMPLETE — accepted baseline captured and offline locked rebuild physically executed successfully; Stage 12D update checker next  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
 **Date:** 2026-11-21
 
@@ -430,7 +430,7 @@ which is already outside Git because `out/` is ignored. Existing bundles are
 never overwritten. Missing package payloads are a hard failure; capture never
 consults live repositories to repair an incomplete accepted baseline cache.
 
-#### Stage 12C2 — local capture and lock promotion: IMPLEMENTED, LOCAL REBUILD VALIDATION NEXT
+#### Stage 12C2 — local capture, lock promotion and offline locked rebuild: COMPLETE
 
 The accepted Stage 11 bundle was captured successfully from the retained final
 workspace and passed the bundle verifier. Captured identity:
@@ -486,36 +486,45 @@ pinned rootfs pacman database is now extracted in one archive pass instead of
 reopening/decompressing the rootfs once per package entry. The already captured
 bundle is valid and does not need to be regenerated.
 
-**Next validation:** run `bash ./scripts/build-release-baseline.sh`. Success
-requires an exact accepted final package inventory with container networking
-disabled. No physical hardware retest is required merely to prove this
-maintenance-path reconstruction.
+**Validation result:** the offline locked rebuild completed successfully with
+an exact accepted final package inventory and container networking disabled. No
+physical hardware retest is required for this maintenance-path proof.
 
 Builder/toolchain capture remains required for future kernel-update candidates.
 It is not required for ordinary locked rebuilds because the exact accepted
 kernel package is reused.
 
-#### Stage 12C2 first locked-rebuild validation result
+#### Stage 12C2 locked-rebuild validation result
 
 The first offline locked rebuild reconstructed and validated the accepted rootfs
-through `pacman -Dk` and `linux-uconsole` file validation, then failed during
-cleanup only:
+through `pacman -Dk` and `linux-uconsole` file validation, then exposed a cleanup
+bug: the shared Stage 10 rootfs builder attempted to remove the preserved rootfs
+archive/sidecars from the read-only `/baseline` mount. That cleanup path was
+made mode-aware; normal Stage 10 behavior remained unchanged.
+
+The corrected offline locked rebuild then completed successfully. Final proof:
 
 ```text
-rm: cannot remove '/baseline/rootfs/...': Read-only file system
+baseline_id=archlinuxarm-stage11-2026-11-21
+builder_image_id=3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8
+final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+accepted_final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+compressed_image_sha256=a1f5bd497a4e033c53e44e92b2c536f536458f74767700143c7159b20a721eec
+accepted_compressed_image_sha256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
+byte_identical_image_required=no
 ```
 
-Root cause: the shared Stage 10 rootfs builder always removed its rootfs archive
-and provenance sidecars at the end. That is correct in normal/update mode where
-they are temporary downloads, but in locked mode those paths point into the
-immutable accepted baseline bundle mounted read-only at `/baseline`.
+Acceptance result:
 
-Correction: locked mode now removes only temporary keyring/build files and
-leaves the preserved rootfs archive plus `.md5`/`.sig` sidecars untouched.
-Normal Stage 10 cleanup behavior is unchanged.
+- exact final package name/version inventory: PASS;
+- accepted inventory hash equality: PASS;
+- preserved rootfs/package/kernel inputs only: PASS;
+- container networking disabled: PASS;
+- live `pacman -Syu`: not used;
+- separate locked-rebuild output path: PASS;
+- byte-identical compressed image: intentionally not required.
 
-The failed run did not alter the accepted baseline bundle. Re-run the same
-`build-release-baseline.sh` command to continue Stage 12C2 validation.
+Stage 12C is complete.
 
 ### Stage 12D — non-destructive update checker
 

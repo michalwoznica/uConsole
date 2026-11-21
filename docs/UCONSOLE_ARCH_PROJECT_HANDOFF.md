@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.7
-**Current phase:** Stage 12C2 first locked-rebuild validation exposed a read-only baseline cleanup bug; correction implemented, rerun next
+**Document revision:** 6.8
+**Current phase:** Stage 12C accepted-baseline capture and offline locked rebuild COMPLETE; Stage 12D non-destructive update checker next
 
 ---
 
@@ -344,7 +344,7 @@ Stage 12 is split into bounded maintenance checkpoints:
 
 - **12A:** audit/classify all build inputs as pinned, rolling or generated;
 - **12B:** define locked-rebuild versus intentional-update policy — COMPLETE;
-- **12C:** capture the accepted baseline package inventory/payload bundle and implement locked rebuild — LOCAL VALIDATION NEXT;
+- **12C:** capture the accepted baseline package inventory/payload bundle and implement locked rebuild — COMPLETE;
 - **12D:** add a non-destructive update checker;
 - **12E:** define/automate update-specific validation;
 - **12F:** prove the maintenance path against the existing known-good pins.
@@ -616,7 +616,7 @@ A normal locked rebuild reuses the exact validated `linux-uconsole` package.
 Therefore exact kernel toolchain capture is required when producing a new kernel
 package, not for ordinary baseline reconstruction.
 
-### Stage 12C — accepted baseline capture and locked rebuild: CLEANUP CORRECTED, LOCAL RERUN NEXT
+### Stage 12C — accepted baseline capture and locked rebuild: COMPLETE
 
 The accepted Stage 11 workspace was captured successfully and verified as:
 
@@ -629,11 +629,11 @@ removed_package_count=93
 target_payload_count=140
 ```
 
-Those identities are promoted into `release-baseline.lock`. The verifier now
-anchors the local bundle directly to Git metadata before checking every file
-hash and package payload.
+Those identities are promoted into `release-baseline.lock`. The verifier anchors
+the local bundle directly to Git metadata before checking every file hash and
+package payload.
 
-`scripts/build-release-baseline.sh` implements the first locked rebuild path:
+`scripts/build-release-baseline.sh` implements the locked rebuild path:
 
 - preserved rootfs only;
 - preserved package payloads only;
@@ -644,22 +644,32 @@ hash and package payload.
 - exact final package name/version inventory required;
 - separate locked-rebuild work/output directories.
 
-The capture performance bug discovered during the successful first capture is
-also corrected for future captures: the rootfs package database is extracted in
-one archive pass rather than repeatedly decompressing the rootfs. The existing
-accepted bundle remains valid and does not need recapture.
+The first validation exposed only a mode-specific cleanup bug: the shared Stage
+10 rootfs builder tried to remove immutable rootfs inputs mounted read-only from
+the baseline bundle. That was corrected without changing normal Stage 10
+cleanup semantics.
 
-### NEXT — validate the locked rebuild locally
-
-Run:
+The corrected offline locked rebuild then completed successfully:
 
 ```text
-bash ./scripts/build-release-baseline.sh
+baseline_id=archlinuxarm-stage11-2026-11-21
+builder_image_id=3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8
+final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+accepted_final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+compressed_image_sha256=a1f5bd497a4e033c53e44e92b2c536f536458f74767700143c7159b20a721eec
+accepted_compressed_image_sha256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
+byte_identical_image_required=no
 ```
 
-Stage 12C closes after that command proves an exact accepted final package
-inventory with container networking disabled. Byte-identical image hashes are
-not required.
+This proves the accepted Stage 11 logical userspace/package baseline can be
+reconstructed without live repository access. The differing compressed image
+hash is expected and accepted because Stage 12 does not require byte-identical
+filesystem images.
+
+### NEXT — Stage 12D non-destructive update checker
+
+Implement a read-only checker that reports available upstream rootfs/kernel
+changes without modifying any lock, source file or repository state.
 
 
 ---
@@ -679,6 +689,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.8 / Stage 12C complete
+
+- Recorded successful corrected offline locked rebuild.
+- Confirmed exact final package inventory hash equality with the accepted Stage
+  11 baseline.
+- Confirmed reconstruction used preserved inputs with container networking
+  disabled and no live `pacman -Syu`.
+- Recorded builder image ID
+  `3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8`.
+- Recorded locked-rebuild compressed image SHA-256
+  `a1f5bd497a4e033c53e44e92b2c536f536458f74767700143c7159b20a721eec`.
+- Reaffirmed that byte-identical image output is not the Stage 12 acceptance
+  contract.
+- Marked Stage 12C complete and set Stage 12D read-only update checker next.
 
 ### 2026-11-21 — Revision 6.7 / Stage 12C2 locked-rebuild cleanup correction
 
