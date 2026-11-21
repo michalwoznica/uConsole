@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-20
-**Document revision:** 5.9
-**Current phase:** Stage 11 console-usability image rebuild correction; local Podman build path active, with upfront sudo authentication/keepalive and rootful Podman host networking
+**Status date:** 2026-11-21
+**Document revision:** 6.0
+**Current phase:** Stage 11 physical hardware pass complete; consolidated image corrections implemented, single rebuild/regression pass pending
 
 ---
 
@@ -367,24 +367,31 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - full kernel/modules/DTB build and package construction;
 - authenticated Arch Linux ARM rootfs integration;
 - deterministic partition/boot contract;
-- first physical uConsole boot into Arch Linux ARM userspace;
-- physical CWU50 display output after correcting Stage 10 backlight/module
-  integration;
-- physical OCP8178 backlight operation;
-- VC4/DRM with a live DSI connector on the physical device;
-- built-in keyboard sufficient for local console login and commands.
-- Wi-Fi hardware/driver can associate and pass IPv4 traffic on the physical device;
-- pacman 7 download sandbox works when Landlock is activated;
+- physical boot from microSD into Arch Linux ARM userspace;
+- physical CWU50 panel output and VC4/KMS/DSI console path;
+- physical OCP8178 backlight operation and direct sysfs brightness control;
+- built-in keyboard, Consumer Control input interface and correct
+  `KEY_BRIGHTNESSUP` / `KEY_BRIGHTNESSDOWN` event generation;
+- Wi-Fi association, IPv4 traffic, DNS through NetworkManager/systemd-resolved
+  and profile/password persistence across reboot;
+- normal `pacman -Syu` on the physical image with the target Landlock sandbox;
+- built-in speaker output and headphone-jack output;
+- GPIO10 headphone detect and the existing amplifier-switch driver logic after
+  live no-pull configuration, including correct speaker mute/restore behavior;
+- battery charging/discharging state and AXP22x AC-online transition reporting;
+- power-button input path;
+- Bluetooth controller power/rfkill state plus real LE RF discovery through
+  the kernel management path (`btmgmt find`);
+- USB mass-storage detection, mount and unmount;
+- reboot and shutdown/power-off behavior exercised during physical validation;
 - console printk level 3 prevents routine kernel/device messages from overwriting tty1.
 
 ### Still unproven / incomplete
 
-- full Wi-Fi throughput/reliability validation and Bluetooth validation;
-- audio output and headphone/speaker switching validation;
-- battery/charging/fuel-gauge validation;
-- power-button behavior;
-- broader USB/SD/GPU functional and reliability testing;
-- reboot/shutdown reliability beyond the diagnostic shutdown test;
+- post-rebuild regression confirmation for the three Stage 11 image corrections;
+- interactive `bluetoothctl` discovery behavior: lower-level RF discovery is
+  proven, but the earlier one-shot/non-interactive command did not demonstrate
+  BlueZ discovery starting;
 - long-duration hardware reliability;
 - byte-for-byte image reproducibility across independent builds;
 - ARMtix/OpenRC image target.
@@ -513,37 +520,61 @@ Treat Git history as permanently public. Never commit user/host identifiers,
 usernames, account IDs, machine-specific absolute paths or other PII. Continue
 privacy audits before every checkpoint and before publication.
 
-### Stage 11 — physical hardware validation: IN PROGRESS
+### Stage 11 — physical hardware validation: PHYSICAL PASS COMPLETE / REBUILD REGRESSION PENDING
 
-Already physically proven:
+The current locally built image completed the practical physical hardware pass.
+See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the evidence and exact test
+matrix.
 
-- kernel/rootfs boot to Arch Linux ARM login console;
-- CWU50 panel output;
-- OCP8178 backlight;
-- VC4/DRM DSI path;
-- built-in keyboard sufficient for login and shell commands;
-- controlled systemd shutdown from the diagnostic service.
+Physically proven on the current image:
 
-### NEXT — rebuild once with Stage 11 usability fixes, then resume hardware validation
+- microSD boot to visible Arch console;
+- CWU50 panel + VC4/KMS/DSI display path;
+- OCP8178 backlight hardware and direct sysfs brightness control;
+- keyboard input and correct brightness-key events;
+- Wi-Fi, DNS, NetworkManager profile persistence and normal `pacman -Syu`;
+- built-in speaker and headphone audio;
+- headphone-detect GPIO and amplifier switching after live no-pull correction;
+- battery charge/discharge and AC-online transitions;
+- power-button input;
+- Bluetooth controller/kernel/RF discovery through `btmgmt find`;
+- USB mass-storage detection/mount/unmount;
+- reboot and shutdown/power-off behavior.
 
-Physical testing exposed base-image usability gaps that unnecessarily slowed
-validation. The next image revision folds those findings into the build:
+The physical pass justified exactly three consolidated image corrections:
 
-- activate Landlock by default with `CONFIG_LSM="landlock"` so pacman 7's
-  download sandbox works without a boot-time workaround;
-- use console log level 3 so routine kernel/device messages stay out of tty1;
-- install a compact console-first administration/validation package set,
-  including NetworkManager (`nmcli`/`nmtui`), USB, ALSA, Bluetooth, input,
-  I2C, Ethernet, thermal, stress, Raspberry Pi, throughput and memory tools;
-- make NetworkManager the default manager for normal interfaces;
-- keep `systemd-resolved` and explicitly wire `/etc/resolv.conf` to its stub;
-- disable systemd-networkd services so two network managers do not compete;
-- initialize a unique pacman keyring automatically on first boot so package
-  signature verification works without any manual bootstrap command.
+1. add `gpio=10=ip,np` to the Raspberry Pi boot policy so GPIO10 headphone
+   detect works from boot without a manual `pinctrl` command;
+2. install/enable a console-only brightness-key handler that consumes the
+   already-correct `KEY_BRIGHTNESSUP/DOWN` events and adjusts the working
+   backlight sysfs interface;
+3. configure Arch systemd-logind with `HandlePowerKey=ignore` so a brief
+   accidental power-button tap does not immediately power the device off.
 
-After the rebuilt image boots and networking/package management are usable,
-continue the remaining Stage 11 hardware matrix directly rather than spending
-more time bootstrapping diagnostic tools.
+No kernel driver changes are required for those findings. The headphone switch,
+backlight driver and keyboard input path were all physically proven once their
+missing boot/userspace policy was supplied.
+
+Bluetooth is intentionally unchanged in this checkpoint. Direct `btmgmt find`
+proved real RF discovery, while earlier one-shot/non-interactive
+`bluetoothctl scan on` calls only reported `SetDiscoveryFilter success`. That is
+not sufficient evidence for a package pin, downgrade or other reproducible
+image workaround. Interactive `bluetoothctl` discovery remains a focused
+post-rebuild regression check.
+
+### NEXT — one consolidated local rebuild and focused regression pass
+
+Build the image once with the Stage 11 corrections, flash it, then check only:
+
+- visible boot plus Wi-Fi/DNS/`pacman -Syu` sanity;
+- headphone insertion/removal without any manual `pinctrl` command;
+- `Fn + <` / `Fn + >` changing brightness;
+- a brief power-button press no longer immediately shutting the system down;
+- interactive `bluetoothctl` discovery, with `btmgmt find` retained as the
+  known-working lower-level control if comparison is needed.
+
+Do not repeat the full hardware enumeration unless one of those regressions
+fails.
 
 ---
 
@@ -562,6 +593,29 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.0 / Stage 11 physical pass and consolidated image corrections
+
+- Completed the practical Stage 11 physical hardware matrix on the locally
+  built Arch Linux ARM image.
+- Physically validated speaker/headphone audio, battery/charging transitions,
+  power-button input, Bluetooth kernel/RF discovery, USB storage, direct
+  backlight control and brightness-key input events in addition to the earlier
+  boot/display/network results.
+- Isolated headphone switching to missing GPIO10 no-pull boot policy and added
+  `gpio=10=ip,np`; left the proven amplifier-switch driver unchanged.
+- Added a console-only brightness-key service that consumes the proven
+  `KEY_BRIGHTNESSUP/DOWN` events and adjusts the working backlight sysfs
+  control; no graphical stack was added.
+- Added an Arch logind drop-in with `HandlePowerKey=ignore` so a brief power-key
+  tap does not immediately shut down the device; left the working PMIC/kernel
+  input path unchanged.
+- Recorded Bluetooth lower-level RF discovery as physically proven and
+  deliberately avoided a speculative BlueZ pin/downgrade; interactive
+  `bluetoothctl` remains a focused rebuild regression check.
+- Added `docs/STAGE11_PHYSICAL_VALIDATION.md` as the durable evidence/fix
+  handoff for this physical pass.
+- Set one consolidated local rebuild and targeted regression pass as next.
 
 ### 2026-11-20 — Revision 5.9 / unattended local-build sudo handling
 

@@ -402,6 +402,15 @@ install -Dm644 \
 install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/uconsole-pacman-keyring-init.service" \
     "$output_rootfs/usr/lib/systemd/system/uconsole-pacman-keyring-init.service"
+install -Dm755 \
+    "$repo_root/image/archlinuxarm/rootfs/uconsole-brightness-keys" \
+    "$output_rootfs/usr/lib/uconsole/uconsole-brightness-keys"
+install -Dm644 \
+    "$repo_root/image/archlinuxarm/rootfs/uconsole-brightness-keys.service" \
+    "$output_rootfs/usr/lib/systemd/system/uconsole-brightness-keys.service"
+install -Dm644 \
+    "$repo_root/image/archlinuxarm/rootfs/logind-uconsole.conf" \
+    "$output_rootfs/etc/systemd/logind.conf.d/50-uconsole-power-key.conf"
 
 ln -sfn ../run/systemd/resolve/stub-resolv.conf \
     "$output_rootfs/etc/resolv.conf"
@@ -419,7 +428,8 @@ systemctl --root="$output_rootfs" enable \
     NetworkManager.service \
     systemd-resolved.service \
     bluetooth.service \
-    uconsole-pacman-keyring-init.service >/dev/null
+    uconsole-pacman-keyring-init.service \
+    uconsole-brightness-keys.service >/dev/null
 
 printf 'Validating integrated Stage 10 rootfs tree...\n'
 pacman_target -Q linux-uconsole |
@@ -453,6 +463,13 @@ systemctl --root="$output_rootfs" is-enabled NetworkManager.service | grep -Fxq 
 systemctl --root="$output_rootfs" is-enabled systemd-resolved.service | grep -Fxq enabled
 systemctl --root="$output_rootfs" is-enabled bluetooth.service | grep -Fxq enabled
 systemctl --root="$output_rootfs" is-enabled uconsole-pacman-keyring-init.service | grep -Fxq enabled
+systemctl --root="$output_rootfs" is-enabled uconsole-brightness-keys.service | grep -Fxq enabled
+grep -Fxq 'HandlePowerKey=ignore' \
+    "$output_rootfs/etc/systemd/logind.conf.d/50-uconsole-power-key.conf"
+grep -Fq 'KEY_BRIGHTNESSDOWN' \
+    "$output_rootfs/usr/lib/uconsole/uconsole-brightness-keys"
+grep -Fq 'KEY_BRIGHTNESSUP' \
+    "$output_rootfs/usr/lib/uconsole/uconsole-brightness-keys"
 [[ "$(systemctl --root="$output_rootfs" is-enabled systemd-networkd.service 2>/dev/null || true)" == "disabled" ]]
 
 pacman_target -Dk

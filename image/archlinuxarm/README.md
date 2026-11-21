@@ -139,3 +139,28 @@ whose source/config/package inputs have not changed is cached under
 retried without another full kernel compilation.
 
 See `docs/LOCAL_IMAGE_BUILD.md` for the exact host dependencies and command.
+
+## Stage 11 physical-validation corrections
+
+The physical hardware pass proved the core uConsole hardware paths and exposed
+three narrow image-policy/usability gaps. The Arch target now includes the
+corresponding corrections:
+
+- `gpio=10=ip,np` in `boot/config-uconsole-cm4.txt`, proven live to make the
+  GPIO10 headphone-detect signal track jack insertion so the existing
+  amplifier-switch driver can mute/unmute the speaker correctly;
+- `uconsole-brightness-keys.service`, a console-only handler for the proven
+  `KEY_BRIGHTNESSUP` / `KEY_BRIGHTNESSDOWN` events that adjusts the already
+  working `/sys/class/backlight/backlight` interface;
+- `/etc/systemd/logind.conf.d/50-uconsole-power-key.conf` with
+  `HandlePowerKey=ignore`, preventing an accidental brief power-button tap from
+  immediately powering the system off while preserving explicit console
+  shutdown.
+
+Bluetooth RF discovery is physically proven through `btmgmt find`. No BlueZ
+package pin/downgrade or other speculative Bluetooth workaround is included in
+this revision; interactive `bluetoothctl` discovery remains a focused rebuild
+regression check.
+
+See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the physical evidence and the
+bounded post-rebuild regression matrix.

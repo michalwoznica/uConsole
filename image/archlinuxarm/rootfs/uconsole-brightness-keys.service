@@ -1,0 +1,12 @@
+[Unit]
+Description=uConsole console brightness-key handler
+After=systemd-udevd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/uconsole/uconsole-brightness-keys
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

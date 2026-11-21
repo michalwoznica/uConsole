@@ -13,6 +13,11 @@ max_framebuffers=2
 # OCP8178 backlight driver takes ownership of GPIO9.
 gpio=9=op,dh
 
+# uConsole headphone detect: input with no internal pull. Physical validation
+# proved GPIO10 stays low with the default bias but tracks jack insertion after
+# applying the equivalent runtime setting: pinctrl set 10 ip pn.
+gpio=10=ip,np
+
 # CM4 USB2 host path used by uConsole peripherals.
 otg_mode=1
 

@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -u
+
+backlight_dir="/sys/class/backlight/backlight"
+input_inventory="/proc/bus/input/devices"
+consumer_name='ClockworkPi uConsole Consumer Control'
+
+find_consumer_event() {
+    awk -v wanted="$consumer_name" '
+        BEGIN { RS=""; FS="\n" }
+        index($0, "N: Name=\"" wanted "\"") {
+            for (i = 1; i <= NF; i++) {
+                if ($i !~ /^H: Handlers=/)
+                    continue
+
+                n = split($i, fields, /[[:space:]]+/)
+                for (j = 1; j <= n; j++) {
+                    if (fields[j] ~ /^event[0-9]+$/) {
+                        print "/dev/input/" fields[j]
+                        exit
+                    }
+                }
+            }
+        }
+    ' "$input_inventory"
+}
+
+adjust_brightness() {
+    local delta="$1"
+    local current max next
+
+    [[ -r "$backlight_dir/brightness" && -r "$backlight_dir/max_brightness" ]] || return 0
+
+    read -r current < "$backlight_dir/brightness"
+    read -r max < "$backlight_dir/max_brightness"
+
+    [[ "$current" =~ ^[0-9]+$ && "$max" =~ ^[0-9]+$ ]] || return 0
+
+    next=$((current + delta))
+    ((next < 0)) && next=0
+    ((next > max)) && next=max
+
+    if ((next != current)); then
+        printf '%s\n' "$next" > "$backlight_dir/brightness"
+    fi
+}
+
+while :; do
+    event_device="$(find_consumer_event)"
+
+    if [[ -z "$event_device" || ! -e "$event_device" ]]; then
+        sleep 2
+        continue
+    fi
+
+    while IFS= read -r line; do
+        case "$line" in
+            *'code 224 (KEY_BRIGHTNESSDOWN), value 1'*)
+                adjust_brightness -1
+                ;;
+            *'code 225 (KEY_BRIGHTNESSUP), value 1'*)
+                adjust_brightness 1
+                ;;
+        esac
+    done < <(stdbuf -oL evtest "$event_device" 2>/dev/null)
+
+    sleep 1
+done

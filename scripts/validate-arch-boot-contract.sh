@@ -82,6 +82,7 @@ printf 'Checking Raspberry Pi firmware boot policy...\n'
 
 for required in \
     'arm_64bit=1' \
+    'gpio=10=ip,np' \
     'otg_mode=1' \
     'dtparam=audio=on' \
     'dtoverlay=audremap,pins_12_13' \

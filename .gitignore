@@ -17,6 +17,9 @@ kernel/src/
 *.img.xz
 *.img.zst
 
+#internal documents
+.handoff
+
 # Editor/OS files
 *.swp
 *.swo
