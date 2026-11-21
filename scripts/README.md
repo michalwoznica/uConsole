@@ -112,3 +112,19 @@ Stage 12C2 adds:
 
 Locked rebuild output is isolated under `build/locked-rebuild/` and
 `out/locked-rebuild/`; it does not overwrite Stage 10 artifacts.
+
+## Stage 12 read-only update checker
+
+Stage 12D adds:
+
+- `check-updates.sh` — verify that the accepted baseline, rootfs lock, kernel
+  source lock and `linux-uconsole` PKGBUILD still agree, then query the
+  configured Arch Linux ARM rootfs mirror and Raspberry Pi `rpi-6.18.y` branch
+  for newer candidates. The checker never edits locks, downloads build
+  payloads, changes package databases or updates the repository. It snapshots
+  Git status before/after and fails if repository state changes while it runs.
+
+A candidate being available is informational and returns success. Failure to
+query an upstream source reliably is distinct from "no update" and returns a
+non-zero status.
+

@@ -526,20 +526,42 @@ Acceptance result:
 
 Stage 12C is complete.
 
-### Stage 12D — non-destructive update checker
+### Stage 12D — non-destructive update checker: IMPLEMENTED, LOCAL VALIDATION PENDING
 
-Add a read-only tool that reports available upstream changes without modifying
-locks or the repository.
+`scripts/check-updates.sh` is the read-only discovery path. It first verifies
+that the accepted baseline still agrees with:
 
-It should report at least:
+- `image/archlinuxarm/rootfs.lock`;
+- `kernel/source.lock`;
+- `image/archlinuxarm/packages/linux-uconsole/PKGBUILD`.
 
-- current pinned Arch rootfs release;
-- newer rootfs candidate, if available;
-- current Raspberry Pi kernel release/commit;
-- newer candidate on the selected kernel line;
-- whether local project source locks still match package metadata.
+Only after those local invariants pass does it query upstream. For the Arch
+rootfs it reads the already configured rootfs mirror directory and selects the
+latest versioned Raspberry Pi AArch64 release; if a mirror disables directory
+listing, it falls back to comparing the versioned and moving `-latest` MD5
+sidecars without downloading either rootfs archive. For the kernel it queries
+only the selected Raspberry Pi `rpi-6.18.y` branch, records its branch-head
+commit and derives the upstream version from that commit's Makefile.
 
-The checker must never silently update a pin.
+The checker reports:
+
+- pinned and candidate Arch rootfs release;
+- whether an Arch rootfs candidate differs from the pin;
+- pinned Raspberry Pi kernel version/commit;
+- candidate `rpi-6.18.y` version/commit;
+- whether the kernel branch head differs from the pin;
+- local lock/package consistency;
+- `repository_mutated=no`.
+
+It creates no files and performs no package/build transaction. Git status is
+snapshotted before and after the network queries; a state change is treated as
+a failure. An available update is informational and does not change exit
+status. An upstream source that cannot be queried reliably is reported as
+unknown and causes a non-zero exit rather than being misreported as
+"no update".
+
+No project pin is ever changed by this script. Local execution is the remaining
+Stage 12D validation step.
 
 ### Stage 12E — update workflow and validation matrix
 

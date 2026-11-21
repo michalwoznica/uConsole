@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.8
-**Current phase:** Stage 12C accepted-baseline capture and offline locked rebuild COMPLETE; Stage 12D non-destructive update checker next
+**Document revision:** 6.9
+**Current phase:** Stage 12D non-destructive update checker IMPLEMENTED; local validation pending
 
 ---
 
@@ -666,10 +666,29 @@ reconstructed without live repository access. The differing compressed image
 hash is expected and accepted because Stage 12 does not require byte-identical
 filesystem images.
 
-### NEXT — Stage 12D non-destructive update checker
+### Stage 12D — non-destructive update checker: IMPLEMENTED, LOCAL VALIDATION PENDING
 
-Implement a read-only checker that reports available upstream rootfs/kernel
-changes without modifying any lock, source file or repository state.
+Added `scripts/check-updates.sh`. Its contract is:
+
+- verify `release-baseline.lock`, `rootfs.lock`, `kernel/source.lock` and the
+  `linux-uconsole` PKGBUILD agree before querying upstream;
+- inspect the configured Arch Linux ARM rootfs mirror for the latest versioned
+  Raspberry Pi AArch64 rootfs, with a `-latest` sidecar comparison fallback;
+- inspect only Raspberry Pi Linux `rpi-6.18.y` and report branch-head
+  version/commit;
+- report update availability without changing any pin;
+- create no files and perform no package/build transaction;
+- snapshot Git status before/after and fail if repository state changes;
+- treat upstream query failure as unknown/error rather than "no update".
+
+Local execution is the validation boundary. Do not proceed to update-workflow
+implementation until the checker has run successfully and its output has been
+reviewed.
+
+### NEXT
+
+Run `bash ./scripts/check-updates.sh` from the repository and review the Stage
+12D summary.
 
 
 ---
@@ -689,6 +708,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.9 / Stage 12D update checker candidate
+
+- Added read-only `scripts/check-updates.sh`.
+- Added local consistency checks across accepted baseline, rootfs lock, kernel
+  source lock and `linux-uconsole` package metadata.
+- Added Arch Linux ARM rootfs candidate discovery using the configured mirror,
+  with a sidecar-only fallback when directory listing is unavailable.
+- Added Raspberry Pi `rpi-6.18.y` branch-head commit/version discovery.
+- Added Git-status before/after protection to prove the checker does not mutate
+  repository state.
+- Upstream query failure is distinct from no-update state.
+- No pin, build logic, package transaction or accepted baseline changed.
+- Stage 12D remains open pending one local execution and output review.
 
 ### 2026-11-21 — Revision 6.8 / Stage 12C complete
 
