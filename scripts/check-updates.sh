@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+trap 'rc=$?; printf "ERROR: update checker aborted unexpectedly at line %s (exit %s).\n" "$LINENO" "$rc" >&2' ERR
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 baseline_lock="$repo_root/image/archlinuxarm/release-baseline.lock"
 rootfs_lock="$repo_root/image/archlinuxarm/rootfs.lock"
@@ -184,9 +186,12 @@ kernel_candidate_commit="$(
 if [[ "$kernel_candidate_commit" =~ ^[0-9a-f]{40}$ ]]; then
     kernel_makefile="$(curl_get "https://raw.githubusercontent.com/raspberrypi/linux/${kernel_candidate_commit}/Makefile" 2>/dev/null || true)"
     if [[ -n "$kernel_makefile" ]]; then
-        kver="$(printf '%s\n' "$kernel_makefile" | awk -F' = ' '/^VERSION = /{print $2; exit}')"
-        kpatch="$(printf '%s\n' "$kernel_makefile" | awk -F' = ' '/^PATCHLEVEL = /{print $2; exit}')"
-        ksub="$(printf '%s\n' "$kernel_makefile" | awk -F' = ' '/^SUBLEVEL = /{print $2; exit}')"
+        # Parse the fetched Makefile directly. Avoid a printf|awk pipeline here:
+        # with pipefail, awk exiting after its first match can SIGPIPE printf and
+        # make the checker terminate under set -e even though parsing succeeded.
+        kver="$(awk -F' = ' '/^VERSION = /{print $2; exit}' <<<"$kernel_makefile")"
+        kpatch="$(awk -F' = ' '/^PATCHLEVEL = /{print $2; exit}' <<<"$kernel_makefile")"
+        ksub="$(awk -F' = ' '/^SUBLEVEL = /{print $2; exit}' <<<"$kernel_makefile")"
         if [[ "$kver" =~ ^[0-9]+$ && "$kpatch" =~ ^[0-9]+$ && "$ksub" =~ ^[0-9]+$ ]]; then
             kernel_candidate_version="${kver}.${kpatch}.${ksub}"
             kernel_query_status=ok

@@ -1682,3 +1682,13 @@ In a fresh ChatGPT conversation:
 - Selected Raspberry Pi Linux 6.18 LTS architecture.
 - Defined minimal uConsole patch strategy.
 - Defined staged implementation and validation plan.
+
+### 2026-11-21 — Stage 12D update-checker SIGPIPE correction
+
+- First physical/local Stage 12D run produced no report despite successful upstream queries.
+- Debug tracing proved the checker reached the current Raspberry Pi `rpi-6.18.y` branch head and fetched its Makefile.
+- Root cause: `set -o pipefail` treated the intentional early exit from `awk` in a `printf | awk` pipeline as a failure when `printf` received SIGPIPE while writing the large kernel Makefile.
+- Kernel VERSION/PATCHLEVEL/SUBLEVEL parsing now uses direct here-strings, removing the SIGPIPE path.
+- Added an `ERR` trap so any future unexpected checker termination prints the failing line and exit status rather than exiting silently.
+- No source pins, accepted baseline identity, build behavior, or update policy changed.
+
