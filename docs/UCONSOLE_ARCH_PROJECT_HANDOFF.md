@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.2
-**Current phase:** Stage 11 physical hardware validation COMPLETE; Stage 12 reproducible update/rebuild path next
+**Document revision:** 6.3
+**Current phase:** Stage 12A update/rebuild input audit COMPLETE; Stage 12B release/update policy next
 
 ---
 
@@ -340,6 +340,18 @@ Validate at minimum:
 
 ### Stage 12 — Reproducible update/rebuild path
 
+Stage 12 is split into bounded maintenance checkpoints:
+
+- **12A:** audit/classify all build inputs as pinned, rolling or generated;
+- **12B:** define locked-rebuild versus intentional-update policy;
+- **12C:** strengthen baseline/manifests with final package/toolchain identity;
+- **12D:** add a non-destructive update checker;
+- **12E:** define/automate update-specific validation;
+- **12F:** prove the maintenance path against the existing known-good pins.
+
+See `docs/STAGE12_UPDATE_REBUILD.md`.
+
+
 ### Later milestone — ARMtix/OpenRC image target
 
 Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific userspace integration with ARMtix/OpenRC equivalents.
@@ -390,7 +402,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 - long-duration hardware reliability;
 - byte-for-byte image reproducibility across independent builds;
-- Stage 12 reproducible update/rebuild path;
+- Stage 12B-F reproducible update/rebuild implementation;
 - ARMtix/OpenRC image target.
 
 ---
@@ -561,12 +573,35 @@ The kernel package hash remained unchanged across the Stage 11 image fixes,
 which is expected because the physically proven kernel/hardware layer did not
 need modification.
 
-### NEXT — Stage 12 reproducible update/rebuild path
+### Stage 12A — reproducible update/rebuild input audit: COMPLETE
 
-Stage 11 requires no further broad physical regression. Continue with the
-planned Stage 12 work: define and validate the reproducible update/rebuild path
-for the completed Arch Linux ARM image while preserving the proven hardware
-baseline.
+The current repository was audited without changing build behavior.
+
+Key result:
+
+- kernel source, uConsole hardware sources, starting rootfs and image geometry
+  are explicitly pinned;
+- the final Arch userspace is **rolling** because the image builder runs
+  `pacman -Syu` against live Arch Linux ARM repositories;
+- the disposable `archlinux:base-devel` build environment is also rolling and
+  performs its own live `pacman -Syu`;
+- host filesystem/compression tools and GitHub runner/action versions are not
+  immutable;
+- the current project is structurally reproducible but does not yet guarantee
+  an exact final-userspace or byte-identical rebuild.
+
+The audit is documented in `docs/STAGE12_UPDATE_REBUILD.md`.
+
+### NEXT — Stage 12B release/update policy
+
+Define two explicit modes before changing build logic:
+
+1. a locked rebuild of an already accepted baseline;
+2. an intentional update candidate that is allowed to consume newer inputs.
+
+The design must not depend on an unofficial third-party Arch Linux ARM archive
+remaining available. Kernel and userspace updates should normally remain
+separate so regressions are attributable.
 
 
 ---
@@ -586,6 +621,26 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.3 / Stage 12A input audit complete
+
+- Audited the current Stage 10/11 build from the reconstructed committed
+  checkpoint state without changing build behavior.
+- Classified exact kernel/rootfs/image/hardware inputs as pinned.
+- Identified the final target `pacman -Syu` transaction as the highest-impact
+  rolling input: the 2026.08 archive is pinned, but the final userspace package
+  versions are not.
+- Identified the mutable `archlinux:base-devel` container plus its own
+  `pacman -Syu` as a second rolling layer affecting kernel toolchain identity.
+- Recorded local host tools and GitHub runner/action versions as additional
+  non-immutable build-environment inputs.
+- Recorded the PKGBUILD `SKIP` checksums for immutable remote commit URLs as an
+  integrity-hardening gap.
+- Confirmed that official Arch Linux ARM mirrors track current packages and
+  that historical snapshot services discussed by the community are
+  third-party; Stage 12 should not depend on them for exact rebuilds.
+- Added `docs/STAGE12_UPDATE_REBUILD.md`.
+- Set Stage 12B locked-rebuild versus intentional-update policy as next.
 
 ### 2026-11-21 — Revision 6.2 / Stage 11 complete
 
