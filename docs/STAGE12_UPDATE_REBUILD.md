@@ -1,6 +1,6 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12C1 baseline-capture tooling IMPLEMENTED; local accepted-baseline capture pending  
+**Status:** Stage 12C2 locked rebuild implemented; first local validation exposed and corrected read-only baseline cleanup bug; rerun pending  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
 **Date:** 2026-11-21
 
@@ -494,6 +494,28 @@ maintenance-path reconstruction.
 Builder/toolchain capture remains required for future kernel-update candidates.
 It is not required for ordinary locked rebuilds because the exact accepted
 kernel package is reused.
+
+#### Stage 12C2 first locked-rebuild validation result
+
+The first offline locked rebuild reconstructed and validated the accepted rootfs
+through `pacman -Dk` and `linux-uconsole` file validation, then failed during
+cleanup only:
+
+```text
+rm: cannot remove '/baseline/rootfs/...': Read-only file system
+```
+
+Root cause: the shared Stage 10 rootfs builder always removed its rootfs archive
+and provenance sidecars at the end. That is correct in normal/update mode where
+they are temporary downloads, but in locked mode those paths point into the
+immutable accepted baseline bundle mounted read-only at `/baseline`.
+
+Correction: locked mode now removes only temporary keyring/build files and
+leaves the preserved rootfs archive plus `.md5`/`.sig` sidecars untouched.
+Normal Stage 10 cleanup behavior is unchanged.
+
+The failed run did not alter the accepted baseline bundle. Re-run the same
+`build-release-baseline.sh` command to continue Stage 12C2 validation.
 
 ### Stage 12D — non-destructive update checker
 

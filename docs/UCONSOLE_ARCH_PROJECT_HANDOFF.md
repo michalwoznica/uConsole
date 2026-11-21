@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.6
-**Current phase:** Stage 12C2 accepted baseline captured and locked-rebuild path implemented; local locked-rebuild validation next
+**Document revision:** 6.7
+**Current phase:** Stage 12C2 first locked-rebuild validation exposed a read-only baseline cleanup bug; correction implemented, rerun next
 
 ---
 
@@ -616,7 +616,7 @@ A normal locked rebuild reuses the exact validated `linux-uconsole` package.
 Therefore exact kernel toolchain capture is required when producing a new kernel
 package, not for ordinary baseline reconstruction.
 
-### Stage 12C — accepted baseline capture and locked rebuild: IMPLEMENTED, LOCAL VALIDATION NEXT
+### Stage 12C — accepted baseline capture and locked rebuild: CLEANUP CORRECTED, LOCAL RERUN NEXT
 
 The accepted Stage 11 workspace was captured successfully and verified as:
 
@@ -679,6 +679,19 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.7 / Stage 12C2 locked-rebuild cleanup correction
+
+- Recorded first local offline locked-rebuild result.
+- Rootfs reconstruction, pacman database validation and `linux-uconsole` file
+  validation passed before cleanup.
+- Diagnosed failure as shared Stage 10 cleanup trying to delete preserved
+  rootfs archive/sidecars from the read-only accepted baseline mount.
+- Made rootfs-input cleanup mode-aware: locked mode preserves immutable
+  baseline inputs; normal/update mode retains existing temporary-download
+  cleanup.
+- Accepted baseline bundle remains unchanged.
+- Set corrected offline locked-rebuild rerun as the next action.
 
 ### 2026-11-21 — Revision 6.6 / Stage 12C2 baseline lock promotion and locked-rebuild implementation
 

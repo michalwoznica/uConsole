@@ -727,6 +727,13 @@ fi
 
 printf 'Cleaning temporary package build tree to reduce runner disk usage...\n'
 rm -rf "$package_stage"
-rm -f "$archive" "$md5_file" "$sig_file" "$keyring_source" "$keyring"
+if (( locked_mode )); then
+    # Rootfs archive and provenance sidecars belong to the accepted baseline
+    # bundle, which is mounted read-only. They are immutable inputs, not
+    # temporary downloads owned by this build.
+    rm -f "$keyring_source" "$keyring"
+else
+    rm -f "$archive" "$md5_file" "$sig_file" "$keyring_source" "$keyring"
+fi
 
 printf 'PASS: Stage 10 integrated rootfs tree prepared.\n'
