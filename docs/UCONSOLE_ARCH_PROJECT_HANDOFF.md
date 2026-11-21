@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.0
-**Current phase:** Stage 11 physical hardware pass complete; consolidated image corrections implemented, single rebuild/regression pass pending
+**Document revision:** 6.1
+**Current phase:** Stage 11 fixes physically proven; permanent brightness device-name correction prepared; final artifact rebuild pending
 
 ---
 
@@ -520,7 +520,7 @@ Treat Git history as permanently public. Never commit user/host identifiers,
 usernames, account IDs, machine-specific absolute paths or other PII. Continue
 privacy audits before every checkpoint and before publication.
 
-### Stage 11 — physical hardware validation: PHYSICAL PASS COMPLETE / REBUILD REGRESSION PENDING
+### Stage 11 — physical hardware validation: FIXES PHYSICALLY PROVEN / FINAL ARTIFACT REBUILD PENDING
 
 The current locally built image completed the practical physical hardware pass.
 See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the evidence and exact test
@@ -555,26 +555,37 @@ No kernel driver changes are required for those findings. The headphone switch,
 backlight driver and keyboard input path were all physically proven once their
 missing boot/userspace policy was supplied.
 
-Bluetooth is intentionally unchanged in this checkpoint. Direct `btmgmt find`
-proved real RF discovery, while earlier one-shot/non-interactive
-`bluetoothctl scan on` calls only reported `SetDiscoveryFilter success`. That is
-not sufficient evidence for a package pin, downgrade or other reproducible
-image workaround. Interactive `bluetoothctl` discovery remains a focused
-post-rebuild regression check.
+The first rebuilt image physically confirmed:
 
-### NEXT — one consolidated local rebuild and focused regression pass
+- headphone insertion/removal works from boot without manual `pinctrl`;
+- a brief power-button press is ignored as intended;
+- normal BlueZ discovery works with `bluetoothctl -t 20 scan on`.
 
-Build the image once with the Stage 11 corrections, flash it, then check only:
+Brightness initially remained broken even though the service was active. The
+running service had only a `sleep 2` retry child and never attached `evtest`.
+The exact kernel input name was then confirmed as:
 
-- visible boot plus Wi-Fi/DNS/`pacman -Syu` sanity;
-- headphone insertion/removal without any manual `pinctrl` command;
-- `Fn + <` / `Fn + >` changing brightness;
-- a brief power-button press no longer immediately shutting the system down;
-- interactive `bluetoothctl` discovery, with `btmgmt find` retained as the
-  known-working lower-level control if comparison is needed.
+```text
+ClockworkPI uConsole Consumer Control
+```
 
-Do not repeat the full hardware enumeration unless one of those regressions
-fails.
+while the handler searched for `ClockworkPi uConsole Consumer Control`. After
+applying that one-line capitalization correction live and restarting the
+service, `Fn + <` / `Fn + >` immediately controlled brightness. This physically
+proves the userspace handler design and the exact permanent correction now
+carried by the repository.
+
+Bluetooth requires no image change: both lower-level `btmgmt find` and normal
+BlueZ discovery are physically proven. The earlier external `timeout` wrapper
+was a misleading test method.
+
+### NEXT — final artifact rebuild
+
+Rebuild the image with the permanent `ClockworkPI` correction and flash it.
+Only one hardware regression remains necessary: confirm `Fn + <` / `Fn + >`
+works immediately after boot with no live edit or service restart.
+
+Do not repeat the full hardware enumeration.
 
 ---
 
@@ -593,6 +604,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.1 / Stage 11 rebuilt-image regression and brightness-name correction
+
+- Physically confirmed the GPIO10 no-pull correction: headphone insertion now
+  mutes speakers and unplugging restores them without manual `pinctrl`.
+- Physically confirmed `HandlePowerKey=ignore`: a brief power-button press now
+  does nothing.
+- Confirmed normal BlueZ discovery with `bluetoothctl -t 20 scan on`; the
+  earlier external `timeout` wrapper was a misleading test and no Bluetooth
+  workaround is required.
+- Isolated the remaining brightness failure to a case-sensitive input-device
+  name mismatch: the kernel reports `ClockworkPI uConsole Consumer Control`,
+  while the handler searched for `ClockworkPi ...`.
+- Applied the exact capitalization correction live; after restarting the
+  service, both brightness keys worked immediately.
+- Updated the permanent handler to match the physically observed kernel name.
+- Reduced the remaining validation to one final rebuilt-image brightness-key
+  regression check.
 
 ### 2026-11-21 — Revision 6.0 / Stage 11 physical pass and consolidated image corrections
 

@@ -3,7 +3,7 @@ set -u
 
 backlight_dir="/sys/class/backlight/backlight"
 input_inventory="/proc/bus/input/devices"
-consumer_name='ClockworkPi uConsole Consumer Control'
+consumer_name='ClockworkPI uConsole Consumer Control'
 
 find_consumer_event() {
     awk -v wanted="$consumer_name" '

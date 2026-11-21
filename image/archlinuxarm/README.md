@@ -151,16 +151,17 @@ corresponding corrections:
   amplifier-switch driver can mute/unmute the speaker correctly;
 - `uconsole-brightness-keys.service`, a console-only handler for the proven
   `KEY_BRIGHTNESSUP` / `KEY_BRIGHTNESSDOWN` events that adjusts the already
-  working `/sys/class/backlight/backlight` interface;
+  working `/sys/class/backlight/backlight` interface; physical regression
+  testing confirmed the kernel reports the device as exactly
+  `ClockworkPI uConsole Consumer Control`, which the handler now matches;
 - `/etc/systemd/logind.conf.d/50-uconsole-power-key.conf` with
   `HandlePowerKey=ignore`, preventing an accidental brief power-button tap from
   immediately powering the system off while preserving explicit console
   shutdown.
 
-Bluetooth RF discovery is physically proven through `btmgmt find`. No BlueZ
-package pin/downgrade or other speculative Bluetooth workaround is included in
-this revision; interactive `bluetoothctl` discovery remains a focused rebuild
-regression check.
+Bluetooth RF discovery is physically proven through `btmgmt find`, and normal
+BlueZ discovery is proven with `bluetoothctl -t 20 scan on`. No BlueZ package
+pin/downgrade or other Bluetooth workaround is required.
 
 See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the physical evidence and the
 bounded post-rebuild regression matrix.

@@ -121,11 +121,25 @@ KEY_BRIGHTNESSUP   (225)
 The missing layer was therefore console userspace, not the keyboard firmware,
 input driver or OCP8178 driver.
 
-**Implemented image correction:** the Arch target now installs and enables a
-small systemd service that listens to the uConsole Consumer Control event
-interface with `evtest` and adjusts the backlight sysfs value one step per key
-press. It requires no X11, Wayland or desktop environment and adds no new
-package beyond the already-selected `evtest` validation/base package.
+**Implemented image correction:** the Arch target installs and enables a small
+systemd service that listens to the uConsole Consumer Control event interface
+with `evtest` and adjusts the backlight sysfs value one step per key press. It
+requires no X11, Wayland or desktop environment and adds no new package beyond
+the already-selected `evtest` validation/base package.
+
+The first rebuilt image exposed one narrow userspace defect: the handler
+searched case-sensitively for `ClockworkPi uConsole Consumer Control`, while
+the physical keyboard is reported by the kernel as exactly:
+
+```text
+ClockworkPI uConsole Consumer Control
+```
+
+The service remained active but never spawned `evtest`; its child was only the
+2-second retry sleep. Applying the live one-line name correction and restarting
+the service made `Fn + <` / `Fn + >` control brightness immediately. This
+physically proves the handler design and isolates the permanent correction to
+the exact device-name capitalization.
 
 ### Bluetooth
 
@@ -141,15 +155,17 @@ started discovery and found multiple nearby LE devices with RSSI values. This
 physically proves the controller, firmware communication, kernel Bluetooth
 management path and RF receive/discovery path.
 
-One-shot/non-interactive `bluetoothctl scan on` testing did not show discovery
-starting; it printed only `SetDiscoveryFilter success`. Because lower-level RF
-discovery is proven and the exact behavior of that command form has not yet
-been isolated from BlueZ/userspace command semantics, **no speculative BlueZ
-pin, downgrade or image workaround is being added**.
+Normal BlueZ discovery is also physically proven. The correct non-interactive
+BlueZ command:
 
-Bluetooth should be regression-tested again on the rebuilt image using an
-interactive `bluetoothctl` session before classifying any remaining behavior as
-a package defect.
+```sh
+bluetoothctl -t 20 scan on
+```
+
+returned discovered devices on the rebuilt image. Earlier testing with an
+external `timeout 20s bluetoothctl scan on` wrapper was misleading; there is no
+Bluetooth package/configuration defect to correct. No BlueZ pin, downgrade or
+image workaround is required.
 
 ## Image changes justified by Stage 11
 
@@ -165,17 +181,20 @@ The consolidated rebuild contains exactly these new Stage 11 corrections:
 Bluetooth is deliberately **not** changed in this checkpoint because no
 specific package/configuration correction has yet been physically justified.
 
-## Rebuild regression matrix
+## Rebuild regression status
 
-After one consolidated rebuild, only targeted regression checks are required:
+Physical regression results on the first rebuilt image:
 
-- boot to visible console;
-- Wi-Fi + DNS + `pacman -Syu` sanity check;
-- headphone insertion/removal works without a manual `pinctrl` command;
-- `Fn + <` / `Fn + >` visibly change brightness;
-- brief power-button press no longer immediately shuts down the device;
-- interactive `bluetoothctl` discovery is re-tested; if it still fails while
-  `btmgmt find` works, investigate BlueZ userspace specifically.
+- boot to visible console: PASS;
+- headphone insertion/removal without manual `pinctrl`: PASS;
+- brief power-button press ignored: PASS;
+- normal BlueZ discovery with `bluetoothctl -t 20 scan on`: PASS;
+- brightness keys: FAIL initially because of the exact device-name
+  capitalization mismatch, then PASS immediately after applying the live
+  `ClockworkPI` correction and restarting the service.
 
-No broad hardware re-enumeration is required unless one of those checks
-regresses.
+The repository now carries that exact permanent brightness-name correction. A
+final image rebuild is required only to prove that the distributable artifact
+contains the already physically proven fix. After flashing it, the only
+necessary hardware regression is `Fn + <` / `Fn + >`; broad hardware
+re-enumeration is not required.
