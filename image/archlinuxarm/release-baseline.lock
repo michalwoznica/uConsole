@@ -1,0 +1,26 @@
+# Accepted Arch Linux ARM uConsole release baseline.
+#
+# This file records the identity of the last physically accepted image. It is
+# metadata, not an instruction to consult live repositories. Promotion to a
+# new baseline must be explicit and must occur only after the relevant Stage 12
+# validation has passed.
+
+BASELINE_ID=archlinuxarm-stage11-2026-11-21
+BASELINE_STATUS=accepted
+BASELINE_ACCEPTED_UTC=2026-11-21
+
+BASELINE_ROOTFS_RELEASE=2026.08
+BASELINE_ROOTFS_SHA256=f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967
+
+BASELINE_RPI_LINUX_COMMIT=0b41724521c9adf5399409d02aece6c1df0a4432
+BASELINE_KERNEL_RELEASE=6.18.60-1-uconsole
+BASELINE_KERNEL_PACKAGE_SHA256=0f830217a766cd106347498f6aeb58f5cb320651ca26cb6ab68b096a2c61a812
+
+BASELINE_IMAGE_RAW_SHA256=002eee704787770ad873f1cd56789df4cf56c86655895148ebbe4c03320b9a86
+BASELINE_IMAGE_COMPRESSED_SHA256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
+
+# Stage 12 policy markers.
+BASELINE_REBUILD_MODE=locked-rebuild
+BASELINE_BYTE_IDENTICAL_IMAGE_REQUIRED=no
+BASELINE_LIVE_PACKAGE_REFRESH_ALLOWED=no
+BASELINE_LIVE_KERNEL_REFRESH_ALLOWED=no

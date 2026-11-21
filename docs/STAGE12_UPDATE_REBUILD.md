@@ -1,6 +1,6 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12A input audit COMPLETE; policy/design work next  
+**Status:** Stage 12B release/update policy COMPLETE; baseline capture/manifest work next  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
 **Date:** 2026-11-21
 
@@ -254,35 +254,163 @@ This document is the output.
 
 No build logic changed.
 
-### Stage 12B — define the release/update policy
+### Stage 12B — release/update policy: COMPLETE
 
-Choose and document two distinct modes:
+Stage 12B establishes two modes with deliberately different trust and network
+semantics. The current build scripts are not switched between these modes yet;
+that implementation begins in Stage 12C.
 
-1. **locked rebuild**
-   - reproduce an already accepted known-good release;
-   - do not silently consume newer packages.
+#### Mode 1 — `locked-rebuild`
 
-2. **update candidate**
-   - deliberately refresh one class of inputs;
-   - record exactly what moved;
-   - validate before promoting it to the new known-good baseline.
+Purpose: reproduce an already accepted baseline without silently moving any
+upstream package or kernel input.
 
-Kernel and Arch userspace updates should normally be performed separately.
+Rules:
 
-Stage 12B must decide how exact package payloads and the build toolchain are
-preserved. The preferred design should not depend on a third-party historical
-mirror remaining online.
+- the accepted baseline is identified by
+  `image/archlinuxarm/release-baseline.lock`;
+- no live `pacman -Syu` is permitted;
+- no moving OCI tag may determine the kernel package;
+- no kernel source update is permitted;
+- the exact accepted `linux-uconsole` package is reused rather than rebuilt;
+- the pinned rootfs archive and all package payloads required to transform it
+  into the accepted final userspace must come from a project-preserved baseline
+  input bundle;
+- missing baseline payloads are a hard failure, never a reason to fall back to
+  live repositories;
+- the final installed package inventory must match the accepted inventory;
+- exact raw/compressed image hashes are informative, not a pass/fail contract.
 
-### Stage 12C — baseline/manifest improvements
+The last point is intentional. Stage 12's primary reproducibility target is the
+accepted system content and policy, not byte-identical ext4/FAT/zstd output.
+Filesystem creation metadata and host image-tool versions may legitimately
+change image bytes while preserving the same installed system.
 
-Likely additions:
+A locked rebuild therefore needs the exact validated kernel **package**, not an
+identical kernel compiler environment. Kernel toolchain reproducibility matters
+when a new kernel package is deliberately built, not when the accepted package
+is simply reused.
 
-- complete final target package inventory (`name version`);
-- hashes of package payloads used for the update transaction;
-- build-container identity/digest;
-- build-toolchain package inventory;
-- explicit mode (`locked-rebuild` vs `update-candidate`);
-- meaningful baseline comparison output.
+#### Mode 2 — `update-candidate`
+
+Purpose: deliberately consume newer upstream state and produce a candidate that
+must be reviewed before it can replace the accepted baseline.
+
+Rules:
+
+- live repository access is allowed only in this mode;
+- the candidate must state which update class was requested;
+- the candidate must record the complete final target package inventory;
+- every downloaded target package payload needed to reproduce the candidate
+  must be preserved before the disposable build workspace is removed;
+- the exact resulting `linux-uconsole` package is preserved;
+- if the kernel is rebuilt, the build-container digest and toolchain inventory
+  must be recorded;
+- the candidate is never promoted automatically;
+- promotion occurs only after the validation matrix for that update class
+  passes.
+
+#### Update classes
+
+Updates should normally be isolated so a regression has one clear source.
+
+1. **Arch userspace refresh**
+   - keep the rootfs archive pin and kernel package fixed;
+   - refresh packages from the live Arch Linux ARM repositories;
+   - capture the resulting package delta/inventory as candidate inputs.
+2. **Rootfs-base refresh**
+   - explicitly move to a newer versioned Arch Linux ARM rootfs archive;
+   - authenticate and pin that archive first;
+   - regenerate the userspace delta against the new rootfs.
+3. **Kernel refresh**
+   - keep Arch userspace/rootfs fixed wherever practical;
+   - move the exact Raspberry Pi kernel commit deliberately;
+   - rebuild and validate `linux-uconsole`;
+   - record the exact builder/toolchain identity.
+4. **Project-policy change**
+   - change project-owned boot/userspace policy without an unrelated upstream
+     refresh;
+   - validate only the affected behavior plus baseline integrity.
+
+Combining classes is allowed only when an upstream dependency makes separation
+impractical, and the reason must be recorded.
+
+#### Accepted-baseline promotion
+
+The promotion flow is:
+
+```text
+accepted baseline
+      |
+      +--> locked-rebuild --------------------> same accepted baseline
+      |
+      `--> update-candidate
+              |
+              +--> capture exact candidate inputs
+              +--> automated validation
+              +--> targeted physical validation
+              |
+              `--> explicit promotion
+                       |
+                       `--> new accepted baseline
+```
+
+Promotion updates `release-baseline.lock` only after validation. Merely
+building a candidate must never move the baseline.
+
+#### Project-owned baseline input bundle
+
+A self-contained baseline rebuild must not depend on old packages remaining on
+Arch Linux ARM mirrors. Official mirrors are synchronized to current packages,
+and pacman normally retains downloaded package files in its cache. Therefore
+the project will preserve its own baseline input bundle outside Git.
+
+The bundle design for Stage 12C is:
+
+```text
+baseline-inputs/
+├── manifest
+├── rootfs/
+│   ├── ArchLinuxARM-<release>-rpi-aarch64-rootfs.tar.gz
+│   └── provenance/signature metadata
+├── target-packages/
+│   ├── *.pkg.tar.*
+│   └── package hashes/signatures where available
+├── kernel/
+│   └── linux-uconsole-<version>-aarch64.pkg.tar.*
+├── inventories/
+│   ├── rootfs-packages.txt
+│   └── final-packages.txt
+└── build-metadata/
+    └── candidate/builder identity as applicable
+```
+
+The large bundle is a release artifact, not Git content. Git stores the small
+lock/manifest identity and the tooling needed to create/verify the bundle.
+
+The current final build workspace is especially useful for Stage 12C because
+pacman leaves downloaded packages in `/var/cache/pacman/pkg/`. The next
+checkpoint should capture those payloads before another clean build replaces
+the Stage 10 workspace.
+
+### Stage 12C — capture and describe the current accepted baseline
+
+Next checkpoint:
+
+- capture the complete final target package inventory (`name version`) from the
+  current final Stage 11 build workspace;
+- capture the package payloads retained in its pacman cache;
+- preserve the exact validated `linux-uconsole` package;
+- reacquire/verify the pinned rootfs archive for the baseline input bundle;
+- hash every preserved payload and generate a machine-readable bundle manifest;
+- extend the Stage 10 artifact manifest with final userspace inventory identity
+  and explicit build mode;
+- do not run another clean Stage 10 build until the current package cache has
+  been captured.
+
+Builder/toolchain capture is required for future kernel-update candidates. It
+is not required to reproduce the accepted baseline image when the exact
+validated kernel package is reused.
 
 ### Stage 12D — non-destructive update checker
 
@@ -333,7 +461,7 @@ Do **not** upgrade Linux or the Arch rootfs merely to test Stage 12.
 Only after the maintenance path itself is proven should a real upstream update
 be attempted.
 
-## 8. Stage 12A conclusion
+## 8. Stage 12B conclusion
 
 The current build is working and maintainable, but its reproducibility model is
 mixed:
@@ -348,6 +476,6 @@ live final Arch package update
 live build toolchain
 ```
 
-The next checkpoint should make the distinction between a **locked rebuild**
-and an **intentional update candidate** explicit before changing any package or
-kernel version.
+Stage 12B has now made that distinction explicit. The next checkpoint is
+Stage 12C: capture the current accepted baseline's userspace inventory and
+package payloads while the final Stage 11 build workspace still exists.
