@@ -97,4 +97,6 @@ Stage 12C adds:
 
 The capture script is deliberately fail-closed. It refuses to overwrite an
 existing baseline bundle and refuses to fall back to live packages when the
-accepted Stage 10 workspace no longer contains an exact required payload.
+accepted Stage 10 workspace no longer contains an exact required payload. The
+pinned-rootfs package inventory is extracted in one archive pass rather than
+re-decompressing the rootfs once per package record.

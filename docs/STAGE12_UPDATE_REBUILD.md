@@ -411,7 +411,8 @@ The capture tool:
 3. records the complete final pacman inventory from the accepted workspace;
 4. reacquires and verifies the pinned rootfs archive, published MD5 and detached
    Arch Linux ARM signature;
-5. records the original rootfs package inventory;
+5. records the original rootfs package inventory by extracting its pacman
+   local-database records in one archive pass;
 6. computes exact rootfs→final added/changed and removed package sets;
 7. requires an exact cached package payload for every changed/new final package
    except `linux-uconsole`;

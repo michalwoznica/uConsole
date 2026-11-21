@@ -138,23 +138,23 @@ inventory_from_local_db() {
 inventory_from_rootfs_archive() {
     local archive="$1"
     local output="$2"
-    : > "$output"
-    while IFS= read -r desc_member; do
-        [[ -n "$desc_member" ]] || continue
-        bsdtar -xOf "$archive" "$desc_member" |
-            awk '
-                $0 == "%NAME%" { getline; name=$0 }
-                $0 == "%VERSION%" { getline; version=$0 }
-                END {
-                    if (name != "" && version != "")
-                        printf "%s\t%s\n", name, version
-                }
-            ' >> "$output"
-    done < <(
-        bsdtar -tf "$archive" |
-            grep -E '^(\./)?var/lib/pacman/local/[^/]+/desc$'
-    )
-    sort -u -o "$output" "$output"
+    local members="$tmpdir/rootfs-pacman-desc-members.txt"
+    local extracted="$tmpdir/rootfs-pacman-db"
+
+    mkdir -p "$extracted"
+
+    # List once, then extract every pacman local-database desc file in one
+    # archive pass. Reopening a compressed rootfs once per package would force
+    # thousands of repeated single-threaded decompressions.
+    bsdtar -tf "$archive" |
+        grep -E '^(\./)?var/lib/pacman/local/[^/]+/desc$' > "$members"
+    if [[ ! -s "$members" ]]; then
+        printf 'ERROR: no pacman local-database entries found in pinned rootfs archive.\n' >&2
+        exit 1
+    fi
+
+    bsdtar -xf "$archive" -C "$extracted" -T "$members"
+    inventory_from_local_db "$extracted" "$output"
 }
 
 download_from_base() {

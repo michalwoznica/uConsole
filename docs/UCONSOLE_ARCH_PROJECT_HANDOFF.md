@@ -2,7 +2,7 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.5
+**Document revision:** 6.6
 **Current phase:** Stage 12C1 baseline-capture tooling implemented; local accepted-baseline capture next
 
 ---
@@ -642,6 +642,13 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.6 / Stage 12C1 capture performance correction
+
+- Corrected the pinned-rootfs inventory path before accepting the first baseline capture.
+- The initial implementation reopened/decompressed the compressed rootfs once per pacman package record, causing pathological single-core runtime.
+- The corrected implementation lists the pacman `desc` members once, extracts all of them in one archive pass, and then reuses the existing local-database parser.
+- No baseline policy, package selection, verification contract or Stage 10 image behavior changed.
 
 ### 2026-11-21 — Revision 6.5 / Stage 12C1 baseline-capture tooling
 
