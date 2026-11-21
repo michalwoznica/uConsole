@@ -19,6 +19,17 @@ fi
 # shellcheck disable=SC1090
 source "$bundle_dir/bundle.lock"
 
+actual_bundle_lock_sha256="$(sha256sum "$bundle_dir/bundle.lock" | awk '{print $1}')"
+actual_bundle_files_sha256="$(sha256sum "$bundle_dir/bundle-files.sha256" | awk '{print $1}')"
+if [[ "$actual_bundle_lock_sha256" != "$BASELINE_BUNDLE_LOCK_SHA256" ]]; then
+    printf 'ERROR: bundle.lock hash does not match accepted repository baseline metadata.\n' >&2
+    exit 1
+fi
+if [[ "$actual_bundle_files_sha256" != "$BASELINE_BUNDLE_FILES_SHA256" ]]; then
+    printf 'ERROR: bundle-files.sha256 hash does not match accepted repository baseline metadata.\n' >&2
+    exit 1
+fi
+
 if [[ "$BUNDLE_FORMAT" != "1" ]]; then
     printf 'ERROR: unsupported baseline bundle format: %s\n' "$BUNDLE_FORMAT" >&2
     exit 1
@@ -41,6 +52,22 @@ if [[ "$BUNDLE_KERNEL_PACKAGE_SHA256" != "$BASELINE_KERNEL_PACKAGE_SHA256" ]]; t
 fi
 if [[ "$BUNDLE_ACCEPTED_IMAGE_COMPRESSED_SHA256" != "$BASELINE_IMAGE_COMPRESSED_SHA256" ]]; then
     printf 'ERROR: bundle was not captured from the accepted compressed image.\n' >&2
+    exit 1
+fi
+
+if [[ "$BUNDLE_FORMAT" != "$BASELINE_BUNDLE_FORMAT" ]]; then
+    printf 'ERROR: bundle format does not match repository baseline metadata.\n' >&2
+    exit 1
+fi
+if [[ "$BUNDLE_ROOTFS_INVENTORY_SHA256" != "$BASELINE_ROOTFS_INVENTORY_SHA256" ||
+      "$BUNDLE_FINAL_INVENTORY_SHA256" != "$BASELINE_FINAL_INVENTORY_SHA256" ]]; then
+    printf 'ERROR: bundle package inventory identity does not match accepted baseline.\n' >&2
+    exit 1
+fi
+if [[ "$BUNDLE_PACKAGE_DELTA_COUNT" != "$BASELINE_PACKAGE_DELTA_COUNT" ||
+      "$BUNDLE_REMOVED_PACKAGE_COUNT" != "$BASELINE_REMOVED_PACKAGE_COUNT" ||
+      "$BUNDLE_TARGET_PAYLOAD_COUNT" != "$BASELINE_TARGET_PAYLOAD_COUNT" ]]; then
+    printf 'ERROR: bundle package counts do not match accepted baseline.\n' >&2
     exit 1
 fi
 

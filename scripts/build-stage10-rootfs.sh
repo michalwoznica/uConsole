@@ -24,6 +24,24 @@ jobs="${JOBS:-$(nproc)}"
 package_list="$repo_root/image/archlinuxarm/rootfs/uconsole-base-packages.txt"
 mapfile -t image_packages < "$package_list"
 
+locked_bundle="${UCONSOLE_LOCKED_BASELINE_BUNDLE:-}"
+locked_mode=0
+if [[ -n "$locked_bundle" ]]; then
+    locked_mode=1
+    # shellcheck disable=SC1091
+    source "$repo_root/image/archlinuxarm/release-baseline.lock"
+    if [[ ! -d "$locked_bundle" || ! -s "$locked_bundle/bundle.lock" ]]; then
+        printf 'ERROR: locked baseline bundle is missing or incomplete: %s\n' "$locked_bundle" >&2
+        exit 1
+    fi
+    # shellcheck disable=SC1090
+    source "$locked_bundle/bundle.lock"
+    if [[ "$BUNDLE_BASELINE_ID" != "$BASELINE_ID" ]]; then
+        printf 'ERROR: locked bundle baseline ID does not match repository baseline.\n' >&2
+        exit 1
+    fi
+fi
+
 if ! [[ "$jobs" =~ ^[1-9][0-9]*$ ]]; then
     printf 'ERROR: JOBS must be a positive integer, got: %s\n' "$jobs" >&2
     exit 1
@@ -49,7 +67,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-archive="$workdir/$ROOTFS_FILENAME"
+if (( locked_mode )); then
+    archive="$locked_bundle/rootfs/$ROOTFS_FILENAME"
+else
+    archive="$workdir/$ROOTFS_FILENAME"
+fi
 md5_file="$archive$ROOTFS_MD5_SUFFIX"
 sig_file="$archive$ROOTFS_SIGNATURE_SUFFIX"
 keyring_source="$workdir/archlinuxarm-source.gpg"
@@ -95,14 +117,24 @@ esac
 rm -rf "$output_rootfs" "$output_package_dir"
 mkdir -p "$output_rootfs" "$output_package_dir"
 
-printf 'Fetching pinned Arch Linux ARM rootfs...\n'
-download_versioned_input "$ROOTFS_FILENAME" "$archive"
-download_versioned_input \
-    "${ROOTFS_FILENAME}${ROOTFS_MD5_SUFFIX}" \
-    "$md5_file"
-download_versioned_input \
-    "${ROOTFS_FILENAME}${ROOTFS_SIGNATURE_SUFFIX}" \
-    "$sig_file"
+if (( locked_mode )); then
+    printf 'Using preserved pinned rootfs from accepted baseline bundle...\n'
+    for preserved in "$archive" "$md5_file" "$sig_file"; do
+        if [[ ! -s "$preserved" ]]; then
+            printf 'ERROR: preserved baseline rootfs input missing: %s\n' "$preserved" >&2
+            exit 1
+        fi
+    done
+else
+    printf 'Fetching pinned Arch Linux ARM rootfs...\n'
+    download_versioned_input "$ROOTFS_FILENAME" "$archive"
+    download_versioned_input \
+        "${ROOTFS_FILENAME}${ROOTFS_MD5_SUFFIX}" \
+        "$md5_file"
+    download_versioned_input \
+        "${ROOTFS_FILENAME}${ROOTFS_SIGNATURE_SUFFIX}" \
+        "$sig_file"
+fi
 
 actual_size="$(stat -c '%s' "$archive")"
 if [[ "$actual_size" != "$ROOTFS_EXPECTED_SIZE" ]]; then
@@ -125,96 +157,126 @@ if [[ "$actual_sha256" != "$ROOTFS_SHA256" ]]; then
     exit 1
 fi
 
-keyring_member="$(
-    bsdtar -tf "$archive" |
-        grep -E '(^|^\./)usr/share/pacman/keyrings/archlinuxarm\.gpg$' |
-        head -n 1
-)"
-if [[ -z "$keyring_member" ]]; then
-    printf 'ERROR: Arch Linux ARM keyring not found in rootfs archive.\n' >&2
-    exit 1
-fi
-
-bsdtar -xOf "$archive" "$keyring_member" > "$keyring_source"
-test -s "$keyring_source"
-
-if grep -aqm1 '^-----BEGIN PGP PUBLIC KEY BLOCK-----' "$keyring_source"; then
-    gpg \
-        --batch \
-        --yes \
-        --dearmor \
-        --output "$keyring" \
-        "$keyring_source"
+if (( locked_mode )); then
+    printf 'Rootfs payload integrity is anchored by the verified accepted baseline bundle.\n'
 else
-    cp "$keyring_source" "$keyring"
-fi
+    keyring_member="$(
+        bsdtar -tf "$archive" |
+            grep -E '(^|^\./)usr/share/pacman/keyrings/archlinuxarm\.gpg$' |
+            head -n 1
+    )"
+    if [[ -z "$keyring_member" ]]; then
+        printf 'ERROR: Arch Linux ARM keyring not found in rootfs archive.\n' >&2
+        exit 1
+    fi
 
-gpgv_status="$workdir/gpgv-status.txt"
-gpgv_log="$workdir/gpgv-log.txt"
+    bsdtar -xOf "$archive" "$keyring_member" > "$keyring_source"
+    test -s "$keyring_source"
 
-if ! gpgv \
-    --status-fd=1 \
-    --keyring "$keyring" \
-    "$sig_file" "$archive" \
-    >"$gpgv_status" \
-    2>"$gpgv_log"; then
-    printf 'ERROR: detached rootfs signature verification failed.\n' >&2
-    cat "$gpgv_status" >&2 || true
-    cat "$gpgv_log" >&2 || true
-    exit 1
-fi
+    if grep -aqm1 '^-----BEGIN PGP PUBLIC KEY BLOCK-----' "$keyring_source"; then
+        gpg \
+            --batch \
+            --yes \
+            --dearmor \
+            --output "$keyring" \
+            "$keyring_source"
+    else
+        cp "$keyring_source" "$keyring"
+    fi
 
-if ! awk \
-    -v expected="$ROOTFS_SIGNING_FINGERPRINT" \
-    '$1 == "[GNUPG:]" && $2 == "VALIDSIG" &&
-     ($3 == expected || $12 == expected) { found = 1 }
-     END { exit(found ? 0 : 1) }' \
-    "$gpgv_status"; then
-    printf 'ERROR: rootfs signature identity mismatch.\n' >&2
-    cat "$gpgv_status" >&2
-    exit 1
+    gpgv_status="$workdir/gpgv-status.txt"
+    gpgv_log="$workdir/gpgv-log.txt"
+
+    if ! gpgv \
+        --status-fd=1 \
+        --keyring "$keyring" \
+        "$sig_file" "$archive" \
+        >"$gpgv_status" \
+        2>"$gpgv_log"; then
+        printf 'ERROR: detached rootfs signature verification failed.\n' >&2
+        cat "$gpgv_status" >&2 || true
+        cat "$gpgv_log" >&2 || true
+        exit 1
+    fi
+
+    if ! awk \
+        -v expected="$ROOTFS_SIGNING_FINGERPRINT" \
+        '$1 == "[GNUPG:]" && $2 == "VALIDSIG" &&
+         ($3 == expected || $12 == expected) { found = 1 }
+         END { exit(found ? 0 : 1) }' \
+        "$gpgv_status"; then
+        printf 'ERROR: rootfs signature identity mismatch.\n' >&2
+        cat "$gpgv_status" >&2
+        exit 1
+    fi
+
 fi
 
 printf 'Extracting authenticated rootfs...\n'
 bsdtar -xpf "$archive" -C "$output_rootfs"
 
-printf 'Preparing temporary target pacman keyring for Arch Linux ARM package verification...\n'
-for keyring_file in \
-    archlinuxarm.gpg \
-    archlinuxarm-trusted \
-    archlinuxarm-revoked
-do
-    if [[ ! -f "$target_keyring_dir/$keyring_file" ]]; then
-        printf 'ERROR: target keyring file missing: %s\n' "$keyring_file" >&2
-        exit 1
-    fi
-    install -Dm644 \
-        "$target_keyring_dir/$keyring_file" \
-        "$host_keyring_dir/$keyring_file"
-done
+if (( locked_mode )); then
+    printf 'Preparing offline pacman policy for locked baseline package replay...\n'
+    locked_pacman_conf="$output_rootfs/etc/pacman.stage12-locked.conf"
+    cat > "$locked_pacman_conf" <<'PACMAN_LOCKED'
+[options]
+Architecture = aarch64
+DBPath = /var/lib/pacman/
+CacheDir = /var/cache/pacman/pkg/
+LogFile = /var/log/pacman.log
+GPGDir = /etc/pacman.d/gnupg/
+HookDir = /etc/pacman.d/hooks/
+SigLevel = Never
+LocalFileSigLevel = Never
+PACMAN_LOCKED
 
-# pacman --sysroot operates from inside the target root. Initialize the
-# temporary verification keyring at the target's normal GPGDir so package
-# signature checks use a writable, visible keyring during image composition.
-rm -rf "$target_gpgdir"
-install -d -m700 "$target_gpgdir"
-pacman-key --gpgdir "$target_gpgdir" --init
-pacman-key --gpgdir "$target_gpgdir" --populate archlinux archlinuxarm
-test -s "$target_gpgdir/pubring.gpg"
-test -s "$target_gpgdir/trustdb.gpg"
+    pacman_target() {
+        pacman \
+            --sysroot "$output_rootfs" \
+            --config /etc/pacman.stage12-locked.conf \
+            --arch aarch64 \
+            --disable-sandbox-filesystem \
+            "$@"
+    }
+else
+    printf 'Preparing temporary target pacman keyring for Arch Linux ARM package verification...\n'
+    for keyring_file in \
+        archlinuxarm.gpg \
+        archlinuxarm-trusted \
+        archlinuxarm-revoked
+    do
+        if [[ ! -f "$target_keyring_dir/$keyring_file" ]]; then
+            printf 'ERROR: target keyring file missing: %s\n' "$keyring_file" >&2
+            exit 1
+        fi
+        install -Dm644 \
+            "$target_keyring_dir/$keyring_file" \
+            "$host_keyring_dir/$keyring_file"
+    done
 
-pacman_target() {
-    # This pacman process runs inside the disposable x86_64 build container,
-    # not under the target uConsole kernel. Do not depend on the build host's
-    # Landlock/container policy while composing a foreign-architecture sysroot;
-    # disable only that build-time filesystem restriction. The generated target
-    # /etc/pacman.conf is unchanged and retains normal sandboxing.
-    pacman \
-        --sysroot "$output_rootfs" \
-        --arch aarch64 \
-        --disable-sandbox-filesystem \
-        "$@"
-}
+    # pacman --sysroot operates from inside the target root. Initialize the
+    # temporary verification keyring at the target's normal GPGDir so package
+    # signature checks use a writable, visible keyring during image composition.
+    rm -rf "$target_gpgdir"
+    install -d -m700 "$target_gpgdir"
+    pacman-key --gpgdir "$target_gpgdir" --init
+    pacman-key --gpgdir "$target_gpgdir" --populate archlinux archlinuxarm
+    test -s "$target_gpgdir/pubring.gpg"
+    test -s "$target_gpgdir/trustdb.gpg"
+
+    pacman_target() {
+        # This pacman process runs inside the disposable x86_64 build container,
+        # not under the target uConsole kernel. Do not depend on the build host's
+        # Landlock/container policy while composing a foreign-architecture sysroot;
+        # disable only that build-time filesystem restriction. The generated target
+        # /etc/pacman.conf is unchanged and retains normal sandboxing.
+        pacman \
+            --sysroot "$output_rootfs" \
+            --arch aarch64 \
+            --disable-sandbox-filesystem \
+            "$@"
+    }
+fi
 
 printf 'Checking stock package state...\n'
 for pkg in \
@@ -227,7 +289,24 @@ do
     pacman_target -Q "$pkg" >/dev/null
 done
 
-prebuilt_kernel_package="${UCONSOLE_PREBUILT_KERNEL_PACKAGE:-}"
+if (( locked_mode )); then
+    mapfile -t locked_kernel_packages < <(
+        find "$locked_bundle/kernel" -maxdepth 1 -type f \
+            -name 'linux-uconsole-*-aarch64.pkg.tar*' ! -name '*.sig' | sort
+    )
+    if [[ "${#locked_kernel_packages[@]}" -ne 1 ]]; then
+        printf 'ERROR: locked bundle must contain exactly one linux-uconsole package.\n' >&2
+        exit 1
+    fi
+    prebuilt_kernel_package="${locked_kernel_packages[0]}"
+    locked_kernel_sha256="$(sha256sum "$prebuilt_kernel_package" | awk '{print $1}')"
+    if [[ "$locked_kernel_sha256" != "$BASELINE_KERNEL_PACKAGE_SHA256" ]]; then
+        printf 'ERROR: preserved kernel package does not match accepted baseline hash.\n' >&2
+        exit 1
+    fi
+else
+    prebuilt_kernel_package="${UCONSOLE_PREBUILT_KERNEL_PACKAGE:-}"
+fi
 
 if [[ -n "$prebuilt_kernel_package" ]]; then
     printf 'Using prebuilt linux-uconsole package: %s\n' \
@@ -328,34 +407,129 @@ fi
 target_ldconfig_mode="$(stat -Lc '%a' "$target_ldconfig")"
 chmod a-x "$target_ldconfig"
 
-printf 'Updating Arch userspace and installing uConsole console/validation tools...\n'
-pacman_target \
-    --noconfirm \
-    --noscriptlet \
-    --needed \
-    --ignore linux-aarch64,uboot-raspberrypi \
-    -Syu \
-    "${image_packages[@]}"
+if (( locked_mode )); then
+    printf 'Replaying accepted userspace package state from preserved payloads (offline)...\n'
 
-# Keep hooks installed by the updated packages, but prevent them from running
-# during the following foreign-architecture kernel replacement transaction.
-mv "$system_hooks" "$system_hooks_updated"
-mkdir -p "$system_hooks"
+    final_inventory="$locked_bundle/inventories/final-packages.txt"
+    rootfs_inventory="$locked_bundle/inventories/rootfs-packages.txt"
+    package_delta="$locked_bundle/inventories/package-delta.txt"
+    for inventory in "$final_inventory" "$rootfs_inventory" "$package_delta"; do
+        [[ -s "$inventory" ]] || {
+            printf 'ERROR: locked baseline inventory missing: %s\n' "$inventory" >&2
+            exit 1
+        }
+    done
 
-printf 'Replacing stock kernel/U-Boot with linux-uconsole...\n'
-pacman_target \
-    --noconfirm \
-    --noscriptlet \
-    --nosave \
-    -Rdd \
-    linux-aarch64 \
-    uboot-raspberrypi
+    mapfile -t actual_removed_packages < <(
+        awk -F '\t' 'NR==FNR { final[$1]=1; next } !($1 in final) { print $1 }' \
+            "$final_inventory" "$rootfs_inventory" | sort -u
+    )
+    if (( ${#actual_removed_packages[@]} != 0 )); then
+        pacman_target \
+            --noconfirm \
+            --noscriptlet \
+            --nosave \
+            -Rdd \
+            "${actual_removed_packages[@]}"
+    fi
 
-pacman_target \
-    --noconfirm \
-    --noscriptlet \
-    --asexplicit \
-    -U "$package_file"
+    mapfile -t locked_target_payloads < <(
+        find "$locked_bundle/target-packages" -maxdepth 1 -type f \
+            -name '*.pkg.tar.*' ! -name '*.sig' | sort
+    )
+    if [[ "${#locked_target_payloads[@]}" -ne "$BUNDLE_TARGET_PAYLOAD_COUNT" ]]; then
+        printf 'ERROR: locked target payload count mismatch.\n' >&2
+        exit 1
+    fi
+
+    pacman_target \
+        --noconfirm \
+        --noscriptlet \
+        -U \
+        "${locked_target_payloads[@]}" \
+        "$package_file"
+
+    # Preserve hooks installed by the accepted package payloads, but keep them
+    # suppressed during this foreign-architecture replay just as in Stage 10.
+    mv "$system_hooks" "$system_hooks_updated"
+    mkdir -p "$system_hooks"
+
+    # Existing rootfs packages retain their install reason on upgrade. New
+    # packages introduced only as dependencies are normalized to dependency
+    # reason; project-requested image packages and linux-uconsole remain explicit.
+    mapfile -t new_final_names < <(
+        awk -F '\t' 'NR==FNR { old[$1]=1; next } !($1 in old) { print $1 }' \
+            "$rootfs_inventory" "$final_inventory" | sort -u
+    )
+    if (( ${#new_final_names[@]} != 0 )); then
+        declare -A explicit_new=()
+        explicit_new[linux-uconsole]=1
+        for pkg in "${image_packages[@]}"; do explicit_new["$pkg"]=1; done
+        dependency_new=()
+        explicit_new_list=()
+        for pkg in "${new_final_names[@]}"; do
+            if [[ -n "${explicit_new[$pkg]:-}" ]]; then
+                explicit_new_list+=("$pkg")
+            else
+                dependency_new+=("$pkg")
+            fi
+        done
+        if (( ${#dependency_new[@]} != 0 )); then
+            pacman_target -D --asdeps "${dependency_new[@]}"
+        fi
+        if (( ${#explicit_new_list[@]} != 0 )); then
+            pacman_target -D --asexplicit "${explicit_new_list[@]}"
+        fi
+    fi
+
+    current_inventory="$workdir/locked-final-packages.txt"
+    : > "$current_inventory"
+    while IFS= read -r -d '' desc; do
+        awk '
+            $0 == "%NAME%" { getline; name=$0 }
+            $0 == "%VERSION%" { getline; version=$0 }
+            END { if (name != "" && version != "") printf "%s\t%s\n", name, version }
+        ' "$desc" >> "$current_inventory"
+    done < <(
+        find "$output_rootfs/var/lib/pacman/local" \
+            -mindepth 2 -maxdepth 2 -type f -name desc -print0
+    )
+    sort -u -o "$current_inventory" "$current_inventory"
+    if ! cmp -s "$final_inventory" "$current_inventory"; then
+        printf 'ERROR: locked rebuild final package inventory differs from accepted baseline.\n' >&2
+        diff -u "$final_inventory" "$current_inventory" >&2 || true
+        exit 1
+    fi
+else
+    printf 'Updating Arch userspace and installing uConsole console/validation tools...\n'
+    pacman_target \
+        --noconfirm \
+        --noscriptlet \
+        --needed \
+        --ignore linux-aarch64,uboot-raspberrypi \
+        -Syu \
+        "${image_packages[@]}"
+
+    # Keep hooks installed by the updated packages, but prevent them from running
+    # during the following foreign-architecture kernel replacement transaction.
+    mv "$system_hooks" "$system_hooks_updated"
+    mkdir -p "$system_hooks"
+
+    printf 'Replacing stock kernel/U-Boot with linux-uconsole...\n'
+    pacman_target \
+        --noconfirm \
+        --noscriptlet \
+        --nosave \
+        -Rdd \
+        linux-aarch64 \
+        uboot-raspberrypi
+
+    pacman_target \
+        --noconfirm \
+        --noscriptlet \
+        --asexplicit \
+        -U "$package_file"
+fi
 
 restore_target_ldconfig
 
@@ -475,8 +649,11 @@ grep -Fq 'KEY_BRIGHTNESSUP' \
 pacman_target -Dk
 pacman_target -Qk linux-uconsole
 
-# The build-time keyring contains a generated private local signing key.
-# Do not ship it. First boot creates a unique pacman keyring for the device.
+if (( locked_mode )); then
+    rm -f "$locked_pacman_conf"
+fi
+# The accepted image ships without a preinitialized pacman keyring. First boot
+# creates a unique keyring for the device in both live and locked build modes.
 rm -rf "$target_gpgdir"
 test ! -e "$target_gpgdir"
 

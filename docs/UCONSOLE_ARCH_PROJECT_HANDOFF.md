@@ -3,7 +3,7 @@
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
 **Document revision:** 6.6
-**Current phase:** Stage 12C1 baseline-capture tooling implemented; local accepted-baseline capture next
+**Current phase:** Stage 12C2 accepted baseline captured and locked-rebuild path implemented; local locked-rebuild validation next
 
 ---
 
@@ -344,7 +344,7 @@ Stage 12 is split into bounded maintenance checkpoints:
 
 - **12A:** audit/classify all build inputs as pinned, rolling or generated;
 - **12B:** define locked-rebuild versus intentional-update policy — COMPLETE;
-- **12C:** capture the accepted baseline package inventory/payload bundle and strengthen manifests;
+- **12C:** capture the accepted baseline package inventory/payload bundle and implement locked rebuild — LOCAL VALIDATION NEXT;
 - **12D:** add a non-destructive update checker;
 - **12E:** define/automate update-specific validation;
 - **12F:** prove the maintenance path against the existing known-good pins.
@@ -616,13 +616,50 @@ A normal locked rebuild reuses the exact validated `linux-uconsole` package.
 Therefore exact kernel toolchain capture is required when producing a new kernel
 package, not for ordinary baseline reconstruction.
 
-### NEXT — Stage 12C baseline capture
+### Stage 12C — accepted baseline capture and locked rebuild: IMPLEMENTED, LOCAL VALIDATION NEXT
 
-Capture the current final Stage 11 build workspace before another clean Stage
-10 build removes it. Preserve the final pacman inventory, cached target package
-payloads, exact kernel package and pinned rootfs archive as a self-contained
-baseline input bundle outside Git, with hashes/manifest identity tracked by the
-repository.
+The accepted Stage 11 workspace was captured successfully and verified as:
+
+```text
+bundle_lock_sha256=911d40bdc33076d962bb19a546161362367f9fb6e22a9fabfc34f004385b0986
+bundle_files_sha256=b177485e629b8ed633572ef13cb9f7572e7b02ddd8a8f24fa1352172a24f4789
+final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+package_delta_count=141
+removed_package_count=93
+target_payload_count=140
+```
+
+Those identities are promoted into `release-baseline.lock`. The verifier now
+anchors the local bundle directly to Git metadata before checking every file
+hash and package payload.
+
+`scripts/build-release-baseline.sh` implements the first locked rebuild path:
+
+- preserved rootfs only;
+- preserved package payloads only;
+- exact accepted `linux-uconsole` package;
+- no container network;
+- no live `pacman -Syu`;
+- no kernel rebuild;
+- exact final package name/version inventory required;
+- separate locked-rebuild work/output directories.
+
+The capture performance bug discovered during the successful first capture is
+also corrected for future captures: the rootfs package database is extracted in
+one archive pass rather than repeatedly decompressing the rootfs. The existing
+accepted bundle remains valid and does not need recapture.
+
+### NEXT — validate the locked rebuild locally
+
+Run:
+
+```text
+bash ./scripts/build-release-baseline.sh
+```
+
+Stage 12C closes after that command proves an exact accepted final package
+inventory with container networking disabled. Byte-identical image hashes are
+not required.
 
 
 ---
@@ -643,12 +680,23 @@ In a fresh ChatGPT conversation:
 
 ## 14. Change log
 
-### 2026-11-21 — Revision 6.6 / Stage 12C1 capture performance correction
+### 2026-11-21 — Revision 6.6 / Stage 12C2 baseline lock promotion and locked-rebuild implementation
 
-- Corrected the pinned-rootfs inventory path before accepting the first baseline capture.
-- The initial implementation reopened/decompressed the compressed rootfs once per pacman package record, causing pathological single-core runtime.
-- The corrected implementation lists the pacman `desc` members once, extracts all of them in one archive pass, and then reuses the existing local-database parser.
-- No baseline policy, package selection, verification contract or Stage 10 image behavior changed.
+- Recorded the successful accepted-baseline capture identity and package counts
+  in `release-baseline.lock`.
+- Strengthened bundle verification so Git anchors both `bundle.lock` and the
+  complete `bundle-files.sha256` manifest.
+- Added the first offline/fail-closed locked rebuild consumer.
+- Locked rebuild requires the builder image to already exist locally, disables
+  container networking, reuses the exact accepted kernel package and consumes
+  only preserved baseline package payloads.
+- Added exact final package name/version inventory comparison as the locked
+  rebuild acceptance gate.
+- Kept locked-rebuild artifacts separate from the accepted Stage 10 output.
+- Corrected future baseline capture performance by extracting the pinned-rootfs
+  pacman database in one archive pass.
+- The already captured accepted bundle remains valid; no recapture is required.
+- Set one local locked-rebuild execution as the next validation step.
 
 ### 2026-11-21 — Revision 6.5 / Stage 12C1 baseline-capture tooling
 

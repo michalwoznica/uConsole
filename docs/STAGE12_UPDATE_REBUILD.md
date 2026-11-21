@@ -411,8 +411,7 @@ The capture tool:
 3. records the complete final pacman inventory from the accepted workspace;
 4. reacquires and verifies the pinned rootfs archive, published MD5 and detached
    Arch Linux ARM signature;
-5. records the original rootfs package inventory by extracting its pacman
-   local-database records in one archive pass;
+5. records the original rootfs package inventory;
 6. computes exact rootfs→final added/changed and removed package sets;
 7. requires an exact cached package payload for every changed/new final package
    except `linux-uconsole`;
@@ -431,24 +430,70 @@ which is already outside Git because `out/` is ignored. Existing bundles are
 never overwritten. Missing package payloads are a hard failure; capture never
 consults live repositories to repair an incomplete accepted baseline cache.
 
-#### Stage 12C2 — local capture and lock promotion: NEXT
+#### Stage 12C2 — local capture and lock promotion: IMPLEMENTED, LOCAL REBUILD VALIDATION NEXT
 
-Run the capture tool once on the machine that still holds the final Stage 11
-build workspace. Record its final summary, especially:
+The accepted Stage 11 bundle was captured successfully from the retained final
+workspace and passed the bundle verifier. Captured identity:
 
-- `bundle_lock_sha256`;
-- `bundle_files_sha256`;
-- `final_inventory_sha256`;
-- delta/payload counts.
+```text
+bundle_lock_sha256=911d40bdc33076d962bb19a546161362367f9fb6e22a9fabfc34f004385b0986
+bundle_files_sha256=b177485e629b8ed633572ef13cb9f7572e7b02ddd8a8f24fa1352172a24f4789
+rootfs_inventory_sha256=3c8f488f1362c4f1d3c246c4b85645b31584f5e97c4daabb04bd32d501344a8a
+final_inventory_sha256=72078b8777c61d60e3798f5a7fbb86c4c737b1d97227ddfc1151f2450befacd4
+package_delta_count=141
+removed_package_count=93
+target_payload_count=140
+```
 
-Stage 12C2 will then promote those identities into Git and implement the first
-`locked-rebuild` consumption path against the preserved bundle.
+These values are now promoted into `release-baseline.lock`. The bundle verifier
+therefore validates not only internal file hashes but also the exact accepted
+bundle identity recorded in Git.
 
-Do not run another clean Stage 10 build until this capture succeeds.
+The first locked-rebuild consumer is now implemented as:
 
-Builder/toolchain capture is required for future kernel-update candidates. It
-is not required to reproduce the accepted baseline image when the exact
-validated kernel package is reused.
+```text
+scripts/build-release-baseline.sh
+```
+
+Its contract is deliberately stricter than the normal Stage 10/update path:
+
+1. verify the preserved bundle against the Git baseline lock;
+2. require the existing local `archlinux:base-devel` builder image rather than
+   pulling a moving tag;
+3. run the container with networking disabled;
+4. extract the preserved pinned rootfs;
+5. replay only the preserved package payloads plus the exact accepted
+   `linux-uconsole` package;
+6. remove only package *names* absent from the accepted final inventory (the
+   captured 93-line removed set also contains old versions of upgraded
+   packages and is therefore not blindly removed);
+7. require the resulting final name/version package inventory to match the
+   captured accepted inventory exactly;
+8. build the partitioned image into separate `build/locked-rebuild/` and
+   `out/locked-rebuild/` paths so the accepted Stage 10 artifacts are not
+   overwritten;
+9. report the rebuilt image hash for information only — byte-identical image
+   output remains intentionally outside the acceptance contract.
+
+The locked replay disables local package signature policy only inside the
+foreign-architecture replay transaction because the exact package-file hashes
+are already transitively anchored by the Git-recorded bundle manifest hash.
+The resulting target image still receives the normal first-boot pacman keyring
+initialization policy.
+
+A performance correction is also included for future baseline captures: the
+pinned rootfs pacman database is now extracted in one archive pass instead of
+reopening/decompressing the rootfs once per package entry. The already captured
+bundle is valid and does not need to be regenerated.
+
+**Next validation:** run `bash ./scripts/build-release-baseline.sh`. Success
+requires an exact accepted final package inventory with container networking
+disabled. No physical hardware retest is required merely to prove this
+maintenance-path reconstruction.
+
+Builder/toolchain capture remains required for future kernel-update candidates.
+It is not required for ordinary locked rebuilds because the exact accepted
+kernel package is reused.
 
 ### Stage 12D — non-destructive update checker
 

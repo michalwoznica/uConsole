@@ -97,6 +97,18 @@ Stage 12C adds:
 
 The capture script is deliberately fail-closed. It refuses to overwrite an
 existing baseline bundle and refuses to fall back to live packages when the
-accepted Stage 10 workspace no longer contains an exact required payload. The
-pinned-rootfs package inventory is extracted in one archive pass rather than
-re-decompressing the rootfs once per package record.
+accepted Stage 10 workspace no longer contains an exact required payload.
+
+## Stage 12 locked baseline rebuild
+
+Stage 12C2 adds:
+
+- `build-release-baseline.sh` — rebuild the accepted baseline from the
+  project-preserved bundle without live package/kernel refreshes. It verifies
+  the bundle against `release-baseline.lock`, requires the existing local
+  builder image rather than pulling it, disables container networking, reuses
+  the accepted `linux-uconsole` package, and requires the reconstructed final
+  package name/version inventory to match the accepted inventory exactly.
+
+Locked rebuild output is isolated under `build/locked-rebuild/` and
+`out/locked-rebuild/`; it does not overwrite Stage 10 artifacts.
