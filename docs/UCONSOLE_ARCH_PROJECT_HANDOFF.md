@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.1
-**Current phase:** Stage 11 fixes physically proven; permanent brightness device-name correction prepared; final artifact rebuild pending
+**Document revision:** 6.2
+**Current phase:** Stage 11 physical hardware validation COMPLETE; Stage 12 reproducible update/rebuild path next
 
 ---
 
@@ -388,12 +388,9 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 ### Still unproven / incomplete
 
-- post-rebuild regression confirmation for the three Stage 11 image corrections;
-- interactive `bluetoothctl` discovery behavior: lower-level RF discovery is
-  proven, but the earlier one-shot/non-interactive command did not demonstrate
-  BlueZ discovery starting;
 - long-duration hardware reliability;
 - byte-for-byte image reproducibility across independent builds;
+- Stage 12 reproducible update/rebuild path;
 - ARMtix/OpenRC image target.
 
 ---
@@ -520,72 +517,57 @@ Treat Git history as permanently public. Never commit user/host identifiers,
 usernames, account IDs, machine-specific absolute paths or other PII. Continue
 privacy audits before every checkpoint and before publication.
 
-### Stage 11 — physical hardware validation: FIXES PHYSICALLY PROVEN / FINAL ARTIFACT REBUILD PENDING
+### Stage 11 — physical hardware validation: COMPLETE
 
-The current locally built image completed the practical physical hardware pass.
-See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the evidence and exact test
-matrix.
+Stage 11 is complete. See `docs/STAGE11_PHYSICAL_VALIDATION.md` for the full
+physical evidence and correction history.
 
-Physically proven on the current image:
+The final rebuilt image was flashed to microSD and booted on the physical
+uConsole. All required Stage 11 hardware paths and the three image-layer
+corrections are physically proven:
 
 - microSD boot to visible Arch console;
 - CWU50 panel + VC4/KMS/DSI display path;
-- OCP8178 backlight hardware and direct sysfs brightness control;
-- keyboard input and correct brightness-key events;
-- Wi-Fi, DNS, NetworkManager profile persistence and normal `pacman -Syu`;
+- OCP8178 backlight and `Fn + <` / `Fn + >` brightness control;
+- keyboard input and Consumer Control events;
+- Wi-Fi, DNS, NetworkManager persistence and normal `pacman -Syu`;
 - built-in speaker and headphone audio;
-- headphone-detect GPIO and amplifier switching after live no-pull correction;
+- automatic headphone insertion/removal switching from boot;
 - battery charge/discharge and AC-online transitions;
-- power-button input;
-- Bluetooth controller/kernel/RF discovery through `btmgmt find`;
+- brief power-button press ignored by the selected logind policy;
+- Bluetooth controller/kernel/RF path and normal BlueZ discovery;
 - USB mass-storage detection/mount/unmount;
-- reboot and shutdown/power-off behavior.
+- reboot and shutdown/power-off paths.
 
-The physical pass justified exactly three consolidated image corrections:
+The three Stage 11 corrections are:
 
-1. add `gpio=10=ip,np` to the Raspberry Pi boot policy so GPIO10 headphone
-   detect works from boot without a manual `pinctrl` command;
-2. install/enable a console-only brightness-key handler that consumes the
-   already-correct `KEY_BRIGHTNESSUP/DOWN` events and adjusts the working
-   backlight sysfs interface;
-3. configure Arch systemd-logind with `HandlePowerKey=ignore` so a brief
-   accidental power-button tap does not immediately power the device off.
+1. `gpio=10=ip,np` for reliable headphone detection;
+2. the console-only brightness-key service using the exact physical input name
+   `ClockworkPI uConsole Consumer Control`;
+3. `HandlePowerKey=ignore` for brief power-button presses.
 
-No kernel driver changes are required for those findings. The headphone switch,
-backlight driver and keyboard input path were all physically proven once their
-missing boot/userspace policy was supplied.
-
-The first rebuilt image physically confirmed:
-
-- headphone insertion/removal works from boot without manual `pinctrl`;
-- a brief power-button press is ignored as intended;
-- normal BlueZ discovery works with `bluetoothctl -t 20 scan on`.
-
-Brightness initially remained broken even though the service was active. The
-running service had only a `sleep 2` retry child and never attached `evtest`.
-The exact kernel input name was then confirmed as:
+Final validated artifact identity:
 
 ```text
-ClockworkPI uConsole Consumer Control
+rootfs_release=2026.08
+rpi_linux_commit=0b41724521c9adf5399409d02aece6c1df0a4432
+kernel_release=6.18.60-1-uconsole
+package_sha256=0f830217a766cd106347498f6aeb58f5cb320651ca26cb6ab68b096a2c61a812
+image_raw_sha256=002eee704787770ad873f1cd56789df4cf56c86655895148ebbe4c03320b9a86
+compressed_sha256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
 ```
 
-while the handler searched for `ClockworkPi uConsole Consumer Control`. After
-applying that one-line capitalization correction live and restarting the
-service, `Fn + <` / `Fn + >` immediately controlled brightness. This physically
-proves the userspace handler design and the exact permanent correction now
-carried by the repository.
+The kernel package hash remained unchanged across the Stage 11 image fixes,
+which is expected because the physically proven kernel/hardware layer did not
+need modification.
 
-Bluetooth requires no image change: both lower-level `btmgmt find` and normal
-BlueZ discovery are physically proven. The earlier external `timeout` wrapper
-was a misleading test method.
+### NEXT — Stage 12 reproducible update/rebuild path
 
-### NEXT — final artifact rebuild
+Stage 11 requires no further broad physical regression. Continue with the
+planned Stage 12 work: define and validate the reproducible update/rebuild path
+for the completed Arch Linux ARM image while preserving the proven hardware
+baseline.
 
-Rebuild the image with the permanent `ClockworkPI` correction and flash it.
-Only one hardware regression remains necessary: confirm `Fn + <` / `Fn + >`
-works immediately after boot with no live edit or service restart.
-
-Do not repeat the full hardware enumeration.
 
 ---
 
@@ -604,6 +586,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.2 / Stage 11 complete
+
+- Rebuilt the final image with the permanent `ClockworkPI` brightness-device
+  name correction.
+- Recorded final raw image SHA-256
+  `002eee704787770ad873f1cd56789df4cf56c86655895148ebbe4c03320b9a86`.
+- Recorded final compressed image SHA-256
+  `aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a`.
+- Flashed and booted the final artifact on the physical uConsole.
+- Confirmed `Fn + <` and `Fn + >` work immediately from the clean rebuilt
+  image with no live edit or manual service restart.
+- Closed Stage 11 physical hardware validation.
+- Set Stage 12 reproducible update/rebuild path as the next project stage.
 
 ### 2026-11-21 — Revision 6.1 / Stage 11 rebuilt-image regression and brightness-name correction
 

@@ -1,6 +1,6 @@
 # Stage 11 physical validation
 
-**Status:** physical hardware pass complete; consolidated image corrections implemented, rebuild/regression pending  
+**Status:** COMPLETE — physical hardware validation and final rebuilt-image regression passed  
 **Test image:** Arch Linux ARM 2026.08, `linux-uconsole 6.18.60-1-uconsole`  
 **Raspberry Pi Linux source:** `0b41724521c9adf5399409d02aece6c1df0a4432`
 
@@ -178,8 +178,8 @@ The consolidated rebuild contains exactly these new Stage 11 corrections:
 3. An Arch/systemd-logind drop-in that ignores a brief power-key press so an
    accidental tap does not immediately shut down the device.
 
-Bluetooth is deliberately **not** changed in this checkpoint because no
-specific package/configuration correction has yet been physically justified.
+Bluetooth requires no image correction. Both lower-level `btmgmt find` and
+normal BlueZ discovery with `bluetoothctl -t 20 scan on` are physically proven.
 
 ## Rebuild regression status
 
@@ -193,8 +193,23 @@ Physical regression results on the first rebuilt image:
   capitalization mismatch, then PASS immediately after applying the live
   `ClockworkPI` correction and restarting the service.
 
-The repository now carries that exact permanent brightness-name correction. A
-final image rebuild is required only to prove that the distributable artifact
-contains the already physically proven fix. After flashing it, the only
-necessary hardware regression is `Fn + <` / `Fn + >`; broad hardware
-re-enumeration is not required.
+The repository now carries that exact permanent brightness-name correction.
+
+A final image was rebuilt, flashed to microSD and booted on the physical
+uConsole. `Fn + <` and `Fn + >` controlled brightness immediately without any
+live edit or manual service restart.
+
+Final rebuilt artifact identity:
+
+```text
+kernel_release=6.18.60-1-uconsole
+package_sha256=0f830217a766cd106347498f6aeb58f5cb320651ca26cb6ab68b096a2c61a812
+image_raw_sha256=002eee704787770ad873f1cd56789df4cf56c86655895148ebbe4c03320b9a86
+compressed_sha256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
+```
+
+The unchanged kernel package hash confirms that the final Stage 11 corrections
+remain confined to boot/userspace policy.
+
+Stage 11 is therefore complete. No further broad physical-hardware regression
+is required for this stage.
