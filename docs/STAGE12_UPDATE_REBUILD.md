@@ -1,6 +1,6 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12B release/update policy COMPLETE; baseline capture/manifest work next  
+**Status:** Stage 12C1 baseline-capture tooling IMPLEMENTED; local accepted-baseline capture pending  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
 **Date:** 2026-11-21
 
@@ -395,18 +395,55 @@ the Stage 10 workspace.
 
 ### Stage 12C — capture and describe the current accepted baseline
 
-Next checkpoint:
+#### Stage 12C1 — capture tooling: IMPLEMENTED
 
-- capture the complete final target package inventory (`name version`) from the
-  current final Stage 11 build workspace;
-- capture the package payloads retained in its pacman cache;
-- preserve the exact validated `linux-uconsole` package;
-- reacquire/verify the pinned rootfs archive for the baseline input bundle;
-- hash every preserved payload and generate a machine-readable bundle manifest;
-- extend the Stage 10 artifact manifest with final userspace inventory identity
-  and explicit build mode;
-- do not run another clean Stage 10 build until the current package cache has
-  been captured.
+Two fail-closed tools now define the capture contract:
+
+- `scripts/capture-release-baseline.sh`;
+- `scripts/verify-release-baseline-bundle.sh`.
+
+The capture tool:
+
+1. requires the retained final Stage 10 rootfs workspace and accepted Stage 10
+   artifacts;
+2. proves the compressed image and kernel package match
+   `release-baseline.lock`;
+3. records the complete final pacman inventory from the accepted workspace;
+4. reacquires and verifies the pinned rootfs archive, published MD5 and detached
+   Arch Linux ARM signature;
+5. records the original rootfs package inventory;
+6. computes exact rootfs→final added/changed and removed package sets;
+7. requires an exact cached package payload for every changed/new final package
+   except `linux-uconsole`;
+8. preserves the exact accepted `linux-uconsole` package separately;
+9. copies the Stage 10 and source/geometry lock metadata;
+10. hashes every file in the resulting baseline bundle;
+11. invokes the verifier before reporting success.
+
+The default bundle location is:
+
+```text
+out/baselines/<BASELINE_ID>/
+```
+
+which is already outside Git because `out/` is ignored. Existing bundles are
+never overwritten. Missing package payloads are a hard failure; capture never
+consults live repositories to repair an incomplete accepted baseline cache.
+
+#### Stage 12C2 — local capture and lock promotion: NEXT
+
+Run the capture tool once on the machine that still holds the final Stage 11
+build workspace. Record its final summary, especially:
+
+- `bundle_lock_sha256`;
+- `bundle_files_sha256`;
+- `final_inventory_sha256`;
+- delta/payload counts.
+
+Stage 12C2 will then promote those identities into Git and implement the first
+`locked-rebuild` consumption path against the preserved bundle.
+
+Do not run another clean Stage 10 build until this capture succeeds.
 
 Builder/toolchain capture is required for future kernel-update candidates. It
 is not required to reproduce the accepted baseline image when the exact

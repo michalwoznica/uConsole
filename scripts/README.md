@@ -81,3 +81,20 @@ Stage 11 adds:
   failures can be retried without recompiling an unchanged kernel.
 
 Local usage is documented in `docs/LOCAL_IMAGE_BUILD.md`.
+
+## Stage 12 baseline capture
+
+Stage 12C adds:
+
+- `capture-release-baseline.sh` — capture the accepted Stage 11 rootfs→final
+  package delta from the retained Stage 10 workspace, preserve the exact target
+  package payloads and validated `linux-uconsole` package, reacquire and verify
+  the pinned rootfs archive, and emit a hashed baseline input bundle under the
+  gitignored `out/baselines/` tree;
+- `verify-release-baseline-bundle.sh` — verify bundle identity against
+  `release-baseline.lock`, validate all file hashes, and prove that every final
+  package delta has a preserved package payload.
+
+The capture script is deliberately fail-closed. It refuses to overwrite an
+existing baseline bundle and refuses to fall back to live packages when the
+accepted Stage 10 workspace no longer contains an exact required payload.

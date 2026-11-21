@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.4
-**Current phase:** Stage 12B release/update policy COMPLETE; Stage 12C baseline capture next
+**Document revision:** 6.5
+**Current phase:** Stage 12C1 baseline-capture tooling implemented; local accepted-baseline capture next
 
 ---
 
@@ -642,6 +642,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.5 / Stage 12C1 baseline-capture tooling
+
+- Added fail-closed accepted-baseline capture tooling without changing Stage 10
+  image construction behavior.
+- Capture validates the retained final Stage 10 image/kernel identities against
+  `release-baseline.lock` before accepting the workspace as a source.
+- Capture reacquires and authenticates the pinned 2026.08 rootfs, records both
+  rootfs and final package inventories, and derives exact added/changed and
+  removed package sets.
+- Exact package payloads are selected from the accepted final workspace pacman
+  cache by `.PKGINFO` name/version identity; missing payloads are a hard failure.
+- The exact validated `linux-uconsole` package is preserved separately.
+- Added complete bundle file hashing plus a standalone verifier that proves
+  baseline identity and package-payload coverage.
+- Baseline bundles live under the existing gitignored `out/baselines/` tree and
+  are never overwritten by the capture tool.
+- Set Stage 12C2 local capture and manifest/lock promotion as next.
 
 ### 2026-11-21 — Revision 6.4 / Stage 12B release/update policy complete
 
