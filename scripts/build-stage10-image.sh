@@ -24,14 +24,38 @@ source "$repo_root/image/archlinuxarm/image-layout.lock"
 # shellcheck disable=SC1091
 source "$repo_root/kernel/source.lock"
 
-kernel_release="6.18.60-1-uconsole"
+kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-6.18.60-1-uconsole}"
+rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
+image_checkpoint="${UCONSOLE_IMAGE_CHECKPOINT:-Stage10}"
+image_variant="${UCONSOLE_IMAGE_VARIANT:-}"
+
+if [[ ! "$kernel_release" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-uconsole$ ]]; then
+    printf 'ERROR: invalid UCONSOLE_IMAGE_KERNEL_RELEASE: %s\n' "$kernel_release" >&2
+    exit 1
+fi
+if [[ ! "$rpi_linux_commit" =~ ^[0-9a-f]{40}$ ]]; then
+    printf 'ERROR: invalid UCONSOLE_IMAGE_RPI_LINUX_COMMIT.\n' >&2
+    exit 1
+fi
+if [[ ! "$image_checkpoint" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    printf 'ERROR: invalid UCONSOLE_IMAGE_CHECKPOINT: %s\n' "$image_checkpoint" >&2
+    exit 1
+fi
+if [[ -n "$image_variant" && ! "$image_variant" =~ ^[a-z0-9][a-z0-9.-]*$ ]]; then
+    printf 'ERROR: invalid UCONSOLE_IMAGE_VARIANT: %s\n' "$image_variant" >&2
+    exit 1
+fi
 
 mkdir -p "$output_dir"
 
-image_name="uconsole-archlinuxarm-${ROOTFS_RELEASE}-cm4.img"
+image_stem="uconsole-archlinuxarm-${ROOTFS_RELEASE}-cm4"
+if [[ -n "$image_variant" ]]; then
+    image_stem+="-${image_variant}"
+fi
+image_name="${image_stem}.img"
 image="$output_dir/$image_name"
 compressed="$image.zst"
-manifest="$output_dir/uconsole-archlinuxarm-${ROOTFS_RELEASE}-cm4.manifest"
+manifest="$output_dir/${image_stem}.manifest"
 raw_sha_file="$output_dir/${image_name}.sha256"
 compressed_sha_file="$output_dir/${image_name}.zst.sha256"
 
@@ -338,11 +362,11 @@ printf '%s  %s\n' \
 package_sha256="$(sha256sum "$package_file" | awk '{print $1}')"
 
 cat > "$manifest" <<EOF
-checkpoint=Stage10
+checkpoint=$image_checkpoint
 rootfs_release=$ROOTFS_RELEASE
 rootfs_filename=$ROOTFS_FILENAME
 rootfs_sha256=$ROOTFS_SHA256
-rpi_linux_commit=$RPI_LINUX_COMMIT
+rpi_linux_commit=$rpi_linux_commit
 kernel_release=$kernel_release
 package_filename=$(basename "$package_file")
 package_sha256=$package_sha256

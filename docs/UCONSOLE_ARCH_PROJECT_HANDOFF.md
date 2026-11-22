@@ -346,8 +346,8 @@ Stage 12 is split into bounded maintenance checkpoints:
 - **12B:** define locked-rebuild versus intentional-update policy — COMPLETE;
 - **12C:** capture the accepted baseline package inventory/payload bundle and implement locked rebuild — COMPLETE;
 - **12D:** add and locally prove a non-destructive update checker — COMPLETE;
-- **12E:** validate an explicit kernel update candidate without changing pins — IMPLEMENTED, LOCAL VALIDATION PENDING;
-- **12F:** full candidate build/physical regression only after an explicit decision to evaluate a Stage 12E PASS.
+- **12E:** validate an explicit kernel update candidate without changing pins — COMPLETE;
+- **12F:** build the real candidate package/image without promotion, then perform bounded physical regression — IMPLEMENTED, LOCAL BUILD PENDING.
 
 See `docs/STAGE12_UPDATE_REBUILD.md`.
 
@@ -402,7 +402,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 - long-duration hardware reliability;
 - byte-for-byte image reproducibility across independent builds;
-- Stage 12E-F update-candidate validation/promotion path;
+- Stage 12F candidate image build/physical regression and any later promotion;
 - ARMtix/OpenRC image target.
 
 ---
@@ -689,50 +689,71 @@ The first local run exposed a late SIGPIPE/`pipefail` parser bug after the
 network queries had already succeeded. The parser was corrected and an ERR trap
 was added; the rerun produced the complete report above. No project pin changed.
 
-### Stage 12E — isolated kernel update-candidate compatibility validation: IMPLEMENTED, LOCAL VALIDATION PENDING
+### Stage 12E — isolated kernel update-candidate compatibility validation: COMPLETE
 
-Added `scripts/validate-kernel-update-candidate.sh VERSION COMMIT` plus the
-containerized host launcher `scripts/run-kernel-update-candidate.sh`.
+The exact Stage 12D candidate passed locally:
 
-Its boundary is deliberately narrower than a real update:
+```text
+candidate_kernel_version=6.18.64
+candidate_kernel_commit=a40f735325391b1705161b07f36ed45e1bf04521
+candidate_kernel_release=6.18.64-1-uconsole
+patch_series=0001-0005
+patch_fuzz=0
+required_config_count=17
+kernel_prepare=pass
+device_tree_build=pass
+dt_overlay_application=pass
+builder_image_id=3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8
+cross_gcc_version=aarch64-linux-gnu-gcc (GCC) 16.2.0
+cross_ld_version=GNU ld (GNU Binutils) 2.47
+dtc_version=Version: DTC v1.8.1
+project_pins_changed=no
+repository_mutated=no
+```
 
-- candidate version/commit must be explicit;
-- host execution delegates to the existing local Arch builder container;
-- the repository is mounted read-only inside the candidate container;
-- cross-build/toolchain packages are installed only inside that disposable
-  container and their versions are recorded in the candidate report;
-- only a newer kernel in the current 6.18 branch family is accepted;
-- all work stays under ignored `build/update-candidate/`;
-- the normal package-staging script is reused;
-- only the staged PKGBUILD receives candidate `pkgver`/`_commit` values;
-- the exact candidate source commit must report the requested kernel version;
-- the existing project patch series must apply through the actual PKGBUILD
-  `prepare()` path with `--fuzz=0`;
-- the existing uConsole config contract must still resolve;
-- kernel `prepare` must pass;
-- candidate DTBs/DTBO are built and the uConsole overlay must apply to the CM4
-  base DTB;
-- no kernel Image/modules build occurs;
-- no disk image is produced;
-- Git status must be identical before/after;
-- a candidate report is written only inside the ignored workspace.
+All five project patches therefore remain strict zero-fuzz compatible with
+Raspberry Pi Linux 6.18.64, the required config resolves, kernel prepare passes,
+and the CM4/uConsole device trees build and compose successfully. No accepted
+pin changed.
 
-The first selected candidate is exactly the Stage 12D discovery:
+### Stage 12F — real 6.18.64 candidate package/image build: IMPLEMENTED, LOCAL BUILD PENDING
+
+Added `scripts/build-kernel-update-candidate.sh VERSION COMMIT` and
+`scripts/install-kernel-update-candidate.sh`.
+
+The Stage 12F contract is kernel-only:
+
+- require the matching Stage 12E PASS report;
+- verify the accepted baseline bundle first;
+- build the real candidate `linux-uconsole` package online in the existing local
+  Arch builder image;
+- reconstruct accepted Stage 11 userspace from the preserved baseline bundle
+  offline;
+- replace only `linux-uconsole` with the candidate package offline;
+- require every other installed package name/version to remain exactly equal to
+  the accepted inventory;
+- build the candidate image through the existing Stage 10 image path with
+  candidate-only release/commit/name overrides;
+- preserve package/image hashes, builder/toolchain metadata, final inventory and
+  candidate report under ignored `out/update-candidate/`;
+- leave source/package/baseline pins and Git state unchanged;
+- record `physical_validation=not_run` and `promotion=not_performed`.
+
+`build-stage10-image.sh` now accepts opt-in candidate metadata overrides. The
+normal Stage 10 and locked-rebuild defaults are unchanged when those variables
+are not set.
+
+### NEXT
+
+Run Stage 12F locally for the already validated candidate:
 
 ```text
 version=6.18.64
 commit=a40f735325391b1705161b07f36ed45e1bf04521
 ```
 
-A PASS proves mechanical compatibility only. It does not promote the candidate
-or alter the physically accepted 6.18.60 baseline.
-
-### NEXT
-
-Rerun the exact Stage 12E candidate validator. Host execution now
-automatically uses the containerized toolchain path with host networking, which
-was physically confirmed to restore DNS resolution for the rootful Podman
-builder. Review its summary before any full kernel build or pin change.
+Review the Stage 12F report and artifact hashes before flashing anything. A
+successful build still does not promote the candidate.
 
 
 ---
@@ -752,6 +773,25 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.13 / Stage 12E complete, Stage 12F candidate build implementation
+
+- Recorded successful local Stage 12E validation of Raspberry Pi Linux 6.18.64
+  at `a40f735325391b1705161b07f36ed45e1bf04521`.
+- Confirmed all five uConsole patches apply with zero fuzz, required config
+  resolves, kernel prepare passes, and CM4/uConsole DT composition passes.
+- Added Stage 12F real candidate package/image build path.
+- Stage 12F deliberately reconstructs the accepted Stage 11 userspace from the
+  preserved baseline bundle offline, then replaces only `linux-uconsole`.
+- Added exact userspace-inventory equality gate excluding only the intentionally
+  changed kernel package version.
+- Added candidate-specific Stage 10 image metadata/name overrides while keeping
+  default Stage 10/locked-rebuild behavior unchanged.
+- Candidate package, image, final inventory, builder metadata and hashes remain
+  outside Git under ignored build/output trees.
+- Accepted kernel/rootfs/baseline pins remain unchanged.
+- Stage 12F is local-build pending; physical validation and promotion remain
+  explicitly not performed.
 
 ### 2026-11-22 — Revision 6.12 / Stage 12E container networking correction
 

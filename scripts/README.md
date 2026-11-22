@@ -142,3 +142,23 @@ Stage 12E adds:
   patch/config `prepare()` path with `--fuzz=0`, builds/applies the CM4/uConsole
   device trees, and proves Git state is unchanged. It intentionally stops
   before a full kernel or image build.
+
+## Stage 12 real kernel candidate build
+
+Stage 12F adds:
+
+- `build-kernel-update-candidate.sh` — require a matching Stage 12E PASS, build
+  the real candidate `linux-uconsole` package in the existing local builder
+  image, reconstruct accepted userspace from the preserved baseline bundle
+  offline, install only the candidate kernel offline, and build a separately
+  named candidate image without changing accepted pins;
+- `install-kernel-update-candidate.sh` — perform the offline kernel-only package
+  replacement inside the reconstructed baseline rootfs, remove stale generated
+  metadata from the accepted kernel release, regenerate candidate module
+  metadata, and require the final userspace inventory to match the accepted
+  baseline exactly except for `linux-uconsole`.
+
+Candidate artifacts are written only under ignored `build/update-candidate/`
+and `out/update-candidate/`. A successful Stage 12F build does not promote the
+candidate; physical regression remains a separate gate.
+

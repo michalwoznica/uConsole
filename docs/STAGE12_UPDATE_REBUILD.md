@@ -565,7 +565,7 @@ repository_mutated=no
 Stage 12D therefore proves update discovery is read-only and distinguishes
 "update available" from "update applied". No project pin was changed.
 
-### Stage 12E — isolated kernel update-candidate compatibility validation: IMPLEMENTED, LOCAL VALIDATION PENDING
+### Stage 12E — isolated kernel update-candidate compatibility validation: COMPLETE
 
 `scripts/validate-kernel-update-candidate.sh VERSION COMMIT` validates one
 explicitly selected Raspberry Pi Linux candidate without modifying project
@@ -574,73 +574,79 @@ which runs the validator in the existing local Arch builder image with the
 repository mounted read-only. Candidate selection is deliberately explicit
 rather than following a moving branch head during validation.
 
-The validator:
-
-1. requires a newer kernel in the current selected major/minor branch family;
-2. records Git status before starting;
-3. creates only an ignored `build/update-candidate/kernel-<version>-<commit>/`
-   workspace;
-4. stages the authoritative `linux-uconsole` package inputs using the normal
-   project staging script;
-5. changes `pkgver` and `_commit` only in the staged candidate PKGBUILD;
-6. fetches the exact candidate commit and verifies its Makefile version;
-7. reuses the same immutable CWU50/OCP8178 sources and project patch series;
-8. executes the actual PKGBUILD `prepare()` path, which requires every project
-   patch to apply with `--fuzz=0`;
-9. requires the candidate release to resolve as `<version>-1-uconsole`;
-10. requires the existing uConsole kernel config contract to resolve unchanged;
-11. runs kernel `prepare`;
-12. builds device trees/overlays only, applies the compiled uConsole DTBO to
-    the compiled CM4 DTB, and checks the resulting overlay structure;
-13. deliberately does **not** build the kernel Image/modules or a disk image;
-14. compares Git status after completion and fails if tracked/unignored
-    repository state changed;
-15. writes a candidate report only inside the ignored candidate workspace;
-16. records the local builder image ID plus cross-GCC, cross-binutils and DTC
-    versions used for the compatibility check.
-
-The first candidate selected from Stage 12D is:
+The first selected candidate was exactly the Stage 12D discovery:
 
 ```text
 version=6.18.64
 commit=a40f735325391b1705161b07f36ed45e1bf04521
 ```
 
-Passing Stage 12E means only that the candidate is mechanically compatible
-with the current source/config/DT composition. It does not promote the kernel
-and does not replace the physically accepted 6.18.60 baseline.
+Final local Stage 12E evidence:
 
-The first local Stage 12E attempt stopped before candidate composition because
-`aarch64-linux-gnu-gcc` was not installed on the host. That exposed an
-implementation mismatch with the project's established containerized build
-workflow. Stage 12E now keeps the developer host clean: the cross compiler and
-other build dependencies are installed only inside the disposable candidate
-container. The local Arch builder image itself must already exist; Stage 12E
-will not silently pull a moving image tag.
+```text
+candidate_kernel_release=6.18.64-1-uconsole
+patch_series=0001-0005
+patch_fuzz=0
+required_config_count=17
+kernel_prepare=pass
+device_tree_build=pass
+dt_overlay_application=pass
+builder_image_id=3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8
+cross_gcc_version=aarch64-linux-gnu-gcc (GCC) 16.2.0
+cross_ld_version=GNU ld (GNU Binutils) 2.47
+dtc_version=Version: DTC v1.8.1
+project_pins_changed=no
+repository_mutated=no
+```
 
-The next local attempt reached the disposable container but its normal Podman
-network could not resolve Arch package mirrors. Host DNS was healthy, and an
-explicit rootful Podman test confirmed that the same local builder image
-resolves correctly with `--network=host`. Stage 12E therefore uses host
-networking for this deliberately online candidate-validation container. This
-changes only the candidate/toolchain fetch path: the repository remains mounted
-read-only, accepted pins remain unchanged, and no target-image networking policy
-is affected.
+This proves mechanical compatibility only. It does not promote the candidate
+or alter the physically accepted 6.18.60 baseline.
 
-### Stage 12F — full candidate build and bounded physical regression, only if deliberately chosen
+The local validation also proved two host-environment facts now encoded in the
+launcher: the developer workstation does not need a host cross compiler, and
+the deliberately online rootful Podman candidate container uses host networking
+because normal rootful container DNS did not resolve Arch package mirrors on
+this host. The repository remains read-only inside that container.
 
-If an update candidate passes Stage 12E and is intentionally selected for
-further evaluation, Stage 12F may:
+### Stage 12F — real candidate package/image build: IMPLEMENTED, LOCAL BUILD PENDING
 
-- build the complete candidate `linux-uconsole` package;
-- capture the exact builder/container/toolchain identity;
-- construct an update-candidate image separately from accepted baseline
-  artifacts;
-- run targeted physical regressions for display/backlight, audio/headphone,
-  battery/power key, networking, Bluetooth, USB and reboot/shutdown;
-- promote pins only after explicit acceptance.
+Stage 12F is intentionally kernel-only. It does not combine the kernel test
+with a rolling userspace refresh.
 
-A Stage 12E PASS alone is not a reason to upgrade.
+`scripts/build-kernel-update-candidate.sh VERSION COMMIT` requires the matching
+Stage 12E PASS report and then:
+
+1. verifies the accepted Stage 11 baseline bundle against
+   `release-baseline.lock`;
+2. stages the normal `linux-uconsole` package inputs and changes `pkgver` and
+   `_commit` only in the ignored candidate workspace;
+3. uses the already-local Arch builder image and host networking only while
+   building the real candidate `linux-uconsole` package;
+4. records builder image/toolchain identity and preserves the exact candidate
+   package plus SHA-256;
+5. reconstructs the accepted Stage 11 userspace/rootfs from the preserved
+   baseline bundle with container networking disabled;
+6. installs only the candidate `linux-uconsole` package into that reconstructed
+   rootfs with networking disabled;
+7. requires every installed package other than `linux-uconsole` to match the
+   accepted baseline inventory exactly;
+8. removes stale generated module metadata from the accepted kernel release and
+   regenerates dependency metadata for the candidate release;
+9. reuses the proven Stage 10 image-construction path to build/validate the
+   candidate microSD image under a candidate-specific filename;
+10. preserves the candidate final inventory, builder metadata, image manifest,
+    image/package hashes and a Stage 12F candidate report under
+    `out/update-candidate/`;
+11. verifies Git state is unchanged and records that physical validation and
+    promotion have not occurred.
+
+Stage 10 image construction now has opt-in environment overrides for candidate
+kernel release/commit, checkpoint label and output-name variant. With those
+overrides unset, normal Stage 10/locked-rebuild behavior and filenames are
+unchanged.
+
+A Stage 12F build PASS is still not promotion. The resulting image must undergo
+the bounded physical regression before any source/package/baseline pin changes.
 
 ## 8. Stage 12B conclusion
 
@@ -659,8 +665,8 @@ live build toolchain
 
 Stage 12B made that distinction explicit. Stage 12C subsequently proved the
 offline locked rebuild, and Stage 12D proved non-destructive update discovery.
-The current checkpoint is Stage 12E: validate one explicit kernel candidate
-without changing the accepted baseline.
+The current checkpoint is Stage 12F: build the real 6.18.64 candidate package
+and isolated candidate image without changing the accepted baseline.
 
 ### 2026-11-21 — Stage 12D update-checker SIGPIPE correction
 
