@@ -389,7 +389,10 @@ stale_refs="$backup_dir/stale-references.txt"
 : > "$stale_refs"
 while IFS= read -r tracked; do
     case "$tracked" in
-        docs/*|README.md|kernel/BASELINE.md|*.md) continue ;;
+        # kernel/sources/*.lock records immutable source/provenance identities.
+        # Those references may intentionally predate the current accepted kernel
+        # and must not be rewritten during baseline promotion.
+        docs/*|README.md|kernel/BASELINE.md|kernel/sources/*.lock|*.md) continue ;;
     esac
     case "$tracked" in
         *.sh|*.yml|*.yaml|*.lock|*PKGBUILD|*.conf|*.txt)

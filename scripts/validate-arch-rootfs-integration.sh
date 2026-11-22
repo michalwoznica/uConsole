@@ -7,10 +7,58 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck disable=SC1091
-source "$repo_root/image/archlinuxarm/rootfs.lock"
+rootfs_lock="$repo_root/image/archlinuxarm/rootfs.lock"
+kernel_lock="$repo_root/kernel/source.lock"
+pkgbuild="$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
 
-kernel_release="6.18.60-1-uconsole"
+for required in "$rootfs_lock" "$kernel_lock" "$pkgbuild"; do
+    if [[ ! -s "$required" ]]; then
+        printf 'ERROR: required Stage 9B input missing: %s\n' "$required" >&2
+        exit 1
+    fi
+done
+
+# shellcheck disable=SC1090
+source "$rootfs_lock"
+# shellcheck disable=SC1090
+source "$kernel_lock"
+
+pkgbuild_value() {
+    local key="$1"
+    local line
+
+    line="$(grep -m1 -E "^[[:space:]]*${key}[[:space:]]*=" "$pkgbuild" || true)"
+    if [[ -z "$line" ]]; then
+        printf 'ERROR: PKGBUILD scalar missing: %s\n' "$key" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$line" |
+        sed -E "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*//; s/[[:space:]]*(#.*)?$//; s/^[\"']//; s/[\"']$//"
+}
+
+kernel_pkgver="$(pkgbuild_value pkgver)"
+kernel_pkgrel="$(pkgbuild_value pkgrel)"
+kernel_pkgcommit="$(pkgbuild_value _commit)"
+
+if [[ "$kernel_pkgver" != "$RPI_LINUX_VERSION" ]]; then
+    printf 'ERROR: PKGBUILD pkgver %s does not match kernel source lock %s.\n' \
+        "$kernel_pkgver" "$RPI_LINUX_VERSION" >&2
+    exit 1
+fi
+if [[ "$kernel_pkgcommit" != "$RPI_LINUX_COMMIT" ]]; then
+    printf 'ERROR: PKGBUILD _commit %s does not match kernel source lock %s.\n' \
+        "$kernel_pkgcommit" "$RPI_LINUX_COMMIT" >&2
+    exit 1
+fi
+if ! [[ "$kernel_pkgrel" =~ ^[1-9][0-9]*$ ]]; then
+    printf 'ERROR: PKGBUILD pkgrel must be a positive integer: %s\n' \
+        "$kernel_pkgrel" >&2
+    exit 1
+fi
+
+kernel_package_version="${kernel_pkgver}-${kernel_pkgrel}"
+kernel_release="${kernel_package_version}-uconsole"
 jobs="${JOBS:-$(nproc)}"
 
 if ! [[ "$jobs" =~ ^[1-9][0-9]*$ ]]; then
@@ -248,7 +296,7 @@ pkginfo="$workdir/PKGINFO"
 bsdtar -xOf "$package_file" .PKGINFO > "$pkginfo"
 
 grep -Fxq 'pkgname = linux-uconsole' "$pkginfo"
-grep -Fxq 'pkgver = 6.18.60-1' "$pkginfo"
+grep -Fxq "pkgver = $kernel_package_version" "$pkginfo"
 grep -Fxq 'arch = aarch64' "$pkginfo"
 grep -Fxq 'conflict = linux-aarch64' "$pkginfo"
 grep -Fxq 'conflict = uboot-raspberrypi' "$pkginfo"
@@ -325,7 +373,7 @@ install -Dm644 \
 
 printf 'Verifying target package database transition...\n'
 pacman_target -Q linux-uconsole |
-    grep -Fxq 'linux-uconsole 6.18.60-1'
+    grep -Fxq "linux-uconsole $kernel_package_version"
 
 if pacman_target -Q linux-aarch64 >/dev/null 2>&1; then
     printf 'ERROR: linux-aarch64 is still registered after replacement.\n' >&2

@@ -849,16 +849,29 @@ In a fresh ChatGPT conversation:
 
 ## 14. Change log
 
-### 2026-11-22 — Revision 6.17 / Stage 12H stale-reference audit correction
+### 2026-11-22 — Revision 6.18 / Stage 12H provenance/validator correction
 
-- Recorded the first real Stage 12H promotion attempt reaching the stale-reference
-  audit after both baseline-bundle verification gates passed.
-- Confirmed rollback restored the prior accepted state and removed the unaccepted
-  promoted bundle.
-- Diagnosed false positives caused by unescaped dots in the old-version
-  `grep -E` pattern.
-- Replaced the regex test with exact `grep -F` checks for old version and commit.
-- No accepted pin, package, image or baseline changed.
+- Recorded two Stage 12H promotion attempts reaching the stale accepted-kernel
+  audit and rolling back cleanly before promotion was retained.
+- Inspected the exact reported references rather than treating them uniformly.
+- Confirmed `kernel/sources/axp20x-battery.lock` is immutable Stage 5 provenance:
+  its Raspberry Pi base commit must remain the original audited source identity.
+- Confirmed `scripts/validate-arch-rootfs-integration.sh` contained three active
+  hard-coded `6.18.60-1` assumptions.
+- Generalized Stage 9B to derive package/kernel release from the authoritative
+  PKGBUILD and cross-check its version/commit against `kernel/source.lock`.
+- Excluded `kernel/sources/*.lock` provenance records from the Stage 12H stale
+  accepted-kernel audit while retaining the audit for active scripts/config.
+- No accepted pin, package, image or baseline changed in either failed run.
+
+### 2026-11-22 — Revision 6.17 / Stage 12H initial stale-reference audit correction
+
+- Replaced the promotion audit's regex version match with literal `grep -F`
+  checks after the first failed promotion attempt.
+- A second promotion attempt proved that matching mode was not the underlying
+  issue: the same two paths were reported and required exact code inspection.
+- Rollback restored the prior accepted state and removed the unaccepted promoted
+  bundle after both attempts.
 
 ### 2026-11-22 — Revision 6.16 / Stage 12H promotion tooling
 

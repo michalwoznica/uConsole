@@ -790,24 +790,26 @@ is part of that promotion.
 
 
 
-### 2026-11-22 — Stage 12H stale-reference audit false-positive correction
+### 2026-11-22 — Stage 12H provenance/active-validator correction
 
-- The first real Stage 12H promotion attempt passed current-bundle verification,
-  constructed the promoted bundle, updated the temporary promotion locks and
-  verified the promoted bundle, then stopped at the stale-kernel-reference audit.
-- The audit reported `kernel/sources/axp20x-battery.lock` and
-  `scripts/validate-arch-rootfs-integration.sh`, but an exact fixed-string check
-  after rollback found neither the old `6.18.60` version nor the old kernel
-  commit in those files.
-- Root cause: the audit attempted to escape dots through Bash parameter
-  substitution before `grep -E`; the backslashes were not preserved, so the dots
-  in `6.18.60` acted as regular-expression wildcards and caused false matches.
-- The audit now checks the previous version and commit independently with
-  `grep -F`, so only literal stale accepted-kernel identities are actionable.
-- Promotion rollback worked as designed: the previous accepted repository state
-  was restored and the unaccepted `archlinuxarm-stage12h-2026-11-22` bundle was
-  removed.
-- No accepted pin, package, image or baseline bundle changed in the failed run.
+- Two real promotion attempts reached the stale accepted-kernel audit and rolled
+  back cleanly before any promotion was retained.
+- Exact inspection established that `kernel/sources/axp20x-battery.lock` contains
+  the original Raspberry Pi commit against which the Stage 5 battery delta was
+  audited. That is immutable provenance, not the current accepted kernel pin,
+  and must remain unchanged across later kernel promotions.
+- Exact inspection of `scripts/validate-arch-rootfs-integration.sh` found three
+  genuine active `6.18.60-1` assumptions: the expected module release, built
+  package metadata, and installed package-version assertion.
+- Stage 9B now derives `pkgver`, `pkgrel` and `_commit` from the authoritative
+  `linux-uconsole/PKGBUILD`, cross-checks them against `kernel/source.lock`, and
+  derives the expected package/kernel release from those values.
+- The Stage 12H stale-reference audit now excludes `kernel/sources/*.lock`
+  provenance records while continuing to reject old accepted-kernel identities
+  in active scripts/configuration.
+- Both failed promotion attempts restored the previous accepted repository state
+  and removed the unaccepted `archlinuxarm-stage12h-2026-11-22` bundle.
+- No accepted pin, package, image or baseline bundle changed in either failed run.
 
 ### 2026-11-22 — Stage 12H promotion tooling
 
