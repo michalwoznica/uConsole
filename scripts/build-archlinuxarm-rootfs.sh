@@ -578,7 +578,7 @@ install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/uconsole-pacman-keyring-init.service" \
     "$output_rootfs/usr/lib/systemd/system/uconsole-pacman-keyring-init.service"
 install -Dm755 \
-    "$repo_root/image/archlinuxarm/rootfs/uconsole-brightness-keys" \
+    "$repo_root/image/shared/rootfs/uconsole-brightness-keys" \
     "$output_rootfs/usr/lib/uconsole/uconsole-brightness-keys"
 install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/uconsole-brightness-keys.service" \
