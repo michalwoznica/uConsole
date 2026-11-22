@@ -810,13 +810,25 @@ Stage 12H also generalizes the baseline capture/verifier and locked Stage 10
 rootfs/image builders so accepted kernel release identity comes from
 `release-baseline.lock` rather than hard-coded 6.18.60 values.
 
+First real Stage 12H promotion attempt reached the stale-reference audit after
+both old and newly promoted baseline bundles had verified successfully. The
+audit falsely reported two files because the `grep -E` version pattern treated
+the dots in `6.18.60` as regex wildcards. Exact fixed-string inspection after
+rollback found no literal old version or old commit in either reported file.
+Rollback restored the accepted repository state and removed the unaccepted new
+bundle exactly as designed.
+
+The audit now uses independent `grep -F` checks for the previous kernel version
+and commit. No accepted kernel/image/baseline identity changed in the failed
+attempt.
+
 ### NEXT
 
-Commit the Stage 12H tooling, run promotion for the exact validated
-`6.18.64 / a40f735325391b1705161b07f36ed45e1bf04521` candidate, and review the
-final promotion block. If it reports physical validation PASS and locked
-rebuild PASS, commit the generated promotion locks and close Stage 12. No
-additional kernel update is part of this cycle.
+Commit the Stage 12H stale-reference-audit correction, rerun promotion for the
+exact validated `6.18.64 / a40f735325391b1705161b07f36ed45e1bf04521`
+candidate, and review the final promotion block. If it reports physical
+validation PASS and locked rebuild PASS, commit the generated promotion locks
+and close Stage 12. No additional kernel update is part of this cycle.
 
 
 ---
@@ -836,6 +848,17 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.17 / Stage 12H stale-reference audit correction
+
+- Recorded the first real Stage 12H promotion attempt reaching the stale-reference
+  audit after both baseline-bundle verification gates passed.
+- Confirmed rollback restored the prior accepted state and removed the unaccepted
+  promoted bundle.
+- Diagnosed false positives caused by unescaped dots in the old-version
+  `grep -E` pattern.
+- Replaced the regex test with exact `grep -F` checks for old version and commit.
+- No accepted pin, package, image or baseline changed.
 
 ### 2026-11-22 — Revision 6.16 / Stage 12H promotion tooling
 

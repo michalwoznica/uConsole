@@ -393,7 +393,8 @@ while IFS= read -r tracked; do
     esac
     case "$tracked" in
         *.sh|*.yml|*.yaml|*.lock|*PKGBUILD|*.conf|*.txt)
-            if grep -nE "${old_kernel_version//./\\.}|$old_kernel_commit" "$repo_root/$tracked" >/dev/null 2>&1; then
+            if grep -Fq -- "$old_kernel_version" "$repo_root/$tracked" ||
+               grep -Fq -- "$old_kernel_commit" "$repo_root/$tracked"; then
                 printf '%s\n' "$tracked" >> "$stale_refs"
             fi
             ;;

@@ -790,6 +790,25 @@ is part of that promotion.
 
 
 
+### 2026-11-22 — Stage 12H stale-reference audit false-positive correction
+
+- The first real Stage 12H promotion attempt passed current-bundle verification,
+  constructed the promoted bundle, updated the temporary promotion locks and
+  verified the promoted bundle, then stopped at the stale-kernel-reference audit.
+- The audit reported `kernel/sources/axp20x-battery.lock` and
+  `scripts/validate-arch-rootfs-integration.sh`, but an exact fixed-string check
+  after rollback found neither the old `6.18.60` version nor the old kernel
+  commit in those files.
+- Root cause: the audit attempted to escape dots through Bash parameter
+  substitution before `grep -E`; the backslashes were not preserved, so the dots
+  in `6.18.60` acted as regular-expression wildcards and caused false matches.
+- The audit now checks the previous version and commit independently with
+  `grep -F`, so only literal stale accepted-kernel identities are actionable.
+- Promotion rollback worked as designed: the previous accepted repository state
+  was restored and the unaccepted `archlinuxarm-stage12h-2026-11-22` bundle was
+  removed.
+- No accepted pin, package, image or baseline bundle changed in the failed run.
+
 ### 2026-11-22 — Stage 12H promotion tooling
 
 - Added a machine-readable Stage 12G physical-validation lock for the exact
