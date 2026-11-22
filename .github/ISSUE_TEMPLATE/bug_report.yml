@@ -1,0 +1,107 @@
+name: Bug report
+description: Report a reproducible problem with the uConsole project, build system, or image.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem.
+
+        **Do not use this form for security vulnerabilities.** Use the repository's private vulnerability reporting process described in `SECURITY.md`.
+
+        Please remove credentials, private keys, tokens, personal hostnames, SSIDs, and other sensitive or environment-specific information before submitting logs.
+
+  - type: checkboxes
+    id: existing_issue
+    attributes:
+      label: Existing reports
+      options:
+        - label: I searched existing issues and did not find the same problem.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Select the area that best matches the problem.
+      options:
+        - Released image / installed system
+        - Kernel / driver / device tree / hardware support
+        - Image builder / packaging
+        - Update / locked-rebuild workflow
+        - CI / repository tooling
+        - Documentation
+        - ARMtix / OpenRC development
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Version and hardware
+      description: Provide the identifiers that are relevant to the problem.
+      placeholder: |
+        Release/tag:
+        Commit (if self-built):
+        Kernel (uname -r):
+        Compute Module:
+        uConsole/display revision:
+        Other relevant hardware:
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: What happened?
+      description: Describe the observed behaviour and the failure as precisely as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: What did you expect?
+      description: Describe the expected behaviour.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable sequence that reproduces the problem.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Include only output that helps diagnose the problem. Remove sensitive information first.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add anything else that materially helps reproduce or understand the problem.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Submission checks
+      options:
+        - label: This report does not disclose a security vulnerability.
+          required: true
+        - label: I reviewed the information above and removed secrets and unnecessary private data.
+          required: true
