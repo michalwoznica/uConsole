@@ -69,6 +69,13 @@ Stage 10 adds:
   deterministic partitioned microSD image, including checks that generated
   module dependency/alias metadata survives into the final root filesystem.
 
+## Shared image-building libraries
+
+- `lib/image-partition-filesystems.sh` — distro-neutral helpers that apply a
+  target-provided image-layout lock to write the deterministic partition table
+  and create/verify the boot and root filesystems. Target-specific image
+  identity and geometry remain outside the library.
+
 ## Shared local/CI image build entry point
 
 Stage 11 adds:

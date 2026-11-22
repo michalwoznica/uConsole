@@ -25,6 +25,8 @@ source "$repo_root/image/archlinuxarm/image-layout.lock"
 source "$repo_root/kernel/source.lock"
 # shellcheck disable=SC1091
 source "$repo_root/image/archlinuxarm/release-baseline.lock"
+# shellcheck disable=SC1091
+source "$repo_root/scripts/lib/image-partition-filesystems.sh"
 
 kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-$BASELINE_KERNEL_RELEASE}"
 rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
@@ -154,25 +156,7 @@ if [[ "$actual_sector_size" != "$LOGICAL_SECTOR_SIZE" ]]; then
     exit 1
 fi
 
-printf 'Writing deterministic DOS partition table...\n'
-sfdisk \
-    --wipe always \
-    "$loopdev" <<EOF
-label: dos
-label-id: $DISK_IDENTIFIER_HEX
-unit: sectors
-sector-size: $LOGICAL_SECTOR_SIZE
-
-start=$BOOT_START_SECTOR, size=$BOOT_SIZE_SECTORS, type=$BOOT_PARTITION_TYPE, bootable
-start=$ROOT_START_SECTOR, type=$ROOT_PARTITION_TYPE
-EOF
-
-actual_disk_id="$(sfdisk --disk-id "$loopdev" | tr '[:upper:]' '[:lower:]')"
-if [[ "$actual_disk_id" != "${DISK_IDENTIFIER_HEX,,}" ]]; then
-    printf 'ERROR: disk identifier mismatch: got %s expected %s\n' \
-        "$actual_disk_id" "${DISK_IDENTIFIER_HEX,,}" >&2
-    exit 1
-fi
+uconsole_write_image_partition_table "$loopdev"
 
 printf 'Reattaching image with partition scanning enabled...\n'
 losetup -d "$loopdev"
@@ -209,44 +193,7 @@ for part in "$boot_part" "$root_part"; do
     fi
 done
 
-printf 'Creating deterministic FAT boot filesystem...\n'
-mkfs.vfat \
-    -F 32 \
-    -i "$BOOT_VOLUME_ID_HEX" \
-    -n "$BOOT_FILESYSTEM_LABEL" \
-    "$boot_part"
-
-printf 'Creating deterministic ext4 root filesystem identity...\n'
-mkfs.ext4 \
-    -F \
-    -U "$ROOT_FILESYSTEM_UUID" \
-    -L "$ROOT_FILESYSTEM_LABEL" \
-    -m 0 \
-    -E lazy_itable_init=0,lazy_journal_init=0 \
-    "$root_part"
-
-actual_boot_partuuid="$(blkid -s PARTUUID -o value "$boot_part")"
-actual_root_partuuid="$(blkid -s PARTUUID -o value "$root_part")"
-
-if [[ "${actual_boot_partuuid,,}" != "${BOOT_PARTUUID,,}" ]]; then
-    printf 'ERROR: boot PARTUUID mismatch: got %s expected %s\n' \
-        "$actual_boot_partuuid" "$BOOT_PARTUUID" >&2
-    exit 1
-fi
-
-if [[ "${actual_root_partuuid,,}" != "${ROOT_PARTUUID,,}" ]]; then
-    printf 'ERROR: root PARTUUID mismatch: got %s expected %s\n' \
-        "$actual_root_partuuid" "$ROOT_PARTUUID" >&2
-    exit 1
-fi
-
-actual_boot_label="$(blkid -s LABEL -o value "$boot_part")"
-actual_root_label="$(blkid -s LABEL -o value "$root_part")"
-actual_root_uuid="$(blkid -s UUID -o value "$root_part")"
-
-[[ "$actual_boot_label" == "$BOOT_FILESYSTEM_LABEL" ]]
-[[ "$actual_root_label" == "$ROOT_FILESYSTEM_LABEL" ]]
-[[ "${actual_root_uuid,,}" == "${ROOT_FILESYSTEM_UUID,,}" ]]
+uconsole_format_image_filesystems "$boot_part" "$root_part"
 
 printf 'Mounting image filesystems...\n'
 mount "$root_part" "$mount_root"
