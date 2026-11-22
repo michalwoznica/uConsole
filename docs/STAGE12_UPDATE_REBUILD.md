@@ -626,8 +626,10 @@ Stage 12E PASS report and then:
    package plus SHA-256;
 5. reconstructs the accepted Stage 11 userspace/rootfs from the preserved
    baseline bundle with container networking disabled;
-6. installs only the candidate `linux-uconsole` package into that reconstructed
-   rootfs with networking disabled;
+6. creates a Stage 12F-specific temporary offline pacman configuration inside
+   the reconstructed rootfs, installs only the candidate `linux-uconsole`
+   package with networking disabled, and removes that temporary configuration
+   before candidate validation completes;
 7. requires every installed package other than `linux-uconsole` to match the
    accepted baseline inventory exactly;
 8. removes stale generated module metadata from the accepted kernel release and
@@ -667,6 +669,19 @@ Stage 12B made that distinction explicit. Stage 12C subsequently proved the
 offline locked rebuild, and Stage 12D proved non-destructive update discovery.
 The current checkpoint is Stage 12F: build the real 6.18.64 candidate package
 and isolated candidate image without changing the accepted baseline.
+
+
+### 2026-11-22 — Stage 12F temporary pacman-policy correction
+
+- The first real Stage 12F run successfully reconstructed and validated the
+  accepted Stage 10/11 rootfs, then stopped before candidate-kernel replacement.
+- Root cause: the Stage 10 locked builder intentionally removes its temporary
+  `/etc/pacman.stage12-locked.conf` after rootfs composition, while the new
+  Stage 12F installer incorrectly required that build-only file to remain.
+- Stage 12F now creates its own temporary offline pacman configuration only for
+  candidate-kernel replacement and removes it on success or failure.
+- The accepted image/rootfs policy is unchanged; no build-only pacman
+  configuration is retained in the candidate image.
 
 ### 2026-11-21 — Stage 12D update-checker SIGPIPE correction
 

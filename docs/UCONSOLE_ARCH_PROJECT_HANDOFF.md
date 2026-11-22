@@ -729,7 +729,9 @@ The Stage 12F contract is kernel-only:
   Arch builder image;
 - reconstruct accepted Stage 11 userspace from the preserved baseline bundle
   offline;
-- replace only `linux-uconsole` with the candidate package offline;
+- create a Stage 12F-only temporary offline pacman configuration, replace only
+  `linux-uconsole` with the candidate package offline, then remove that
+  temporary configuration;
 - require every other installed package name/version to remain exactly equal to
   the accepted inventory;
 - build the candidate image through the existing Stage 10 image path with
@@ -773,6 +775,21 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.14 / Stage 12F temporary pacman-policy correction
+
+- First real Stage 12F run completed accepted-rootfs reconstruction and
+  validation, then stopped before candidate-kernel replacement.
+- Diagnosed the failure as a lifecycle mismatch: Stage 10 correctly removes its
+  temporary `/etc/pacman.stage12-locked.conf` after locked composition, but
+  Stage 12F incorrectly expected that file to remain.
+- Stage 12F now creates and cleans up its own temporary offline pacman
+  configuration solely around candidate-kernel replacement.
+- Synthetic kernel-only replacement validation passes with no Stage 10 locked
+  pacman configuration present and confirms the Stage 12F temporary config is
+  absent afterward.
+- No accepted pin, Stage 10 behavior, userspace inventory policy, or promotion
+  state changed. Stage 12F remains local-build pending.
 
 ### 2026-11-22 — Revision 6.13 / Stage 12E complete, Stage 12F candidate build implementation
 

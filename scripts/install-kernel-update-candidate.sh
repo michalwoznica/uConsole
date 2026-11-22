@@ -49,12 +49,8 @@ if [[ ! -s "$baseline_bundle/inventories/final-packages.txt" ]]; then
     printf 'ERROR: accepted baseline final inventory is missing.\n' >&2
     exit 1
 fi
-if [[ ! -s "$rootfs/etc/pacman.stage12-locked.conf" ]]; then
-    printf 'ERROR: locked rootfs pacman configuration is missing.\n' >&2
-    exit 1
-fi
-
 workdir="$(mktemp -d)"
+stage12f_pacman_conf="$rootfs/etc/pacman.stage12f-candidate.conf"
 target_ldconfig=""
 target_ldconfig_mode=""
 system_hooks="$rootfs/usr/share/libalpm/hooks"
@@ -83,9 +79,26 @@ restore_hooks() {
 cleanup() {
     restore_ldconfig
     restore_hooks
+    rm -f "$stage12f_pacman_conf"
     rm -rf "$workdir"
 }
 trap cleanup EXIT
+
+if [[ -e "$stage12f_pacman_conf" ]]; then
+    printf 'ERROR: unexpected Stage 12F pacman configuration already exists.\n' >&2
+    exit 1
+fi
+cat > "$stage12f_pacman_conf" <<'PACMAN_STAGE12F'
+[options]
+Architecture = aarch64
+DBPath = /var/lib/pacman/
+CacheDir = /var/cache/pacman/pkg/
+LogFile = /var/log/pacman.log
+GPGDir = /etc/pacman.d/gnupg/
+HookDir = /etc/pacman.d/hooks/
+SigLevel = Never
+LocalFileSigLevel = Never
+PACMAN_STAGE12F
 
 pkginfo="$workdir/PKGINFO"
 bsdtar -xOf "$candidate_package" .PKGINFO > "$pkginfo"
@@ -98,7 +111,7 @@ grep -Fxq 'conflict = uboot-raspberrypi' "$pkginfo"
 pacman_target() {
     pacman \
         --sysroot "$rootfs" \
-        --config /etc/pacman.stage12-locked.conf \
+        --config /etc/pacman.stage12f-candidate.conf \
         --arch aarch64 \
         --disable-sandbox-filesystem \
         "$@"
@@ -190,6 +203,12 @@ fi
 
 if ! grep -Fqx $'linux-uconsole\t'"${candidate_pkgver}" "$output_inventory"; then
     printf 'ERROR: candidate final inventory does not contain expected linux-uconsole version.\n' >&2
+    exit 1
+fi
+
+rm -f "$stage12f_pacman_conf"
+if [[ -e "$stage12f_pacman_conf" ]]; then
+    printf 'ERROR: temporary Stage 12F pacman configuration was not removed.\n' >&2
     exit 1
 fi
 

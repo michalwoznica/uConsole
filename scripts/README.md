@@ -153,10 +153,11 @@ Stage 12F adds:
   offline, install only the candidate kernel offline, and build a separately
   named candidate image without changing accepted pins;
 - `install-kernel-update-candidate.sh` — perform the offline kernel-only package
-  replacement inside the reconstructed baseline rootfs, remove stale generated
-  metadata from the accepted kernel release, regenerate candidate module
-  metadata, and require the final userspace inventory to match the accepted
-  baseline exactly except for `linux-uconsole`.
+  replacement inside the reconstructed baseline rootfs using a temporary
+  Stage 12F-specific pacman configuration that is removed afterward, remove
+  stale generated metadata from the accepted kernel release, regenerate
+  candidate module metadata, and require the final userspace inventory to match
+  the accepted baseline exactly except for `linux-uconsole`.
 
 Candidate artifacts are written only under ignored `build/update-candidate/`
 and `out/update-candidate/`. A successful Stage 12F build does not promote the
