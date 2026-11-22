@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-21
-**Document revision:** 6.9
-**Current phase:** Stage 12D non-destructive update checker IMPLEMENTED; local validation pending
+**Document revision:** 6.10
+**Current phase:** Stage 12E isolated kernel update-candidate compatibility validation IMPLEMENTED; local validation pending
 
 ---
 
@@ -345,9 +345,9 @@ Stage 12 is split into bounded maintenance checkpoints:
 - **12A:** audit/classify all build inputs as pinned, rolling or generated;
 - **12B:** define locked-rebuild versus intentional-update policy — COMPLETE;
 - **12C:** capture the accepted baseline package inventory/payload bundle and implement locked rebuild — COMPLETE;
-- **12D:** add a non-destructive update checker;
-- **12E:** define/automate update-specific validation;
-- **12F:** prove the maintenance path against the existing known-good pins.
+- **12D:** add and locally prove a non-destructive update checker — COMPLETE;
+- **12E:** validate an explicit kernel update candidate without changing pins — IMPLEMENTED, LOCAL VALIDATION PENDING;
+- **12F:** full candidate build/physical regression only after an explicit decision to evaluate a Stage 12E PASS.
 
 See `docs/STAGE12_UPDATE_REBUILD.md`.
 
@@ -402,7 +402,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 
 - long-duration hardware reliability;
 - byte-for-byte image reproducibility across independent builds;
-- Stage 12B-F reproducible update/rebuild implementation;
+- Stage 12E-F update-candidate validation/promotion path;
 - ARMtix/OpenRC image target.
 
 ---
@@ -666,29 +666,66 @@ reconstructed without live repository access. The differing compressed image
 hash is expected and accepted because Stage 12 does not require byte-identical
 filesystem images.
 
-### Stage 12D — non-destructive update checker: IMPLEMENTED, LOCAL VALIDATION PENDING
+### Stage 12D — non-destructive update checker: COMPLETE
 
-Added `scripts/check-updates.sh`. Its contract is:
+Added and locally validated `scripts/check-updates.sh`.
 
-- verify `release-baseline.lock`, `rootfs.lock`, `kernel/source.lock` and the
-  `linux-uconsole` PKGBUILD agree before querying upstream;
-- inspect the configured Arch Linux ARM rootfs mirror for the latest versioned
-  Raspberry Pi AArch64 rootfs, with a `-latest` sidecar comparison fallback;
-- inspect only Raspberry Pi Linux `rpi-6.18.y` and report branch-head
-  version/commit;
-- report update availability without changing any pin;
-- create no files and perform no package/build transaction;
-- snapshot Git status before/after and fail if repository state changes;
-- treat upstream query failure as unknown/error rather than "no update".
+Final local result:
 
-Local execution is the validation boundary. Do not proceed to update-workflow
-implementation until the checker has run successfully and its output has been
-reviewed.
+```text
+local_lock_consistency=pass
+pinned_rootfs_release=2026.08
+rootfs_candidate_release=2026.08
+rootfs_update_available=no
+pinned_kernel_version=6.18.60
+pinned_kernel_commit=0b41724521c9adf5399409d02aece6c1df0a4432
+kernel_candidate_version=6.18.64
+kernel_candidate_commit=a40f735325391b1705161b07f36ed45e1bf04521
+kernel_update_available=yes
+repository_mutated=no
+```
+
+The first local run exposed a late SIGPIPE/`pipefail` parser bug after the
+network queries had already succeeded. The parser was corrected and an ERR trap
+was added; the rerun produced the complete report above. No project pin changed.
+
+### Stage 12E — isolated kernel update-candidate compatibility validation: IMPLEMENTED, LOCAL VALIDATION PENDING
+
+Added `scripts/validate-kernel-update-candidate.sh VERSION COMMIT`.
+
+Its boundary is deliberately narrower than a real update:
+
+- candidate version/commit must be explicit;
+- only a newer kernel in the current 6.18 branch family is accepted;
+- all work stays under ignored `build/update-candidate/`;
+- the normal package-staging script is reused;
+- only the staged PKGBUILD receives candidate `pkgver`/`_commit` values;
+- the exact candidate source commit must report the requested kernel version;
+- the existing project patch series must apply through the actual PKGBUILD
+  `prepare()` path with `--fuzz=0`;
+- the existing uConsole config contract must still resolve;
+- kernel `prepare` must pass;
+- candidate DTBs/DTBO are built and the uConsole overlay must apply to the CM4
+  base DTB;
+- no kernel Image/modules build occurs;
+- no disk image is produced;
+- Git status must be identical before/after;
+- a candidate report is written only inside the ignored workspace.
+
+The first selected candidate is exactly the Stage 12D discovery:
+
+```text
+version=6.18.64
+commit=a40f735325391b1705161b07f36ed45e1bf04521
+```
+
+A PASS proves mechanical compatibility only. It does not promote the candidate
+or alter the physically accepted 6.18.60 baseline.
 
 ### NEXT
 
-Run `bash ./scripts/check-updates.sh` from the repository and review the Stage
-12D summary.
+Run the exact Stage 12E candidate validator and review its summary before any
+full kernel build or pin change.
 
 
 ---
@@ -708,6 +745,25 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-21 — Revision 6.10 / Stage 12D complete, Stage 12E kernel candidate validator
+
+- Recorded successful Stage 12D rerun after the SIGPIPE correction.
+- Confirmed Arch Linux ARM rootfs `2026.08` remains current.
+- Detected Raspberry Pi `rpi-6.18.y` candidate `6.18.64` at
+  `a40f735325391b1705161b07f36ed45e1bf04521`.
+- Confirmed the read-only checker left repository state unchanged.
+- Added explicit/non-promoting Stage 12E kernel candidate validator.
+- Candidate work is isolated under ignored `build/update-candidate/`.
+- Candidate PKGBUILD metadata is modified only in the staged workspace.
+- Reused the actual `prepare()` path so patches remain strict `--fuzz=0`.
+- Added resolved-config, kernel-prepare, DT build/application and Git-state
+  validation.
+- Deliberately stopped before full kernel/Image/modules/package/image build.
+- No accepted source pin, package metadata, baseline lock or release artifact
+  changed.
+- Stage 12E remains open pending local validation of the exact 6.18.64
+  candidate.
 
 ### 2026-11-21 — Revision 6.9 / Stage 12D update checker candidate
 

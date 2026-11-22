@@ -526,7 +526,7 @@ Acceptance result:
 
 Stage 12C is complete.
 
-### Stage 12D — non-destructive update checker: IMPLEMENTED, LOCAL VALIDATION PENDING
+### Stage 12D — non-destructive update checker: COMPLETE
 
 `scripts/check-updates.sh` is the read-only discovery path. It first verifies
 that the accepted baseline still agrees with:
@@ -543,59 +543,83 @@ sidecars without downloading either rootfs archive. For the kernel it queries
 only the selected Raspberry Pi `rpi-6.18.y` branch, records its branch-head
 commit and derives the upstream version from that commit's Makefile.
 
-The checker reports:
+The first local run exposed a `set -o pipefail`/SIGPIPE bug in the kernel
+Makefile parser. That parser now uses here-strings and the checker has an ERR
+trap so unexpected failures cannot be silent.
 
-- pinned and candidate Arch rootfs release;
-- whether an Arch rootfs candidate differs from the pin;
-- pinned Raspberry Pi kernel version/commit;
-- candidate `rpi-6.18.y` version/commit;
-- whether the kernel branch head differs from the pin;
-- local lock/package consistency;
-- `repository_mutated=no`.
+Final local Stage 12D evidence:
 
-It creates no files and performs no package/build transaction. Git status is
-snapshotted before and after the network queries; a state change is treated as
-a failure. An available update is informational and does not change exit
-status. An upstream source that cannot be queried reliably is reported as
-unknown and causes a non-zero exit rather than being misreported as
-"no update".
+```text
+local_lock_consistency=pass
+pinned_rootfs_release=2026.08
+rootfs_candidate_release=2026.08
+rootfs_update_available=no
+pinned_kernel_version=6.18.60
+pinned_kernel_commit=0b41724521c9adf5399409d02aece6c1df0a4432
+kernel_candidate_version=6.18.64
+kernel_candidate_commit=a40f735325391b1705161b07f36ed45e1bf04521
+kernel_update_available=yes
+repository_mutated=no
+```
 
-No project pin is ever changed by this script. Local execution is the remaining
-Stage 12D validation step.
+Stage 12D therefore proves update discovery is read-only and distinguishes
+"update available" from "update applied". No project pin was changed.
 
-### Stage 12E — update workflow and validation matrix
+### Stage 12E — isolated kernel update-candidate compatibility validation: IMPLEMENTED, LOCAL VALIDATION PENDING
 
-Document/automate the required validation for each update class.
+`scripts/validate-kernel-update-candidate.sh VERSION COMMIT` validates one
+explicitly selected Raspberry Pi Linux candidate without modifying project
+pins. Candidate selection is deliberately explicit rather than following a
+moving branch head during validation.
 
-#### Arch userspace/rootfs update
+The validator:
 
-Expected validation:
+1. requires a newer kernel in the current selected major/minor branch family;
+2. records Git status before starting;
+3. creates only an ignored `build/update-candidate/kernel-<version>-<commit>/`
+   workspace;
+4. stages the authoritative `linux-uconsole` package inputs using the normal
+   project staging script;
+5. changes `pkgver` and `_commit` only in the staged candidate PKGBUILD;
+6. fetches the exact candidate commit and verifies its Makefile version;
+7. reuses the same immutable CWU50/OCP8178 sources and project patch series;
+8. executes the actual PKGBUILD `prepare()` path, which requires every project
+   patch to apply with `--fuzz=0`;
+9. requires the candidate release to resolve as `<version>-1-uconsole`;
+10. requires the existing uConsole kernel config contract to resolve unchanged;
+11. runs kernel `prepare`;
+12. builds device trees/overlays only, applies the compiled uConsole DTBO to
+    the compiled CM4 DTB, and checks the resulting overlay structure;
+13. deliberately does **not** build the kernel Image/modules or a disk image;
+14. compares Git status after completion and fails if tracked/unignored
+    repository state changed;
+15. writes a candidate report only inside the ignored candidate workspace.
 
-- rootfs provenance/signature;
-- package transaction/inventory;
-- boot policy unchanged;
-- services/networking/pacman;
-- bounded physical smoke test.
+The first candidate selected from Stage 12D is:
 
-#### Kernel update
+```text
+version=6.18.64
+commit=a40f735325391b1705161b07f36ed45e1bf04521
+```
 
-Expected validation:
+Passing Stage 12E means only that the candidate is mechanically compatible
+with the current source/config/DT composition. It does not promote the kernel
+and does not replace the physically accepted 6.18.60 baseline.
 
-- exact new kernel commit;
-- patches apply with `--fuzz=0`;
-- config/package validation;
-- DT/overlay validation;
-- full package build;
-- targeted physical hardware regression.
+### Stage 12F — full candidate build and bounded physical regression, only if deliberately chosen
 
-### Stage 12F — prove the workflow without changing the known-good baseline
+If an update candidate passes Stage 12E and is intentionally selected for
+further evaluation, Stage 12F may:
 
-First prove the new maintenance machinery against the current pins.
+- build the complete candidate `linux-uconsole` package;
+- capture the exact builder/container/toolchain identity;
+- construct an update-candidate image separately from accepted baseline
+  artifacts;
+- run targeted physical regressions for display/backlight, audio/headphone,
+  battery/power key, networking, Bluetooth, USB and reboot/shutdown;
+- promote pins only after explicit acceptance.
 
-Do **not** upgrade Linux or the Arch rootfs merely to test Stage 12.
-
-Only after the maintenance path itself is proven should a real upstream update
-be attempted.
+A Stage 12E PASS alone is not a reason to upgrade.
 
 ## 8. Stage 12B conclusion
 
@@ -612,9 +636,10 @@ live final Arch package update
 live build toolchain
 ```
 
-Stage 12B has now made that distinction explicit. The next checkpoint is
-Stage 12C: capture the current accepted baseline's userspace inventory and
-package payloads while the final Stage 11 build workspace still exists.
+Stage 12B made that distinction explicit. Stage 12C subsequently proved the
+offline locked rebuild, and Stage 12D proved non-destructive update discovery.
+The current checkpoint is Stage 12E: validate one explicit kernel candidate
+without changing the accepted baseline.
 
 ### 2026-11-21 — Stage 12D update-checker SIGPIPE correction
 

@@ -128,3 +128,11 @@ A candidate being available is informational and returns success. Failure to
 query an upstream source reliably is distinct from "no update" and returns a
 non-zero status.
 
+Stage 12E adds:
+
+- `validate-kernel-update-candidate.sh` — validate one explicitly selected
+  newer Raspberry Pi Linux commit in an ignored candidate workspace. It stages
+  a candidate-only PKGBUILD, executes the normal patch/config `prepare()` path
+  with `--fuzz=0`, builds/applies the CM4/uConsole device trees, and proves Git
+  state is unchanged. It intentionally stops before a full kernel or image
+  build.
