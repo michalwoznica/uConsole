@@ -81,17 +81,52 @@ must occur on a dedicated development branch and should not change the stable
 Arch baseline on `main` until that target is independently validated and ready
 for promotion.
 
-## Public release status
+## First public release — v1.0.0
 
-The Arch implementation is technically complete and frozen at the Stage 12H
-baseline above. The next project checkpoint is the public-repository transition:
-review repository history/content for private information or secrets, verify
-public-facing licensing/provenance and release documentation, and publish the
-exact physically validated Arch image with its checksums.
+The first stable public project release is prepared as **`v1.0.0`**. The
+version identifies this project release; it does **not** imply that the bundled
+Arch Linux ARM userspace is a November 2026 upstream distribution snapshot.
+The accepted rootfs lineage remains the pinned Arch Linux ARM `2026.08` input
+recorded by the repository.
 
-No ARMtix/Artix implementation work should begin until that publication
-checkpoint is complete.
+The release artifact must be the exact physically validated Stage 12F/12G
+compressed image, renamed for publication without recompressing or rebuilding:
+
+```text
+uconsole-archlinuxarm-v1.0.0-cm4.img.zst
+SHA-256 d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19
+```
+
+After decompression, the raw image SHA-256 is:
+
+```text
+a2daeb466eae193917da5405adf52d60cadb55d029278502c407bbedd4aa0212
+```
+
+The project does not customize the accounts inherited from the pinned Arch
+Linux ARM rootfs. The standard initial local-console credentials are user
+`alarm` with password `alarm`, and the root password is `root`. Change these
+credentials immediately after first login.
+
+To flash on Linux, replace `/dev/sdX` with the **whole microSD device** (not a
+partition). The target device is overwritten completely:
+
+```sh
+zstd -dc uconsole-archlinuxarm-v1.0.0-cm4.img.zst \
+  | sudo dd of=/dev/sdX bs=16M iflag=fullblock oflag=direct,sync status=progress
+sudo blockdev --flushbufs /dev/sdX
+```
+
+See `docs/RELEASE_V1.0.0.md` for the release notes, verification details,
+supported hardware and publication checklist.
+
+`main` remains the stable Arch/publication branch. ARMtix/Artix OpenRC work
+will begin only after the public `v1.0.0` release is published, on a dedicated
+development branch.
 
 ## License
 
-MIT. See `LICENSE`.
+The repository contains material under more than one license. The root MIT
+license is the default for project-authored material without a more specific
+notice; kernel-facing files and fetched third-party sources retain their
+explicit/upstream licenses. See `LICENSING.md`.

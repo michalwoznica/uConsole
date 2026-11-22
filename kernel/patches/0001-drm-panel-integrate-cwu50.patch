@@ -1,6 +1,8 @@
 From: uConsole Linux project
 Subject: [PATCH 1/1] drm/panel: integrate ClockworkPi CWU50 panel driver
 
+License: GPL-2.0-only
+
 Register the externally pinned ClockworkPi CWU50 panel driver with Kconfig
 and Kbuild. The GPL-2.0+ driver source itself is materialized from the exact
 AK-Rex commit recorded in kernel/sources/cwu50.lock before this patch is

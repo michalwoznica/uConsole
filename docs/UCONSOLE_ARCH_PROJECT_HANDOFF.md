@@ -839,22 +839,48 @@ The complete maintenance lifecycle is now proven:
 The stable Arch baseline is frozen at `6.18.64-1-uconsole`. No additional kernel
 update is part of this cycle.
 
-### NEXT — public-repository transition
+### NEXT — publish stable Arch v1.0.0
 
-Before changing repository visibility or starting ARMtix/Artix work:
+The pre-publication exposure audit is complete. Results:
 
-1. audit the complete public-facing repository/history for secrets, private
-   identifiers, host/network details and unintended artifacts;
-2. verify third-party licensing/provenance and public documentation;
-3. prepare the exact physically validated Arch image and checksums for public
-   distribution;
-4. review repository/release presentation and only then change visibility;
-5. keep `main` as the stable Arch/publication baseline;
-6. start ARMtix/Artix OpenRC work afterward on a dedicated development branch.
+- current tracked tree: no credentials, private keys, tokens, personal email
+  addresses, SSIDs, hostnames, local home paths or meaningful private-network
+  configuration found;
+- complete 81-commit history: no secret material found; commit identity uses a
+  GitHub noreply address;
+- historical `192.168.0.1` documentation references are accepted as benign
+  generic RFC1918 context and do not justify rewriting history;
+- no large accidental blobs, Git LFS dependency, submodules or tracked image /
+  package build artifacts were found;
+- repository license/provenance presentation is being made explicitly
+  multi-license before publication.
 
-The public release must use the accepted physically validated compressed image
-SHA-256 `d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19`,
-not the later locked-rebuild proof image.
+The first public project version is **`v1.0.0`**. This is a project release
+number and must not be presented as an Arch Linux ARM release date.
+
+Public artifact name:
+
+```text
+uconsole-archlinuxarm-v1.0.0-cm4.img.zst
+```
+
+It must be a byte-for-byte rename/copy of the exact Stage 12F/12G artifact with
+compressed SHA-256
+`d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19`.
+Do not recompress the image and do not substitute the later locked-rebuild proof
+image.
+
+Remaining publication sequence:
+
+1. commit this `v1.0.0` release-preparation checkpoint on `main`;
+2. create and push annotated tag `v1.0.0` at that exact stable commit;
+3. change the GitHub repository visibility from private to public;
+4. create the GitHub `v1.0.0` release from the tag;
+5. upload the renamed exact validated image and checksum file;
+6. verify the public repository, release page and downloadable image from a
+   logged-out/public perspective;
+7. create a dedicated ARMtix/Artix development branch only after publication
+   is confirmed.
 
 ---
 
@@ -873,6 +899,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.20 / v1.0.0 public-release preparation
+
+- Completed the pre-publication exposure audit of the current tree and complete
+  81-commit history; no secret material requiring removal/history rewrite was
+  found.
+- Selected conventional project version `v1.0.0` for the first stable public
+  Arch release.
+- Defined public artifact name `uconsole-archlinuxarm-v1.0.0-cm4.img.zst` as a
+  rename only of the exact physically validated Stage 12F/12G image.
+- Preserved compressed SHA-256 `d90cf0...` and raw SHA-256 `a2daeb...` as the
+  public release identities.
+- Added explicit multi-license/public provenance presentation so the root MIT
+  license cannot be mistaken for relicensing GPL kernel-facing material.
+- Set tag/public visibility/GitHub Release publication as the remaining work
+  before ARMtix/Artix development begins.
 
 ### 2026-11-22 — Revision 6.19 / Stage 12 final closeout
 
