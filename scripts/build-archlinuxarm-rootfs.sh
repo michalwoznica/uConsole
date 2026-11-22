@@ -558,7 +558,7 @@ depmod \
 
 printf 'Installing final Stage 9C boot/root policy into rootfs tree...\n'
 install -Dm644 \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$output_rootfs/boot/config.txt"
 install -Dm644 \
     "$repo_root/image/archlinuxarm/boot/cmdline-uconsole-cm4.txt" \
@@ -694,7 +694,7 @@ grep -Eq '^name:[[:space:]]+ocp8178_bl$' "$backlight_modinfo"
 grep -Eq '^alias:[[:space:]]+of:N\*T\*Cocp8178-backlight$' "$backlight_modinfo"
 
 cmp -s \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$output_rootfs/boot/config.txt"
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/cmdline-uconsole-cm4.txt" \

@@ -1,0 +1,9 @@
+# Shared image policy
+
+This directory contains image policy that is genuinely distro-neutral and is consumed by more than one userspace target.
+
+Only move content here after verifying that its behavior is independent of the target distribution and init system. Target-specific package, service, filesystem identity, and userspace policy remain under their respective image target directories.
+
+Current shared assets:
+
+- `boot/config-uconsole-cm4.txt` — Raspberry Pi firmware/uConsole hardware boot policy.

@@ -31,7 +31,7 @@ grep -q '^CONFIG_SECURITY_LANDLOCK=y$' \
 grep -q '^CONFIG_LSM="landlock"$' \
     "$repo_root/kernel/config/uconsole-cm4.config"
 
-boot_config="$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt"
+boot_config="$repo_root/image/shared/boot/config-uconsole-cm4.txt"
 grep -q '^arm_64bit=1$' "$boot_config"
 grep -q '^otg_mode=1$' "$boot_config"
 grep -q '^dtparam=audio=on$' "$boot_config"

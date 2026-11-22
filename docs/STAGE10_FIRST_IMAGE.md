@@ -379,7 +379,7 @@ console correctly.
 
 The Stage 10 source now reproduces that proven repair automatically:
 
-- `image/archlinuxarm/boot/config-uconsole-cm4.txt` asserts GPIO9 high as an
+- `image/shared/boot/config-uconsole-cm4.txt` asserts GPIO9 high as an
   output during firmware boot;
 - `scripts/build-archlinuxarm-rootfs.sh` explicitly runs host-side `depmod` after
   the cross-architecture pacman transaction and before rootfs validation;

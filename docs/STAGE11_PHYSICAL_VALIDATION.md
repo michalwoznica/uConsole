@@ -59,7 +59,7 @@ mute on insertion and resume on removal.
 gpio=10=ip,np
 ```
 
-is now part of `image/archlinuxarm/boot/config-uconsole-cm4.txt`.
+is now part of `image/shared/boot/config-uconsole-cm4.txt`.
 
 No amplifier-switch driver or device-tree GPIO polarity change is required.
 

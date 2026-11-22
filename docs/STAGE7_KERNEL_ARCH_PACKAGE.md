@@ -93,7 +93,7 @@ authoritative project files.
 
 The first Arch boot-policy fragment is:
 
-`image/archlinuxarm/boot/config-uconsole-cm4.txt`
+`image/shared/boot/config-uconsole-cm4.txt`
 
 It selects:
 

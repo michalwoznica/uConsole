@@ -1,7 +1,6 @@
-# ClockworkPi uConsole CM4 boot policy for the Arch image target.
+# ClockworkPi uConsole CM4 distro-neutral Raspberry Pi firmware boot policy.
 #
-# This file is NOT installed by linux-uconsole. Stage 9 image integration will
-# compose/install it into the image boot partition.
+# Image targets install this file as /boot/config.txt.
 
 [all]
 arm_64bit=1
@@ -32,8 +31,8 @@ dtoverlay=clockworkpi-uconsole-cm4
 # Raspberry Pi 4/CM4 KMS display path required by the DSI panel.
 dtoverlay=vc4-kms-v3d-pi4,cma-384
 
-# Kernel file installed by the linux-uconsole package.
+# Project uConsole kernel image.
 kernel=kernel8.img
 
-# Stage 9C policy: direct ext4 root boot, no firmware-loaded initramfs.
+# Direct ext4 root boot; no firmware-loaded initramfs.
 # GPIO14/15 remain the uConsole expansion UART; no serial console is enabled.

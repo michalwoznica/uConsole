@@ -6,7 +6,7 @@ Stage 7 now defines two reusable Arch inputs:
 
 - `packages/linux-uconsole/` — standard Arch package metadata for the custom
   kernel;
-- `boot/config-uconsole-cm4.txt` — uConsole-specific Raspberry Pi firmware
+- `../shared/boot/config-uconsole-cm4.txt` — uConsole-specific Raspberry Pi firmware
   policy to be composed into the eventual image.
 
 The package owns kernel/DTB/overlay/module files. The image layer owns boot
@@ -146,7 +146,7 @@ The physical hardware pass proved the core uConsole hardware paths and exposed
 three narrow image-policy/usability gaps. The Arch target now includes the
 corresponding corrections:
 
-- `gpio=10=ip,np` in `boot/config-uconsole-cm4.txt`, proven live to make the
+- `gpio=10=ip,np` in `../shared/boot/config-uconsole-cm4.txt`, proven live to make the
   GPIO10 headphone-detect signal track jack insertion so the existing
   amplifier-switch driver can mute/unmute the speaker correctly;
 - `uconsole-brightness-keys.service`, a console-only handler for the proven

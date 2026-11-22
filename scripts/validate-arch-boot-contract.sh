@@ -9,7 +9,7 @@ source "$repo_root/kernel/source.lock"
 source "$repo_root/image/archlinuxarm/image-layout.lock"
 
 cmdline_file="$repo_root/image/archlinuxarm/boot/cmdline-uconsole-cm4.txt"
-config_file="$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt"
+config_file="$repo_root/image/shared/boot/config-uconsole-cm4.txt"
 fstab_file="$repo_root/image/archlinuxarm/rootfs/fstab-uconsole-cm4"
 
 workdir="$(mktemp -d)"

@@ -368,7 +368,7 @@ fi
 
 printf 'Installing project boot policy outside the kernel package...\n'
 install -Dm644 \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$rootfs/boot/config.txt"
 
 printf 'Verifying target package database transition...\n'
@@ -407,7 +407,7 @@ test -s "$rootfs/etc/mkinitcpio.d/linux-uconsole.preset"
 test -d "$rootfs/usr/lib/modules/$kernel_release"
 
 cmp -s \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$rootfs/boot/config.txt"
 
 printf 'Checking authoritative local package file records...\n'

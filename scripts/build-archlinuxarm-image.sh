@@ -113,7 +113,7 @@ test -s "$rootfs/usr/lib/modules/$kernel_release/modules.alias"
 test -e "$rootfs/usr/lib/modules/$kernel_release/modules.devname"
 
 cmp -s \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$rootfs/boot/config.txt"
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/cmdline-uconsole-cm4.txt" \
@@ -295,7 +295,7 @@ test -s "$mount_root/usr/lib/modules/$kernel_release/modules.alias"
 test -e "$mount_root/usr/lib/modules/$kernel_release/modules.devname"
 
 cmp -s \
-    "$repo_root/image/archlinuxarm/boot/config-uconsole-cm4.txt" \
+    "$repo_root/image/shared/boot/config-uconsole-cm4.txt" \
     "$mount_root/boot/config.txt"
 cmp -s \
     "$repo_root/image/archlinuxarm/boot/cmdline-uconsole-cm4.txt" \

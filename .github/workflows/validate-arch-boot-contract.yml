@@ -5,7 +5,7 @@ on:
     paths:
       - 'kernel/source.lock'
       - 'image/archlinuxarm/image-layout.lock'
-      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/shared/boot/config-uconsole-cm4.txt'
       - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
       - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
       - 'scripts/validate-arch-boot-contract.sh'
@@ -15,7 +15,7 @@ on:
     paths:
       - 'kernel/source.lock'
       - 'image/archlinuxarm/image-layout.lock'
-      - 'image/archlinuxarm/boot/config-uconsole-cm4.txt'
+      - 'image/shared/boot/config-uconsole-cm4.txt'
       - 'image/archlinuxarm/boot/cmdline-uconsole-cm4.txt'
       - 'image/archlinuxarm/rootfs/fstab-uconsole-cm4'
       - 'scripts/validate-arch-boot-contract.sh'
