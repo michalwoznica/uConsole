@@ -50,6 +50,10 @@ if [[ "$BUNDLE_KERNEL_PACKAGE_SHA256" != "$BASELINE_KERNEL_PACKAGE_SHA256" ]]; t
     printf 'ERROR: bundle kernel package hash does not match accepted baseline.\n' >&2
     exit 1
 fi
+if [[ "$BUNDLE_KERNEL_RELEASE" != "$BASELINE_KERNEL_RELEASE" ]]; then
+    printf 'ERROR: bundle kernel release does not match accepted baseline.\n' >&2
+    exit 1
+fi
 if [[ "$BUNDLE_ACCEPTED_IMAGE_COMPRESSED_SHA256" != "$BASELINE_IMAGE_COMPRESSED_SHA256" ]]; then
     printf 'ERROR: bundle was not captured from the accepted compressed image.\n' >&2
     exit 1
@@ -105,7 +109,19 @@ if [[ "${#kernel_packages[@]}" -ne 1 ]]; then
 fi
 check_hash "${kernel_packages[0]}" "$BASELINE_KERNEL_PACKAGE_SHA256"
 
-grep -Fqx $'linux-uconsole\t6.18.60-1' \
+kernel_pkginfo="$(bsdtar -xOf "${kernel_packages[0]}" .PKGINFO 2>/dev/null || bsdtar -xOf "${kernel_packages[0]}" ./.PKGINFO)"
+grep -Fxq 'pkgname = linux-uconsole' <<<"$kernel_pkginfo"
+grep -Fxq "pkgver = ${BASELINE_KERNEL_RELEASE%-uconsole}" <<<"$kernel_pkginfo"
+grep -Fxq 'arch = aarch64' <<<"$kernel_pkginfo"
+
+grep -Fxq "kernel_release=$BASELINE_KERNEL_RELEASE" \
+    "$bundle_dir/build-metadata/stage10.manifest"
+grep -Fxq "rpi_linux_commit=$BASELINE_RPI_LINUX_COMMIT" \
+    "$bundle_dir/build-metadata/stage10.manifest"
+grep -Fxq "compressed_sha256=$BASELINE_IMAGE_COMPRESSED_SHA256" \
+    "$bundle_dir/build-metadata/stage10.manifest"
+
+grep -Fqx $'linux-uconsole\t'"${BASELINE_KERNEL_RELEASE%-uconsole}" \
     "$bundle_dir/inventories/final-packages.txt"
 if grep -Eq $'^(linux-aarch64|uboot-raspberrypi)\t' \
     "$bundle_dir/inventories/final-packages.txt"; then

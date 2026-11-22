@@ -163,3 +163,20 @@ Candidate artifacts are written only under ignored `build/update-candidate/`
 and `out/update-candidate/`. A successful Stage 12F build does not promote the
 candidate; physical regression remains a separate gate.
 
+
+
+## Stage 12 promotion
+
+Stage 12H adds:
+
+- `promote-kernel-update-candidate.sh` — atomically promote an exact physically
+  validated Stage 12F kernel candidate. It verifies Stage 12F/12G artifact
+  identity, derives a new baseline bundle without userspace drift, updates only
+  the authoritative kernel/package/baseline locks, audits for stale accepted-
+  kernel references, and runs the network-disabled locked rebuild. Failure
+  restores the previous accepted locks and removes the unaccepted bundle.
+
+The promotion command intentionally leaves the three promoted tracked lock/
+package files uncommitted after success so they can be reviewed before the
+final Stage 12H commit. The locked-rebuild image is verification evidence only;
+it is not a new physical-validation candidate.

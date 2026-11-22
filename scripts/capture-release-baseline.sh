@@ -189,7 +189,7 @@ if [[ ! -s "$final_inventory" ]]; then
     exit 1
 fi
 
-grep -Fqx $'linux-uconsole\t6.18.60-1' "$final_inventory"
+grep -Fqx $'linux-uconsole\t'"${BASELINE_KERNEL_RELEASE%-uconsole}" "$final_inventory"
 if grep -Eq $'^(linux-aarch64|uboot-raspberrypi)\t' "$final_inventory"; then
     printf 'ERROR: final inventory still contains stock kernel/U-Boot package.\n' >&2
     exit 1
@@ -269,7 +269,7 @@ removed_packages="$capture_dir/inventories/removed-packages.txt"
 comm -13 "$rootfs_inventory" "$final_inventory" > "$package_delta"
 comm -23 "$rootfs_inventory" "$final_inventory" > "$removed_packages"
 
-if ! grep -Eq $'^linux-uconsole\t6\.18\.60-1$' "$package_delta"; then
+if ! grep -Fqx $'linux-uconsole\t'"${BASELINE_KERNEL_RELEASE%-uconsole}" "$package_delta"; then
     printf 'ERROR: expected linux-uconsole addition missing from package delta.\n' >&2
     exit 1
 fi

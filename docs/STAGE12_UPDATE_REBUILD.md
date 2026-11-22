@@ -1,6 +1,6 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12G COMPLETE — 6.18.64 candidate built and physically validated; Stage 12H promotion next  
+**Status:** Stage 12H promotion tooling IMPLEMENTED — local promotion/reproducibility proof pending  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
 **Date:** 2026-11-22
 
@@ -683,6 +683,50 @@ Validation passed for:
 Stage 12G therefore closes the candidate-validation chain. Promotion remains a
 separate operation and has not occurred at this checkpoint.
 
+### Stage 12H — promote exact physically validated candidate: IMPLEMENTED, LOCAL RUN PENDING
+
+Stage 12H is the terminal step of this update cycle. It does not discover or
+chase another upstream kernel. It promotes the exact Stage 12F artifact that
+already passed Stage 12G physical validation.
+
+`image/archlinuxarm/stage12g-physical-validation.lock` records the machine-
+readable physical-validation gate for the accepted candidate identity.
+
+`scripts/promote-kernel-update-candidate.sh VERSION COMMIT [NEW_BASELINE_ID]`
+performs the promotion atomically:
+
+1. require a clean Git worktree;
+2. verify the current accepted baseline bundle before changing anything;
+3. verify the exact Stage 12F package/image/report hashes against the Stage 12G
+   physical-validation lock;
+4. derive a new baseline bundle by reusing the accepted rootfs/userspace
+   payloads and replacing only `linux-uconsole` with the physically validated
+   candidate package;
+5. update `kernel/source.lock`, the authoritative `linux-uconsole` PKGBUILD and
+   `release-baseline.lock` to the validated candidate;
+6. verify the newly generated baseline bundle against the promoted repository
+   lock;
+7. audit executable/configuration files for stale references to the previous
+   accepted kernel identity;
+8. run `build-release-baseline.sh` with container networking disabled;
+9. require the locked rebuild package inventory to match the promoted accepted
+   inventory exactly;
+10. keep the promotion only if every gate passes. On failure, restore the old
+    accepted locks and remove the unaccepted new bundle.
+
+The locked rebuild output is evidence only. Its image does not become a second
+candidate and does not require another physical flash. The exact Stage 12F
+image remains the accepted physically validated image.
+
+To support promotion and future cycles, Stage 12H also removes old hard-coded
+`6.18.60-1` assumptions from the baseline capture/verifier and Stage 10 locked
+rootfs/image builders. Those paths now derive the accepted kernel release from
+`release-baseline.lock`.
+
+The update cycle ends when the Stage 12H promotion block reports both
+`physical_validation=pass` and `locked_rebuild=pass`. No higher kernel is
+evaluated unless a future update cycle is explicitly started.
+
 ## 8. Stage 12B conclusion
 
 The current build is working and maintainable, but its reproducibility model is
@@ -744,3 +788,21 @@ is part of that promotion.
 - Added an `ERR` trap so any future unexpected checker termination prints the failing line and exit status rather than exiting silently.
 - No source pins, accepted baseline identity, build behavior, or update policy changed.
 
+
+
+### 2026-11-22 — Stage 12H promotion tooling
+
+- Added a machine-readable Stage 12G physical-validation lock for the exact
+  6.18.64 candidate package/image identity.
+- Added atomic promotion tooling that derives the new locked baseline from the
+  existing accepted userspace bundle plus the exact physically validated kernel
+  package.
+- Promotion runs the network-disabled locked rebuild before it is retained.
+- Failed promotion restores the previous accepted kernel/package/baseline locks
+  and removes the unaccepted new bundle.
+- Generalized baseline capture/verification and Stage 10 locked rebuild defaults
+  so future accepted kernels are derived from `release-baseline.lock` rather
+  than hard-coded to 6.18.60.
+- This is the final implementation step of the current 6.18.64 update cycle; a
+  later upstream version is informational only until a new cycle is explicitly
+  started.

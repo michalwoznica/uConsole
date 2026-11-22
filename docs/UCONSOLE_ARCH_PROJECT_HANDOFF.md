@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-22
-**Document revision:** 6.15
-**Current phase:** Stage 12G physical validation COMPLETE; Stage 12H promotion of the validated 6.18.64 kernel next
+**Document revision:** 6.16
+**Current phase:** Stage 12H promotion tooling IMPLEMENTED; local promotion/reproducibility proof pending
 
 ---
 
@@ -785,12 +785,38 @@ The candidate is therefore mechanically and physically validated. Promotion has
 still not been performed, and the accepted 6.18.60 project pins remain
 unchanged at this checkpoint.
 
-### NEXT — Stage 12H promotion
+### Stage 12H — promotion of physically validated 6.18.64 candidate: IMPLEMENTED, LOCAL RUN PENDING
 
-Promote the physically validated 6.18.64 candidate as a separate bounded
-checkpoint. Update only the authoritative kernel/package/baseline identities
-required by the release policy, then rebuild/verify the new locked baseline.
-Do not combine promotion with any userspace refresh.
+Stage 12H promotes exactly the Stage 12F image/package that already passed the
+Stage 12G hardware regression. It does not build or select another candidate.
+
+Promotion tooling:
+
+- `image/archlinuxarm/stage12g-physical-validation.lock` records the exact
+  candidate identity and completed hardware gates;
+- `scripts/promote-kernel-update-candidate.sh` verifies the old accepted bundle,
+  verifies the Stage 12F artifacts against the physical-validation lock, derives
+  a new bundle with identical userspace and only the kernel changed, updates the
+  authoritative kernel/package/baseline locks, and runs a network-disabled
+  locked rebuild;
+- promotion is rollback-safe: if bundle verification, stale-reference audit or
+  locked rebuild fails, the previous accepted locks are restored and the new
+  bundle is removed;
+- the locked rebuild image is proof only and does not trigger another physical
+  test cycle. The exact Stage 12F image remains the accepted hardware-tested
+  artifact.
+
+Stage 12H also generalizes the baseline capture/verifier and locked Stage 10
+rootfs/image builders so accepted kernel release identity comes from
+`release-baseline.lock` rather than hard-coded 6.18.60 values.
+
+### NEXT
+
+Commit the Stage 12H tooling, run promotion for the exact validated
+`6.18.64 / a40f735325391b1705161b07f36ed45e1bf04521` candidate, and review the
+final promotion block. If it reports physical validation PASS and locked
+rebuild PASS, commit the generated promotion locks and close Stage 12. No
+additional kernel update is part of this cycle.
 
 
 ---
@@ -810,6 +836,20 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.16 / Stage 12H promotion tooling
+
+- Added machine-readable Stage 12G physical-validation evidence for the exact
+  `6.18.64-1-uconsole` candidate package/image hashes.
+- Added atomic Stage 12H promotion tooling with rollback on any failed gate.
+- Promotion derives a new accepted baseline bundle from unchanged accepted
+  userspace plus the exact physically validated kernel package.
+- Promotion runs a network-disabled locked rebuild and requires exact promoted
+  package inventory before it is retained.
+- Generalized baseline capture/verification and locked Stage 10 rootfs/image
+  defaults to derive kernel identity from `release-baseline.lock`.
+- Defined Stage 12H as the terminal step of this update cycle; no later kernel
+  is evaluated unless a new cycle is explicitly started.
 
 ### 2026-11-22 — Revision 6.15 / Stage 12F and Stage 12G complete
 
@@ -870,7 +910,7 @@ In a fresh ChatGPT conversation:
 - Verified host DNS resolution independently.
 - Verified the expected rootful builder image ID
   `3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8`.
-- Verified normal rootful Podman used DNS server `192.168.0.1` but did not
+- Verified normal rootful Podman used the host LAN resolver but did not
   resolve the mirror during the test.
 - Verified the same rootful container resolves correctly with
   `--network=host`.

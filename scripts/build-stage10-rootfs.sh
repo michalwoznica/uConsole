@@ -18,8 +18,11 @@ output_package_dir="$2"
 
 # shellcheck disable=SC1091
 source "$repo_root/image/archlinuxarm/rootfs.lock"
+# shellcheck disable=SC1091
+source "$repo_root/image/archlinuxarm/release-baseline.lock"
 
-kernel_release="6.18.60-1-uconsole"
+kernel_release="$BASELINE_KERNEL_RELEASE"
+kernel_pkgver="${kernel_release%-uconsole}"
 jobs="${JOBS:-$(nproc)}"
 package_list="$repo_root/image/archlinuxarm/rootfs/uconsole-base-packages.txt"
 mapfile -t image_packages < "$package_list"
@@ -28,8 +31,6 @@ locked_bundle="${UCONSOLE_LOCKED_BASELINE_BUNDLE:-}"
 locked_mode=0
 if [[ -n "$locked_bundle" ]]; then
     locked_mode=1
-    # shellcheck disable=SC1091
-    source "$repo_root/image/archlinuxarm/release-baseline.lock"
     if [[ ! -d "$locked_bundle" || ! -s "$locked_bundle/bundle.lock" ]]; then
         printf 'ERROR: locked baseline bundle is missing or incomplete: %s\n' "$locked_bundle" >&2
         exit 1
@@ -372,7 +373,7 @@ printf 'Built package: %s\n' "$(basename "$package_file")"
 pkginfo="$workdir/PKGINFO"
 bsdtar -xOf "$package_file" .PKGINFO > "$pkginfo"
 grep -Fxq 'pkgname = linux-uconsole' "$pkginfo"
-grep -Fxq 'pkgver = 6.18.60-1' "$pkginfo"
+grep -Fxq "pkgver = ${kernel_pkgver}" "$pkginfo"
 grep -Fxq 'arch = aarch64' "$pkginfo"
 grep -Fxq 'conflict = linux-aarch64' "$pkginfo"
 grep -Fxq 'conflict = uboot-raspberrypi' "$pkginfo"
@@ -607,7 +608,7 @@ systemctl --root="$output_rootfs" enable \
 
 printf 'Validating integrated Stage 10 rootfs tree...\n'
 pacman_target -Q linux-uconsole |
-    grep -Fxq 'linux-uconsole 6.18.60-1'
+    grep -Fxq "linux-uconsole ${kernel_pkgver}"
 
 if pacman_target -Q linux-aarch64 >/dev/null 2>&1; then
     printf 'ERROR: linux-aarch64 still installed.\n' >&2

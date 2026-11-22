@@ -23,8 +23,10 @@ source "$repo_root/image/archlinuxarm/rootfs.lock"
 source "$repo_root/image/archlinuxarm/image-layout.lock"
 # shellcheck disable=SC1091
 source "$repo_root/kernel/source.lock"
+# shellcheck disable=SC1091
+source "$repo_root/image/archlinuxarm/release-baseline.lock"
 
-kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-6.18.60-1-uconsole}"
+kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-$BASELINE_KERNEL_RELEASE}"
 rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
 image_checkpoint="${UCONSOLE_IMAGE_CHECKPOINT:-Stage10}"
 image_variant="${UCONSOLE_IMAGE_VARIANT:-}"
