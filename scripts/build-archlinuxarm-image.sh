@@ -27,6 +27,8 @@ source "$repo_root/kernel/source.lock"
 source "$repo_root/image/archlinuxarm/release-baseline.lock"
 # shellcheck disable=SC1091
 source "$repo_root/scripts/lib/image-partition-filesystems.sh"
+# shellcheck disable=SC1091
+source "$repo_root/scripts/lib/image-rootfs-copy.sh"
 
 kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-$BASELINE_KERNEL_RELEASE}"
 rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
@@ -201,34 +203,15 @@ mkdir -p "$mount_root/boot"
 mount "$boot_part" "$mount_root/boot"
 
 printf 'Checking rootfs capacity before copy...\n'
-root_available="$(df --output=avail -B1 "$mount_root" | tail -n1 | tr -d ' ')"
-root_required="$(du -sx -B1 "$rootfs" --exclude="$rootfs/boot" | awk '{print $1}')"
-
 # Require at least 512 MiB free after the estimated root copy.
 safety_bytes=$((512 * 1024 * 1024))
-if (( root_required + safety_bytes > root_available )); then
-    printf 'ERROR: Arch Linux ARM root partition too small: required=%s available=%s safety=%s\n' \
-        "$root_required" "$root_available" "$safety_bytes" >&2
-    exit 1
-fi
+uconsole_check_image_rootfs_capacity \
+    "$rootfs" \
+    "$mount_root" \
+    "$safety_bytes" \
+    "Arch Linux ARM"
 
-printf 'Copying root filesystem with ownership/xattrs preserved...\n'
-rsync \
-    -aHAX \
-    --numeric-ids \
-    --exclude='/boot/***' \
-    "$rootfs/" \
-    "$mount_root/"
-
-printf 'Copying boot filesystem content to FAT partition...\n'
-rsync \
-    -rltL \
-    --delete \
-    --no-perms \
-    --no-owner \
-    --no-group \
-    "$rootfs/boot/" \
-    "$mount_root/boot/"
+uconsole_copy_integrated_rootfs "$rootfs" "$mount_root"
 
 sync
 

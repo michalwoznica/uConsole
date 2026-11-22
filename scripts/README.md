@@ -75,6 +75,11 @@ Stage 10 adds:
   target-provided image-layout lock to write the deterministic partition table
   and create/verify the boot and root filesystems. Target-specific image
   identity and geometry remain outside the library.
+- `lib/image-rootfs-copy.sh` — distro-neutral helpers that check whether an
+  already-integrated rootfs fits the mounted root partition with a
+  caller-provided safety margin, then copy the root and boot trees with the
+  project's established rsync semantics. Mounting and target-specific rootfs
+  validation remain outside the library.
 
 ## Shared local/CI image build entry point
 
