@@ -15,7 +15,7 @@ Build and maintain a reproducible Linux system for a ClockworkPi uConsole using:
 - Original/older uConsole display revision from 2024
 - microSD boot/storage
 - Arch Linux ARM as the first userspace target
-- ARMtix/Artix with OpenRC as a later userspace target
+- Artix with OpenRC as a later userspace target
 - Raspberry Pi Linux `rpi-6.18.y` as the shared kernel base
 - A minimal uConsole-specific patchset rather than a permanently forked kernel tree
 - Normal Arch-style packaging so the kernel can be rebuilt and upgraded later
@@ -56,7 +56,7 @@ Checkpoint workflow:
 
 ## 3. Multi-distro architecture policy
 
-Arch Linux ARM is the **first implementation target**, but the project is deliberately shaped so that **ARMtix/Artix with OpenRC can be added later** without redesigning the hardware-support layer.
+Arch Linux ARM is the **first implementation target**, but the project is deliberately shaped so that **Artix with OpenRC can be added later** without redesigning the hardware-support layer.
 
 ```text
 shared uConsole hardware/kernel support
@@ -64,7 +64,7 @@ shared uConsole hardware/kernel support
         +-------+-------+
         |               |
         v               v
- Arch Linux ARM    ARMtix / OpenRC
+ Arch Linux ARM    Artix / OpenRC
    first target      later target
 ```
 
@@ -75,18 +75,18 @@ Therefore:
 - shared build scripts avoid systemd assumptions;
 - distro/init-specific userspace logic lives under separate image-target directories;
 - systemd-specific integration belongs only in the Arch Linux ARM image layer;
-- OpenRC-specific integration will later live in the ARMtix target.
+- OpenRC-specific integration will later live in the Artix target.
 
 Planned image layout:
 
 ```text
 image/
 ├── archlinuxarm/
-└── armtix-openrc/
+└── artix-openrc/
 ```
 
 The Arch target is complete and physically validated. `main` is now the stable
-Arch/publication baseline. Future ARMtix/Artix OpenRC implementation must occur
+Arch/publication baseline. Future Artix OpenRC implementation must occur
 on a dedicated development branch and should not alter `main` until that target
 has its own validation/promotion evidence.
 
@@ -270,7 +270,7 @@ Do not carry old invasive VC4 DSI workarounds unless physical testing demonstrat
 ├── image/
 │   ├── README.md
 │   ├── archlinuxarm/
-│   └── armtix-openrc/
+│   └── artix-openrc/
 └── scripts/
 ```
 
@@ -291,7 +291,7 @@ Create:
 - provenance document
 - shared kernel structure
 - Arch Linux ARM image target
-- reserved ARMtix/OpenRC image target
+- reserved Artix/OpenRC image target
 
 ### Stage 1 — Pin exact Raspberry Pi 6.18 baseline
 
@@ -355,9 +355,9 @@ Stage 12 is split into bounded maintenance checkpoints:
 See `docs/STAGE12_UPDATE_REBUILD.md`.
 
 
-### Later milestone — ARMtix/OpenRC image target
+### Later milestone — Artix/OpenRC image target
 
-Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific userspace integration with ARMtix/OpenRC equivalents.
+Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific userspace integration with Artix/OpenRC equivalents.
 
 ---
 
@@ -370,7 +370,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - Raspberry Pi maintains a 6.18 kernel branch.
 - The required uConsole-specific delta is much smaller than the original ClockworkPi monolithic patch.
 - Patch-based packaging is practical.
-- Arch-first / ARMtix-later can share the same kernel/hardware layer.
+- Arch-first / Artix-later can share the same kernel/hardware layer.
 
 ### Proven by this project
 
@@ -407,7 +407,7 @@ Reuse the proven shared kernel/hardware layer and replace Arch/systemd-specific 
 - byte-for-byte image reproducibility across independent builds (not required by
   the accepted reproducibility contract);
 - public-repository/release readiness audit and publication;
-- ARMtix/Artix OpenRC image target.
+- Artix OpenRC image target.
 
 ---
 
@@ -879,7 +879,7 @@ Remaining publication sequence:
 5. upload the renamed exact validated image and checksum file;
 6. verify the public repository, release page and downloadable image from a
    logged-out/public perspective;
-7. create a dedicated ARMtix/Artix development branch only after publication
+7. create a dedicated Artix development branch only after publication
    is confirmed.
 
 ---
@@ -914,7 +914,7 @@ In a fresh ChatGPT conversation:
 - Added explicit multi-license/public provenance presentation so the root MIT
   license cannot be mistaken for relicensing GPL kernel-facing material.
 - Set tag/public visibility/GitHub Release publication as the remaining work
-  before ARMtix/Artix development begins.
+  before Artix development begins.
 
 ### 2026-11-22 — Revision 6.19 / Stage 12 final closeout
 
@@ -929,7 +929,7 @@ In a fresh ChatGPT conversation:
   `dd2538...` locked-rebuild proof image for future public distribution.
 - Closed Stage 12 and froze the stable Arch baseline on `main`.
 - Set public-repository/release preparation as the next checkpoint.
-- Deferred ARMtix/Artix OpenRC implementation until publication is complete and
+- Deferred Artix OpenRC implementation until publication is complete and
   required future work to occur on a dedicated development branch.
 
 ### 2026-11-22 — Revision 6.18 / Stage 12H provenance/validator correction
@@ -2034,9 +2034,9 @@ In a fresh ChatGPT conversation:
 
 ### 2026-11-04 — Revision 0.3
 
-- Added Arch-first / ARMtix-OpenRC-later multi-distro policy.
+- Added Arch-first / Artix-OpenRC-later multi-distro policy.
 - Required shared kernel/hardware support to remain distro-neutral.
-- Split image targets into `image/archlinuxarm/` and `image/armtix-openrc/`.
+- Split image targets into `image/archlinuxarm/` and `image/artix-openrc/`.
 - Kept handoff filename permanently fixed.
 
 ### 2026-11-04 — Initial investigation

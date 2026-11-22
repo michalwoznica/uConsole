@@ -73,10 +73,10 @@ history.
 ## Multi-distro direction
 
 The kernel and hardware-support layer is intentionally distro-neutral. Arch
-Linux ARM is the first completed target. ARMtix/Artix with OpenRC is the next
-planned userspace target under `image/armtix-openrc/`.
+Linux ARM is the first completed target. Artix with OpenRC is the next
+planned userspace target under `image/artix-openrc/`.
 
-`main` is the stable Arch/publication baseline. Future ARMtix/Artix development
+`main` is the stable Arch/publication baseline. Future Artix development
 must occur on a dedicated development branch and should not change the stable
 Arch baseline on `main` until that target is independently validated and ready
 for promotion.
@@ -120,7 +120,7 @@ sudo blockdev --flushbufs /dev/sdX
 See `docs/RELEASE_V1.0.0.md` for the release notes, verification details,
 supported hardware and publication checklist.
 
-`main` remains the stable Arch/publication branch. ARMtix/Artix OpenRC work
+`main` remains the stable Arch/publication branch. Artix OpenRC work
 will begin only after the public `v1.0.0` release is published, on a dedicated
 development branch.
 

@@ -31,7 +31,7 @@ body:
         - Update / locked-rebuild workflow
         - CI / repository tooling
         - Documentation
-        - ARMtix / OpenRC development
+        - Artix / OpenRC development
         - Other
     validations:
       required: true

@@ -768,7 +768,7 @@ future update cycle is explicitly started.
 ## 9. Public-release handoff
 
 The next project checkpoint is publication of the stable Arch implementation,
-not another kernel update and not ARMtix/Artix implementation yet.
+not another kernel update and not Artix implementation yet.
 
 For publication:
 
@@ -781,7 +781,7 @@ For publication:
   remains reproducibility evidence and is not the hardware-tested release image;
 - repository content/history, release assets, licenses/provenance and public
   documentation must be reviewed before visibility changes;
-- future ARMtix/Artix OpenRC work should begin only after that publication
+- future Artix OpenRC work should begin only after that publication
   checkpoint and should live on a dedicated development branch until validated.
 
 
@@ -796,7 +796,7 @@ For publication:
 - The physically validated Stage 12F/12G image remains the release artifact;
   the locked-rebuild image is evidence only.
 - Stage 12 is closed and no further update cycle is active.
-- Next checkpoint is public-repository/release preparation; ARMtix/Artix work is
+- Next checkpoint is public-repository/release preparation; Artix work is
   deferred until publication is complete and will occur on a development branch.
 
 ### 2026-11-22 — Stage 12F/12G candidate build and physical-validation closeout

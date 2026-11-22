@@ -120,7 +120,7 @@ compatibility validation, exact candidate construction, physical validation,
 explicit promotion, and an offline locked-rebuild proof before a new baseline
 can replace the accepted release.
 
-ARMtix/Artix OpenRC development is intentionally separate and will begin on a
+Artix OpenRC development is intentionally separate and will begin on a
 dedicated development branch after the v1.0.0 public release is confirmed.
 
 ## Publication checklist
