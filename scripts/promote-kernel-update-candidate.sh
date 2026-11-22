@@ -340,6 +340,9 @@ bundle_files_sha256="$(sha256sum "$new_bundle_tmp/bundle-files.sha256" | awk '{p
 
 printf 'Preparing promoted repository source/package/baseline locks...\n'
 cat > "$kernel_lock" <<LOCK
+# Machine-readable-ish source lock for project scripts.
+# Keep values literal and update only as an explicit baseline-update stage.
+
 RPI_LINUX_REPOSITORY=$RPI_LINUX_REPOSITORY
 RPI_LINUX_BRANCH_FAMILY=$RPI_LINUX_BRANCH_FAMILY
 RPI_LINUX_COMMIT=$candidate_commit
@@ -354,20 +357,34 @@ grep -Fxq "pkgver=${candidate_version}" "$pkgbuild"
 grep -Fxq "_commit=${candidate_commit}" "$pkgbuild"
 
 cat > "$baseline_lock" <<LOCK
+# Accepted Arch Linux ARM uConsole release baseline.
+#
+# This file records the identity of the last physically accepted image. It is
+# metadata, not an instruction to consult live repositories. Promotion to a
+# new baseline must be explicit and must occur only after the relevant Stage 12
+# validation has passed.
+
 BASELINE_ID=$new_baseline_id
 BASELINE_STATUS=accepted
 BASELINE_ACCEPTED_UTC=$STAGE12G_VALIDATED_UTC
+
 BASELINE_ROOTFS_RELEASE=$BASELINE_ROOTFS_RELEASE
 BASELINE_ROOTFS_SHA256=$BASELINE_ROOTFS_SHA256
+
 BASELINE_RPI_LINUX_COMMIT=$candidate_commit
 BASELINE_KERNEL_RELEASE=$candidate_release
 BASELINE_KERNEL_PACKAGE_SHA256=$candidate_package_sha256
+
 BASELINE_IMAGE_RAW_SHA256=$candidate_raw_sha256
 BASELINE_IMAGE_COMPRESSED_SHA256=$candidate_compressed_sha256
+
+# Stage 12 policy markers.
 BASELINE_REBUILD_MODE=locked-rebuild
 BASELINE_BYTE_IDENTICAL_IMAGE_REQUIRED=no
 BASELINE_LIVE_PACKAGE_REFRESH_ALLOWED=no
 BASELINE_LIVE_KERNEL_REFRESH_ALLOWED=no
+
+# Stage 12 accepted baseline input bundle identity.
 BASELINE_BUNDLE_FORMAT=1
 BASELINE_BUNDLE_LOCK_SHA256=$bundle_lock_sha256
 BASELINE_BUNDLE_FILES_SHA256=$bundle_files_sha256

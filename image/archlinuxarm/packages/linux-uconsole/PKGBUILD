@@ -6,7 +6,7 @@
 
 pkgbase=linux-uconsole
 pkgname=("$pkgbase")
-pkgver=6.18.60
+pkgver=6.18.64
 pkgrel=1
 pkgdesc='Raspberry Pi Linux kernel for ClockworkPi uConsole CM4'
 arch=('aarch64')
@@ -14,7 +14,7 @@ arch=('aarch64')
 url='https://github.com/raspberrypi/linux'
 license=('GPL-2.0-only')
 
-_commit=0b41724521c9adf5399409d02aece6c1df0a4432
+_commit=a40f735325391b1705161b07f36ed45e1bf04521
 _srcname="linux-${_commit}"
 
 makedepends=(
