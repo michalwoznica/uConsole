@@ -41,8 +41,8 @@ No explicit CPU cap is introduced.
 
 ## Rootfs/package construction
 
-`scripts/build-stage10-rootfs.sh` runs inside a disposable
-`archlinux:base-devel` container. `scripts/build-stage10-host.sh` is the shared
+`scripts/build-archlinuxarm-rootfs.sh` runs inside a disposable
+`archlinux:base-devel` container. `scripts/build-archlinuxarm.sh` is the shared
 host orchestration entry point: GitHub Actions selects Docker, while local Arch
 Linux development uses rootful Podman by default. Rootful local composition is
 required so the staged rootfs retains exact numeric UID/GID ownership before
@@ -75,10 +75,10 @@ The integrated rootfs is emitted into the Stage 10 workspace.
 The same complete image can be built locally from an Arch Linux host with:
 
 ```bash
-bash ./scripts/build-stage10-host.sh
+bash ./scripts/build-archlinuxarm.sh
 ```
 
-The default local outputs are written under `out/stage10/`; intermediate state
+The default local outputs are written under `out/archlinuxarm/`; intermediate state
 and the input-keyed `linux-uconsole` package cache live under ignored `build/`
 paths. If image/userspace composition fails after the kernel package has
 already been produced, a retry reuses that unchanged package rather than
@@ -200,7 +200,7 @@ The workflow also emits:
 
 The workflow uploads these as:
 
-`uconsole-archlinuxarm-stage10`
+`uconsole-archlinuxarm-image`
 
 with seven-day artifact retention.
 
@@ -381,11 +381,11 @@ The Stage 10 source now reproduces that proven repair automatically:
 
 - `image/archlinuxarm/boot/config-uconsole-cm4.txt` asserts GPIO9 high as an
   output during firmware boot;
-- `scripts/build-stage10-rootfs.sh` explicitly runs host-side `depmod` after
+- `scripts/build-archlinuxarm-rootfs.sh` explicitly runs host-side `depmod` after
   the cross-architecture pacman transaction and before rootfs validation;
 - rootfs validation requires generated module metadata and verifies that
   `panel_cwu50` and `ocp8178_bl` resolve by name with their expected DT aliases;
-- `scripts/build-stage10-image.sh` verifies that the dependency/alias metadata
+- `scripts/build-archlinuxarm-image.sh` verifies that the dependency/alias metadata
   survives into both the integrated rootfs input and the populated image.
 
 This correction does not change the kernel source, uConsole DT overlay,

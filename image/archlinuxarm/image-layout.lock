@@ -1,4 +1,4 @@
-# Deterministic Stage 10 image identity and partition contract.
+# Deterministic Arch Linux ARM image identity and partition contract.
 #
 # DOS/MBR is intentionally used for the first uConsole microSD image because
 # it matches the traditional Raspberry Pi/Arch Linux ARM two-partition layout.
@@ -19,7 +19,7 @@ ROOT_FILESYSTEM=ext4
 BOOT_MOUNTPOINT=/boot
 ROOT_MOUNTPOINT=/
 
-# Stage 10 concrete image geometry.
+# Arch Linux ARM concrete image geometry.
 LOGICAL_SECTOR_SIZE=512
 IMAGE_SIZE_BYTES=8589934592
 

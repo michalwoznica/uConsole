@@ -462,7 +462,7 @@ Final Stage 10 evidence:
 
 Workflow artifact name:
 
-`uconsole-archlinuxarm-stage10`
+`uconsole-archlinuxarm-image`
 
 Expected artifact contents include the compressed `.img.zst`, raw/compressed
 SHA-256 files, Stage 10 manifest and exact `linux-uconsole` package.
@@ -1275,7 +1275,7 @@ In a fresh ChatGPT conversation:
 
 - Recorded GitHub-hosted Actions quota exhaustion as an infrastructure blocker,
   not a project/build result.
-- Added `scripts/build-stage10-host.sh` as the shared host-level image-build
+- Added `scripts/build-archlinuxarm.sh` as the shared host-level image-build
   entry point.
 - Local Arch builds use rootful Podman; GitHub Actions uses Docker but now calls
   the same orchestration script.

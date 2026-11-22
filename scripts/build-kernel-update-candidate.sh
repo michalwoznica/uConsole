@@ -234,7 +234,7 @@ set +e
     "$builder_image" \
     bash -lc '
         set -euo pipefail
-        bash /repo/scripts/build-stage10-rootfs.sh \
+        bash /repo/scripts/build-archlinuxarm-rootfs.sh \
             /work/rootfs \
             /work/baseline-packages
     '
@@ -276,7 +276,7 @@ sudo -n env \
     UCONSOLE_IMAGE_RPI_LINUX_COMMIT="$candidate_commit" \
     UCONSOLE_IMAGE_CHECKPOINT=Stage12F \
     UCONSOLE_IMAGE_VARIANT="candidate-kernel-${candidate_version}-${candidate_commit:0:12}" \
-    bash "$repo_root/scripts/build-stage10-image.sh" \
+    bash "$repo_root/scripts/build-archlinuxarm-image.sh" \
         "$rootfs_dir" \
         "$package_dir" \
         "$artifact_dir"

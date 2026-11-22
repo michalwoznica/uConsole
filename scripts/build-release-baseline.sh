@@ -113,7 +113,7 @@ set +e
             printf "ERROR: local locked-rebuild container lacks required tools: %s\\n" "${missing[*]}" >&2
             exit 1
         fi
-        bash /repo/scripts/build-stage10-rootfs.sh \
+        bash /repo/scripts/build-archlinuxarm-rootfs.sh \
             /work/rootfs \
             /work/packages
     '
@@ -126,7 +126,7 @@ if [[ "$container_status" -ne 0 ]]; then
 fi
 
 printf 'Building partitioned image from locked baseline rootfs...\n'
-sudo -n bash "$repo_root/scripts/build-stage10-image.sh" \
+sudo -n bash "$repo_root/scripts/build-archlinuxarm-image.sh" \
     "$workdir/rootfs" \
     "$workdir/packages" \
     "$artifact_dir"

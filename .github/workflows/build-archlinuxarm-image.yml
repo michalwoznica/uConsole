@@ -1,4 +1,4 @@
-name: Build first uConsole Arch microSD image
+name: Build uConsole Arch Linux ARM image
 
 on:
   push:
@@ -12,11 +12,11 @@ on:
       - 'image/archlinuxarm/rootfs/**'
       - 'image/archlinuxarm/packages/linux-uconsole/**'
       - 'scripts/stage-arch-kernel-package.sh'
-      - 'scripts/build-stage10-rootfs.sh'
-      - 'scripts/build-stage10-image.sh'
-      - 'scripts/build-stage10-host.sh'
+      - 'scripts/build-archlinuxarm-rootfs.sh'
+      - 'scripts/build-archlinuxarm-image.sh'
+      - 'scripts/build-archlinuxarm.sh'
       - 'docs/STAGE10_FIRST_IMAGE.md'
-      - '.github/workflows/build-stage10-image.yml'
+      - '.github/workflows/build-archlinuxarm-image.yml'
   pull_request:
     paths:
       - 'kernel/**'
@@ -28,11 +28,11 @@ on:
       - 'image/archlinuxarm/rootfs/**'
       - 'image/archlinuxarm/packages/linux-uconsole/**'
       - 'scripts/stage-arch-kernel-package.sh'
-      - 'scripts/build-stage10-rootfs.sh'
-      - 'scripts/build-stage10-image.sh'
-      - 'scripts/build-stage10-host.sh'
+      - 'scripts/build-archlinuxarm-rootfs.sh'
+      - 'scripts/build-archlinuxarm-image.sh'
+      - 'scripts/build-archlinuxarm.sh'
       - 'docs/STAGE10_FIRST_IMAGE.md'
-      - '.github/workflows/build-stage10-image.yml'
+      - '.github/workflows/build-archlinuxarm-image.yml'
   workflow_dispatch:
 
 permissions:
@@ -62,23 +62,23 @@ jobs:
       - name: Build and validate uConsole image
         env:
           CONTAINER_RUNTIME: docker
-          UCONSOLE_BUILD_DIR: ${{ runner.temp }}/uconsole-stage10
-          UCONSOLE_ARTIFACT_DIR: ${{ runner.temp }}/uconsole-stage10/artifacts
-          UCONSOLE_CACHE_DIR: ${{ runner.temp }}/uconsole-stage10-cache
+          UCONSOLE_BUILD_DIR: ${{ runner.temp }}/uconsole-archlinuxarm
+          UCONSOLE_ARTIFACT_DIR: ${{ runner.temp }}/uconsole-archlinuxarm/artifacts
+          UCONSOLE_CACHE_DIR: ${{ runner.temp }}/uconsole-archlinuxarm-cache
         run: |
-          bash ./scripts/build-stage10-host.sh
+          bash ./scripts/build-archlinuxarm.sh
 
       - name: Show artifact sizes
         run: |
-          ls -lh "$RUNNER_TEMP/uconsole-stage10/artifacts"
-          du -sh "$RUNNER_TEMP/uconsole-stage10/artifacts"
+          ls -lh "$RUNNER_TEMP/uconsole-archlinuxarm/artifacts"
+          du -sh "$RUNNER_TEMP/uconsole-archlinuxarm/artifacts"
 
-      - name: Upload Stage 10 image artifact
+      - name: Upload Arch Linux ARM image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: uconsole-archlinuxarm-stage10
+          name: uconsole-archlinuxarm-image
           path: |
-            ${{ runner.temp }}/uconsole-stage10/artifacts/*
+            ${{ runner.temp }}/uconsole-archlinuxarm/artifacts/*
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

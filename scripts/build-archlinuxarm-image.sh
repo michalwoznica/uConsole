@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$(id -u)" -ne 0 ]]; then
-    printf 'ERROR: Stage 10 image builder must run as root on the build host.\n' >&2
+    printf 'ERROR: Arch Linux ARM image builder must run as root on the build host.\n' >&2
     exit 1
 fi
 
@@ -28,7 +28,7 @@ source "$repo_root/image/archlinuxarm/release-baseline.lock"
 
 kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-$BASELINE_KERNEL_RELEASE}"
 rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
-image_checkpoint="${UCONSOLE_IMAGE_CHECKPOINT:-Stage10}"
+image_checkpoint="${UCONSOLE_IMAGE_CHECKPOINT:-archlinuxarm}"
 image_variant="${UCONSOLE_IMAGE_VARIANT:-}"
 
 if [[ ! "$kernel_release" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-uconsole$ ]]; then
@@ -79,7 +79,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-printf 'Checking Stage 10 image-layout contract...\n'
+printf 'Checking Arch Linux ARM image-layout contract...\n'
 
 [[ "$PARTITION_TABLE" == "dos" ]]
 [[ "$LOGICAL_SECTOR_SIZE" == "512" ]]
@@ -129,7 +129,7 @@ mapfile -t package_files < <(
         | sort
 )
 if [[ "${#package_files[@]}" -ne 1 ]]; then
-    printf 'ERROR: expected exactly one Stage 10 linux-uconsole package.\n' >&2
+    printf 'ERROR: expected exactly one Arch Linux ARM linux-uconsole package.\n' >&2
     exit 1
 fi
 package_file="${package_files[0]}"
@@ -260,7 +260,7 @@ root_required="$(du -sx -B1 "$rootfs" --exclude="$rootfs/boot" | awk '{print $1}
 # Require at least 512 MiB free after the estimated root copy.
 safety_bytes=$((512 * 1024 * 1024))
 if (( root_required + safety_bytes > root_available )); then
-    printf 'ERROR: Stage 10 root partition too small: required=%s available=%s safety=%s\n' \
+    printf 'ERROR: Arch Linux ARM root partition too small: required=%s available=%s safety=%s\n' \
         "$root_required" "$root_available" "$safety_bytes" >&2
     exit 1
 fi
@@ -399,8 +399,8 @@ cp -f "$package_file" "$output_dir/"
 # but remove the 8 GiB raw image to control CI workspace/artifact size.
 rm -f "$image"
 
-printf '\n=== STAGE 10 IMAGE ARTIFACT ===\n'
+printf '\n=== ARCH LINUX ARM IMAGE ARTIFACT ===\n'
 cat "$manifest"
-printf '=== END STAGE 10 IMAGE ARTIFACT ===\n\n'
+printf '=== END ARCH LINUX ARM IMAGE ARTIFACT ===\n\n'
 
-printf 'PASS: Stage 10 partitioned microSD image built and validated.\n'
+printf 'PASS: Arch Linux ARM partitioned microSD image built and validated.\n'

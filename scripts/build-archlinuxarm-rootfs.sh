@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$(id -u)" -ne 0 ]]; then
-    printf 'ERROR: Stage 10 rootfs builder must run as root in the disposable Arch container.\n' >&2
+    printf 'ERROR: Arch Linux ARM rootfs builder must run as root in the disposable Arch container.\n' >&2
     exit 1
 fi
 
@@ -106,11 +106,11 @@ download_versioned_input() {
     download_from_base "$ROOTFS_FALLBACK_BASE_URL" "$name" "$output"
 }
 
-printf 'Checking Stage 10 authenticated-rootfs policy...\n'
+printf 'Checking Arch Linux ARM authenticated-rootfs policy...\n'
 
 case "$ROOTFS_FILENAME" in
     *-latest*)
-        printf 'ERROR: Stage 10 rootfs input must be versioned, not -latest.\n' >&2
+        printf 'ERROR: Arch Linux ARM rootfs input must be versioned, not -latest.\n' >&2
         exit 1
         ;;
 esac
@@ -380,13 +380,13 @@ grep -Fxq 'conflict = uboot-raspberrypi' "$pkginfo"
 
 printf 'Preparing cross-architecture pacman transaction...\n'
 system_hooks="$output_rootfs/usr/share/libalpm/hooks"
-system_hooks_saved="$output_rootfs/usr/share/libalpm/hooks.stage10-saved"
-system_hooks_updated="$output_rootfs/usr/share/libalpm/hooks.stage10-updated"
+system_hooks_saved="$output_rootfs/usr/share/libalpm/hooks.uconsole-saved"
+system_hooks_updated="$output_rootfs/usr/share/libalpm/hooks.uconsole-updated"
 custom_hooks="$output_rootfs/etc/pacman.d/hooks"
-custom_hooks_saved="$output_rootfs/etc/pacman.d/hooks.stage10-saved"
+custom_hooks_saved="$output_rootfs/etc/pacman.d/hooks.uconsole-saved"
 
 if [[ -e "$system_hooks_saved" || -e "$system_hooks_updated" || -e "$custom_hooks_saved" ]]; then
-    printf 'ERROR: unexpected Stage 10 hook-save path already exists.\n' >&2
+    printf 'ERROR: unexpected Arch Linux ARM hook-save path already exists.\n' >&2
     exit 1
 fi
 
@@ -451,7 +451,7 @@ if (( locked_mode )); then
         "$package_file"
 
     # Preserve hooks installed by the accepted package payloads, but keep them
-    # suppressed during this foreign-architecture replay just as in Stage 10.
+    # suppressed during this foreign-architecture replay, matching the normal Arch Linux ARM build.
     mv "$system_hooks" "$system_hooks_updated"
     mkdir -p "$system_hooks"
 
@@ -606,7 +606,7 @@ systemctl --root="$output_rootfs" enable \
     uconsole-pacman-keyring-init.service \
     uconsole-brightness-keys.service >/dev/null
 
-printf 'Validating integrated Stage 10 rootfs tree...\n'
+printf 'Validating integrated Arch Linux ARM rootfs tree...\n'
 pacman_target -Q linux-uconsole |
     grep -Fxq "linux-uconsole ${kernel_pkgver}"
 
@@ -737,4 +737,4 @@ else
     rm -f "$archive" "$md5_file" "$sig_file" "$keyring_source" "$keyring"
 fi
 
-printf 'PASS: Stage 10 integrated rootfs tree prepared.\n'
+printf 'PASS: Arch Linux ARM integrated rootfs tree prepared.\n'

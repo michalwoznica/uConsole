@@ -8,11 +8,11 @@ source "$repo_root/image/archlinuxarm/rootfs.lock"
 # shellcheck disable=SC1091
 source "$repo_root/image/archlinuxarm/release-baseline.lock"
 
-stage10_workdir="${UCONSOLE_BUILD_DIR:-$repo_root/build/stage10-host}"
-artifact_dir="${UCONSOLE_ARTIFACT_DIR:-$repo_root/out/stage10}"
+archlinuxarm_workdir="${UCONSOLE_BUILD_DIR:-$repo_root/build/archlinuxarm}"
+artifact_dir="${UCONSOLE_ARTIFACT_DIR:-$repo_root/out/archlinuxarm}"
 bundle_dir="${UCONSOLE_BASELINE_OUTPUT_DIR:-$repo_root/out/baselines/$BASELINE_ID}"
 capture_dir="${bundle_dir}.capturing.$$"
-rootfs_tree="$stage10_workdir/rootfs"
+rootfs_tree="$archlinuxarm_workdir/rootfs"
 pacman_cache="$rootfs_tree/var/cache/pacman/pkg"
 
 required_commands=(
@@ -37,8 +37,8 @@ if [[ "$BASELINE_REBUILD_MODE" != "locked-rebuild" ]]; then
     exit 1
 fi
 if [[ ! -d "$rootfs_tree/var/lib/pacman/local" ]]; then
-    printf 'ERROR: final Stage 10 rootfs workspace not found: %s\n' "$rootfs_tree" >&2
-    printf 'Do not run another clean Stage 10 build before capturing the accepted baseline.\n' >&2
+    printf 'ERROR: final Arch Linux ARM rootfs workspace not found: %s\n' "$rootfs_tree" >&2
+    printf 'Do not run another clean Arch Linux ARM build before capturing the accepted baseline.\n' >&2
     exit 1
 fi
 if [[ ! -d "$pacman_cache" ]]; then
@@ -52,7 +52,7 @@ raw_hash_file="$artifact_dir/uconsole-archlinuxarm-${BASELINE_ROOTFS_RELEASE}-cm
 
 for path in "$manifest_file" "$compressed_image" "$raw_hash_file"; do
     if [[ ! -s "$path" ]]; then
-        printf 'ERROR: expected accepted Stage 10 artifact missing: %s\n' "$path" >&2
+        printf 'ERROR: expected accepted Arch Linux ARM artifact missing: %s\n' "$path" >&2
         exit 1
     fi
 done
@@ -78,7 +78,7 @@ mapfile -t kernel_packages < <(
         | sort
 )
 if [[ "${#kernel_packages[@]}" -ne 1 ]]; then
-    printf 'ERROR: expected exactly one Stage 10 linux-uconsole package, got %s.\n' \
+    printf 'ERROR: expected exactly one Arch Linux ARM linux-uconsole package, got %s.\n' \
         "${#kernel_packages[@]}" >&2
     exit 1
 fi
@@ -178,7 +178,7 @@ download_versioned_input() {
 }
 
 printf 'Capturing accepted baseline: %s\n' "$BASELINE_ID"
-printf 'Final Stage 10 workspace: %s\n' "$stage10_workdir"
+printf 'Final Arch Linux ARM workspace: %s\n' "$archlinuxarm_workdir"
 printf 'Baseline bundle: %s\n' "$bundle_dir"
 
 printf 'Recording final installed package inventory...\n'

@@ -3,9 +3,9 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 container_runtime="${CONTAINER_RUNTIME:-podman}"
-workdir="${UCONSOLE_BUILD_DIR:-$repo_root/build/stage10-host}"
-artifact_dir="${UCONSOLE_ARTIFACT_DIR:-$repo_root/out/stage10}"
-cache_dir="${UCONSOLE_CACHE_DIR:-$repo_root/build/stage10-cache}"
+workdir="${UCONSOLE_BUILD_DIR:-$repo_root/build/archlinuxarm}"
+artifact_dir="${UCONSOLE_ARTIFACT_DIR:-$repo_root/out/archlinuxarm}"
+cache_dir="${UCONSOLE_CACHE_DIR:-$repo_root/build/archlinuxarm-cache}"
 jobs="${JOBS:-$(nproc)}"
 rebuild_kernel="${UCONSOLE_REBUILD_KERNEL:-0}"
 
@@ -161,7 +161,7 @@ set +e
             aarch64-linux-gnu-gcc \
             bc bison curl dtc flex git gnupg inetutils kmod \
             libarchive libcap libelf openssl patch perl python rsync
-        bash /repo/scripts/build-stage10-rootfs.sh \
+        bash /repo/scripts/build-archlinuxarm-rootfs.sh \
             /work/rootfs \
             /work/packages
     '
@@ -192,7 +192,7 @@ if [[ "$container_status" -ne 0 ]]; then
 fi
 
 printf 'Building and validating partitioned microSD image...\n'
-sudo -n bash "$repo_root/scripts/build-stage10-image.sh" \
+sudo -n bash "$repo_root/scripts/build-archlinuxarm-image.sh" \
     "$workdir/rootfs" \
     "$workdir/packages" \
     "$artifact_dir"

@@ -6,7 +6,7 @@ host orchestration used by GitHub Actions.
 The shared entry point is:
 
 ```bash
-bash ./scripts/build-stage10-host.sh
+bash ./scripts/build-archlinuxarm.sh
 ```
 
 ## Arch Linux host prerequisites
@@ -49,21 +49,21 @@ tools through `sudo`.
 From the repository root:
 
 ```bash
-bash ./scripts/build-stage10-host.sh
+bash ./scripts/build-archlinuxarm.sh
 ```
 
 Defaults:
 
 - container runtime: `podman`;
 - parallel jobs: all CPUs reported by `nproc`;
-- work directory: `build/stage10-host/`;
-- local kernel-package cache: `build/stage10-cache/`;
-- final artifacts: `out/stage10/`.
+- work directory: `build/archlinuxarm/`;
+- local kernel-package cache: `build/archlinuxarm-cache/`;
+- final artifacts: `out/archlinuxarm/`.
 
 The final compressed image is:
 
 ```text
-out/stage10/uconsole-archlinuxarm-2026.08-cm4.img.zst
+out/archlinuxarm/uconsole-archlinuxarm-2026.08-cm4.img.zst
 ```
 
 The same directory also contains the raw/compressed checksums, manifest and
@@ -76,7 +76,7 @@ entry point hashes the kernel/package inputs and caches the resulting
 `linux-uconsole` package under:
 
 ```text
-build/stage10-cache/kernel-packages/<input-hash>/
+build/archlinuxarm-cache/kernel-packages/<input-hash>/
 ```
 
 If a later rootfs or image-composition step fails, rerunning the command reuses
@@ -86,7 +86,7 @@ iteration on image/userspace fixes without recompiling the kernel.
 To force a kernel rebuild:
 
 ```bash
-UCONSOLE_REBUILD_KERNEL=1 bash ./scripts/build-stage10-host.sh
+UCONSOLE_REBUILD_KERNEL=1 bash ./scripts/build-archlinuxarm.sh
 ```
 
 ## Optional overrides

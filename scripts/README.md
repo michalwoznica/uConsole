@@ -61,11 +61,11 @@ Stage 9C adds:
 
 Stage 10 adds:
 
-- `build-stage10-rootfs.sh` — authenticate the pinned ARM rootfs, build/install
+- `build-archlinuxarm-rootfs.sh` — authenticate the pinned ARM rootfs, build/install
   the real `linux-uconsole` package, explicitly generate target kmod metadata
   with host-side `depmod` after the hook-suppressed cross-architecture pacman
   transaction, and emit the completed target rootfs;
-- `build-stage10-image.sh` — create, populate, validate and compress the
+- `build-archlinuxarm-image.sh` — create, populate, validate and compress the
   deterministic partitioned microSD image, including checks that generated
   module dependency/alias metadata survives into the final root filesystem.
 
@@ -73,7 +73,7 @@ Stage 10 adds:
 
 Stage 11 adds:
 
-- `build-stage10-host.sh` — orchestrate the complete Stage 10 image build from
+- `build-archlinuxarm.sh` — orchestrate the complete Arch Linux ARM image build from
   a Linux host. GitHub Actions calls it with Docker; local Arch development
   calls the same script with rootful Podman by default. It preserves the
   existing authenticated-rootfs and image-builder contracts and caches a

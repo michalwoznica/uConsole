@@ -80,7 +80,7 @@ These inputs can change without any repository pin changing.
 
 #### A. Final target userspace — highest-impact rolling input
 
-`scripts/build-stage10-rootfs.sh` runs:
+`scripts/build-archlinuxarm-rootfs.sh` runs:
 
 ```text
 pacman ... -Syu <uConsole package-name set>
@@ -114,7 +114,7 @@ This is the most important Stage 12 finding.
 
 #### B. Disposable Arch build container
 
-`scripts/build-stage10-host.sh` runs:
+`scripts/build-archlinuxarm.sh` runs:
 
 ```text
 docker.io/library/archlinux:base-devel
