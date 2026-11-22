@@ -2,8 +2,8 @@
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
 **Status date:** 2026-11-22
-**Document revision:** 6.12
-**Current phase:** Stage 12E isolated kernel update-candidate compatibility validation IMPLEMENTED; local validation pending after confirmed container-network correction
+**Document revision:** 6.15
+**Current phase:** Stage 12G physical validation COMPLETE; Stage 12H promotion of the validated 6.18.64 kernel next
 
 ---
 
@@ -716,7 +716,7 @@ Raspberry Pi Linux 6.18.64, the required config resolves, kernel prepare passes,
 and the CM4/uConsole device trees build and compose successfully. No accepted
 pin changed.
 
-### Stage 12F — real 6.18.64 candidate package/image build: IMPLEMENTED, LOCAL BUILD PENDING
+### Stage 12F — real 6.18.64 candidate package/image build: COMPLETE
 
 Added `scripts/build-kernel-update-candidate.sh VERSION COMMIT` and
 `scripts/install-kernel-update-candidate.sh`.
@@ -738,24 +738,59 @@ The Stage 12F contract is kernel-only:
   candidate-only release/commit/name overrides;
 - preserve package/image hashes, builder/toolchain metadata, final inventory and
   candidate report under ignored `out/update-candidate/`;
-- leave source/package/baseline pins and Git state unchanged;
-- record `physical_validation=not_run` and `promotion=not_performed`.
+- leave source/package/baseline pins and Git state unchanged.
 
-`build-stage10-image.sh` now accepts opt-in candidate metadata overrides. The
-normal Stage 10 and locked-rebuild defaults are unchanged when those variables
-are not set.
-
-### NEXT
-
-Run Stage 12F locally for the already validated candidate:
+The real Stage 12F build completed successfully:
 
 ```text
-version=6.18.64
-commit=a40f735325391b1705161b07f36ed45e1bf04521
+candidate_kernel_version=6.18.64
+candidate_kernel_commit=a40f735325391b1705161b07f36ed45e1bf04521
+candidate_kernel_release=6.18.64-1-uconsole
+candidate_package_filename=linux-uconsole-6.18.64-1-aarch64.pkg.tar.zst
+candidate_package_sha256=e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206
+userspace_inventory=accepted-baseline-except-linux-uconsole
+final_inventory_sha256=151fd2dcead053dd748b3d6b3993f776df786ca40510bb41f43592be2c629666
+compressed_image_filename=uconsole-archlinuxarm-2026.08-cm4-candidate-kernel-6.18.64-a40f73532539.img.zst
+compressed_image_sha256=d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19
+project_pins_changed=no
+repository_mutated=no
+physical_validation=not_run
+promotion=not_performed
 ```
 
-Review the Stage 12F report and artifact hashes before flashing anything. A
-successful build still does not promote the candidate.
+### Stage 12G — physical validation of 6.18.64 candidate: COMPLETE
+
+The Stage 12F image was written to microSD and booted on the physical
+ClockworkPi uConsole CM4. The candidate passed the bounded regression:
+
+- booted successfully as `6.18.64-1-uconsole`;
+- `systemctl --failed` reported zero failed units;
+- brightness buttons worked;
+- NetworkManager, systemd-resolved and Bluetooth services were active;
+- Wi-Fi associated successfully and obtained DHCP addressing;
+- IPv4 routing and DNS resolution worked;
+- battery status/capacity reporting worked;
+- ALSA enumerated the expected uConsole/headphone and HDMI devices;
+- built-in speakers produced audio;
+- headphone output produced audio;
+- live speaker -> headphone switching worked when inserting headphones;
+- live headphone -> speaker switching worked when removing headphones;
+- Bluetooth scanning worked;
+- USB storage worked;
+- short ON/OFF-button press was correctly ignored;
+- clean reboot returned to `6.18.64-1-uconsole` with zero failed units;
+- clean poweroff shut the uConsole down and it remained off.
+
+The candidate is therefore mechanically and physically validated. Promotion has
+still not been performed, and the accepted 6.18.60 project pins remain
+unchanged at this checkpoint.
+
+### NEXT — Stage 12H promotion
+
+Promote the physically validated 6.18.64 candidate as a separate bounded
+checkpoint. Update only the authoritative kernel/package/baseline identities
+required by the release policy, then rebuild/verify the new locked baseline.
+Do not combine promotion with any userspace refresh.
 
 
 ---
@@ -775,6 +810,23 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.15 / Stage 12F and Stage 12G complete
+
+- Recorded successful real Stage 12F build of `linux-uconsole-6.18.64-1` from
+  Raspberry Pi Linux commit `a40f735325391b1705161b07f36ed45e1bf04521`.
+- Preserved accepted Stage 11 userspace exactly apart from the intentional
+  `linux-uconsole` replacement.
+- Recorded candidate package SHA-256
+  `e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206`.
+- Recorded candidate compressed image SHA-256
+  `d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19`.
+- Recorded successful Stage 12G physical validation on the uConsole: boot,
+  brightness, Wi-Fi/DHCP/routing/DNS, Bluetooth, USB storage, battery
+  reporting, speaker/headphone audio and live switching, power-key ignore
+  policy, reboot and shutdown all passed.
+- No accepted kernel/rootfs/baseline pin changed in this closeout checkpoint.
+- Set Stage 12H kernel-candidate promotion as the next bounded step.
 
 ### 2026-11-22 — Revision 6.14 / Stage 12F temporary pacman-policy correction
 

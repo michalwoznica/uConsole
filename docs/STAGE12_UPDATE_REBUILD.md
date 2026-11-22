@@ -1,8 +1,8 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12C COMPLETE — accepted baseline captured and offline locked rebuild physically executed successfully; Stage 12D update checker next  
+**Status:** Stage 12G COMPLETE — 6.18.64 candidate built and physically validated; Stage 12H promotion next  
 **Baseline:** final physically validated Stage 11 Arch Linux ARM image  
-**Date:** 2026-11-21
+**Date:** 2026-11-22
 
 ## 1. Purpose
 
@@ -608,7 +608,7 @@ the deliberately online rootful Podman candidate container uses host networking
 because normal rootful container DNS did not resolve Arch package mirrors on
 this host. The repository remains read-only inside that container.
 
-### Stage 12F — real candidate package/image build: IMPLEMENTED, LOCAL BUILD PENDING
+### Stage 12F — real candidate package/image build: COMPLETE
 
 Stage 12F is intentionally kernel-only. It does not combine the kernel test
 with a rolling userspace refresh.
@@ -647,8 +647,41 @@ kernel release/commit, checkpoint label and output-name variant. With those
 overrides unset, normal Stage 10/locked-rebuild behavior and filenames are
 unchanged.
 
-A Stage 12F build PASS is still not promotion. The resulting image must undergo
-the bounded physical regression before any source/package/baseline pin changes.
+The real Stage 12F build completed successfully:
+
+```text
+candidate_kernel_version=6.18.64
+candidate_kernel_commit=a40f735325391b1705161b07f36ed45e1bf04521
+candidate_kernel_release=6.18.64-1-uconsole
+candidate_package_sha256=e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206
+userspace_inventory=accepted-baseline-except-linux-uconsole
+final_inventory_sha256=151fd2dcead053dd748b3d6b3993f776df786ca40510bb41f43592be2c629666
+compressed_image_sha256=d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19
+project_pins_changed=no
+repository_mutated=no
+```
+
+### Stage 12G — physical candidate validation: COMPLETE
+
+The Stage 12F image was flashed and booted on the physical uConsole CM4.
+Validation passed for:
+
+- kernel identity `6.18.64-1-uconsole`;
+- zero failed systemd units;
+- brightness keys;
+- Wi-Fi association, DHCP, routing and DNS;
+- Bluetooth scan;
+- USB storage;
+- battery reporting;
+- built-in speaker output;
+- headphone output;
+- live speaker/headphone switching in both directions;
+- short power-button ignore policy;
+- clean reboot;
+- clean poweroff with the device remaining off.
+
+Stage 12G therefore closes the candidate-validation chain. Promotion remains a
+separate operation and has not occurred at this checkpoint.
 
 ## 8. Stage 12B conclusion
 
@@ -666,10 +699,29 @@ live build toolchain
 ```
 
 Stage 12B made that distinction explicit. Stage 12C subsequently proved the
-offline locked rebuild, and Stage 12D proved non-destructive update discovery.
-The current checkpoint is Stage 12F: build the real 6.18.64 candidate package
-and isolated candidate image without changing the accepted baseline.
+offline locked rebuild, Stage 12D proved non-destructive update discovery,
+Stage 12E proved candidate compatibility, Stage 12F built the isolated real
+candidate, and Stage 12G physically validated it on the uConsole.
 
+The current checkpoint is Stage 12G complete. Stage 12H is the separate
+promotion step for the physically validated 6.18.64 kernel; no userspace refresh
+is part of that promotion.
+
+
+
+### 2026-11-22 — Stage 12F/12G candidate build and physical-validation closeout
+
+- Real Stage 12F kernel-only build passed for Raspberry Pi Linux 6.18.64 at
+  `a40f735325391b1705161b07f36ed45e1bf04521`.
+- Candidate `linux-uconsole-6.18.64-1` package SHA-256:
+  `e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206`.
+- Candidate compressed image SHA-256:
+  `d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19`.
+- Stage 12G physical regression passed for boot, systemd health, brightness,
+  Wi-Fi/DHCP/routing/DNS, Bluetooth, USB storage, battery reporting, speakers,
+  headphones, live audio switching, power-key ignore policy, reboot and
+  shutdown.
+- Accepted pins remain unchanged in this closeout. Stage 12H promotion is next.
 
 ### 2026-11-22 — Stage 12F temporary pacman-policy correction
 
