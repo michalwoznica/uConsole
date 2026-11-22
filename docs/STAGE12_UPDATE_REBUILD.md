@@ -1,7 +1,7 @@
 # Stage 12 — Reproducible Update / Rebuild Path
 
-**Status:** Stage 12H promotion tooling IMPLEMENTED — local promotion/reproducibility proof pending  
-**Baseline:** final physically validated Stage 11 Arch Linux ARM image  
+**Status:** COMPLETE — Stage 12H promotion and offline reproducibility proof passed  
+**Baseline:** accepted Stage 12H Arch Linux ARM image (`archlinuxarm-stage12h-2026-11-22`)  
 **Date:** 2026-11-22
 
 ## 1. Purpose
@@ -21,22 +21,30 @@ build. Its job is to identify every meaningful build input and classify it as:
 
 No build behavior is changed by Stage 12A.
 
-## 2. Known-good baseline
+## 2. Accepted baseline after Stage 12H
 
-The Stage 11 final image is the reference baseline for all future maintenance.
+Stage 12 started from the physically accepted Stage 11 image and completed one
+full kernel-update cycle. The resulting Stage 12H baseline is now authoritative
+for future Arch maintenance and publication.
 
 ```text
+baseline_id=archlinuxarm-stage12h-2026-11-22
 rootfs_release=2026.08
 rootfs_sha256=f10903be472e2662e110f0f7bae2750a30914ce3dc0fcd38ec85d3405d8c8967
-rpi_linux_commit=0b41724521c9adf5399409d02aece6c1df0a4432
-kernel_release=6.18.60-1-uconsole
-package_sha256=0f830217a766cd106347498f6aeb58f5cb320651ca26cb6ab68b096a2c61a812
-image_raw_sha256=002eee704787770ad873f1cd56789df4cf56c86655895148ebbe4c03320b9a86
-compressed_sha256=aa0d9c961579e12e5eb9991086d0c2b0a91670e07cc4c8cd8711f0316b0bce7a
+rpi_linux_commit=a40f735325391b1705161b07f36ed45e1bf04521
+kernel_release=6.18.64-1-uconsole
+package_sha256=e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206
+image_raw_sha256=a2daeb466eae193917da5405adf52d60cadb55d029278502c407bbedd4aa0212
+compressed_sha256=d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19
+final_inventory_sha256=151fd2dcead053dd748b3d6b3993f776df786ca40510bb41f43592be2c629666
+bundle_lock_sha256=361d87d23a091a40b8312bd8f091cc32759f0f340ca3fb13f4628c06ebc0def2
+bundle_files_sha256=11f629b12b561f0d45235613c6bed085cd9f6975ffda4052572f86c1898a461c
 ```
 
-The kernel package hash remained stable through the Stage 11 image-only
-corrections because the kernel/hardware layer did not change.
+The exact compressed image above is the Stage 12F artifact that passed Stage
+12G physical validation and was promoted unchanged by Stage 12H. The later
+locked rebuild is reproducibility evidence only and does not replace the
+hardware-tested artifact.
 
 ## 3. Audit result
 
@@ -46,7 +54,7 @@ The following inputs are already explicit and stable.
 
 | Input | Repository control | Notes |
 |---|---|---|
-| Raspberry Pi Linux source | `kernel/source.lock` exact commit | `0b417245...`, Linux 6.18.60 |
+| Raspberry Pi Linux source | `kernel/source.lock` exact commit | current accepted baseline: `a40f7353...`, Linux 6.18.64 |
 | Kernel branch family | recorded | `rpi-6.18.y`; informational once exact commit is selected |
 | Arch Linux ARM rootfs archive | exact release, size and SHA-256 | moving `-latest` alias is forbidden |
 | Rootfs signing identity | exact fingerprint | detached signature is verified |
@@ -683,75 +691,113 @@ Validation passed for:
 Stage 12G therefore closes the candidate-validation chain. Promotion remains a
 separate operation and has not occurred at this checkpoint.
 
-### Stage 12H — promote exact physically validated candidate: IMPLEMENTED, LOCAL RUN PENDING
+### Stage 12H — promote exact physically validated candidate: COMPLETE
 
-Stage 12H is the terminal step of this update cycle. It does not discover or
-chase another upstream kernel. It promotes the exact Stage 12F artifact that
-already passed Stage 12G physical validation.
+Stage 12H successfully promoted exactly the Stage 12F image/package that had
+already passed Stage 12G physical validation. It did not build or select a new
+candidate.
 
-`image/archlinuxarm/stage12g-physical-validation.lock` records the machine-
-readable physical-validation gate for the accepted candidate identity.
-
-`scripts/promote-kernel-update-candidate.sh VERSION COMMIT [NEW_BASELINE_ID]`
-performs the promotion atomically:
-
-1. require a clean Git worktree;
-2. verify the current accepted baseline bundle before changing anything;
-3. verify the exact Stage 12F package/image/report hashes against the Stage 12G
-   physical-validation lock;
-4. derive a new baseline bundle by reusing the accepted rootfs/userspace
-   payloads and replacing only `linux-uconsole` with the physically validated
-   candidate package;
-5. update `kernel/source.lock`, the authoritative `linux-uconsole` PKGBUILD and
-   `release-baseline.lock` to the validated candidate;
-6. verify the newly generated baseline bundle against the promoted repository
-   lock;
-7. audit executable/configuration files for stale references to the previous
-   accepted kernel identity;
-8. run `build-release-baseline.sh` with container networking disabled;
-9. require the locked rebuild package inventory to match the promoted accepted
-   inventory exactly;
-10. keep the promotion only if every gate passes. On failure, restore the old
-    accepted locks and remove the unaccepted new bundle.
-
-The locked rebuild output is evidence only. Its image does not become a second
-candidate and does not require another physical flash. The exact Stage 12F
-image remains the accepted physically validated image.
-
-To support promotion and future cycles, Stage 12H also removes old hard-coded
-`6.18.60-1` assumptions from the baseline capture/verifier and Stage 10 locked
-rootfs/image builders. Those paths now derive the accepted kernel release from
-`release-baseline.lock`.
-
-The update cycle ends when the Stage 12H promotion block reports both
-`physical_validation=pass` and `locked_rebuild=pass`. No higher kernel is
-evaluated unless a future update cycle is explicitly started.
-
-## 8. Stage 12B conclusion
-
-The current build is working and maintainable, but its reproducibility model is
-mixed:
+The final promotion passed every gate:
 
 ```text
-pinned source/hardware policy
-        +
-pinned starting rootfs
-        +
-live final Arch package update
-        +
-live build toolchain
+previous_baseline_id=archlinuxarm-stage11-2026-11-21
+accepted_baseline_id=archlinuxarm-stage12h-2026-11-22
+accepted_kernel_version=6.18.64
+accepted_kernel_commit=a40f735325391b1705161b07f36ed45e1bf04521
+accepted_kernel_release=6.18.64-1-uconsole
+accepted_kernel_package_sha256=e4eb51edf12d7022ee96a5599ac7643dc665afd02aad1ecdd074c3e108674206
+accepted_image_raw_sha256=a2daeb466eae193917da5405adf52d60cadb55d029278502c407bbedd4aa0212
+accepted_image_compressed_sha256=d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19
+accepted_final_inventory_sha256=151fd2dcead053dd748b3d6b3993f776df786ca40510bb41f43592be2c629666
+baseline_bundle_lock_sha256=361d87d23a091a40b8312bd8f091cc32759f0f340ca3fb13f4628c06ebc0def2
+baseline_bundle_files_sha256=11f629b12b561f0d45235613c6bed085cd9f6975ffda4052572f86c1898a461c
+physical_validation=pass
+locked_rebuild=pass
+promotion_complete=yes
 ```
 
-Stage 12B made that distinction explicit. Stage 12C subsequently proved the
-offline locked rebuild, Stage 12D proved non-destructive update discovery,
-Stage 12E proved candidate compatibility, Stage 12F built the isolated real
-candidate, and Stage 12G physically validated it on the uConsole.
+The network-disabled locked rebuild reproduced the exact accepted final package
+inventory:
 
-The current checkpoint is Stage 12G complete. Stage 12H is the separate
-promotion step for the physically validated 6.18.64 kernel; no userspace refresh
-is part of that promotion.
+```text
+locked_rebuild_inventory_sha256=151fd2dcead053dd748b3d6b3993f776df786ca40510bb41f43592be2c629666
+locked_rebuild_compressed_image_sha256=dd2538723b8a1bc0f7ccbffabf07ab0811aa4b55db5ea85c2198e962b3672dcf
+byte_identical_image_required=no
+```
+
+The differing rebuild image hash is expected. Stage 12 requires exact accepted
+package/system identity, not byte-identical filesystem-image bytes. The exact
+Stage 12F/12G image remains the accepted physically tested release artifact.
+
+Two earlier promotion attempts were rolled back safely while the stale-reference
+audit was corrected. Exact inspection established that
+`kernel/sources/axp20x-battery.lock` is immutable Stage 5 provenance, while the
+Stage 9B rootfs validator contained active hard-coded 6.18.60 assumptions that
+were generalized to derive kernel/package identity from authoritative locks and
+the PKGBUILD. The final successful promotion retained the corrected semantics.
+
+Stage 12H updated the authoritative accepted kernel/package/baseline locks to
+6.18.64. A later formatting-only correction restored explanatory comments in
+the lock files and changed future promotion generation to preserve them; it did
+not alter any promoted identity or require a rebuild/retest.
+
+Stage 12 is complete. No further kernel update cycle is active.
+
+## 8. Stage 12 conclusion
+
+Stage 12 established and exercised the complete maintenance lifecycle:
+
+```text
+discover
+  -> compatibility validate
+  -> build exact candidate
+  -> physically validate exact candidate
+  -> promote exact candidate
+  -> offline reproducibility proof
+  -> stop
+```
+
+Stage 12C proved the offline locked rebuild, Stage 12D proved non-destructive
+update discovery, Stage 12E proved candidate compatibility, Stage 12F built the
+isolated real candidate, Stage 12G physically validated that exact image, and
+Stage 12H promoted it and reproduced the accepted package inventory offline.
+
+The stable Arch baseline is therefore frozen at `6.18.64-1-uconsole` until a
+future update cycle is explicitly started.
+
+## 9. Public-release handoff
+
+The next project checkpoint is publication of the stable Arch implementation,
+not another kernel update and not ARMtix/Artix implementation yet.
+
+For publication:
+
+- `main` remains the stable Arch/publication baseline;
+- the public release image must be the exact physically validated Stage 12F/12G
+  artifact with compressed SHA-256
+  `d90cf0db8862d301a1f0ba012284cd4ad862d2c11c9603b0369ee66cef0ccc19`;
+- the locked-rebuild image with SHA-256
+  `dd2538723b8a1bc0f7ccbffabf07ab0811aa4b55db5ea85c2198e962b3672dcf`
+  remains reproducibility evidence and is not the hardware-tested release image;
+- repository content/history, release assets, licenses/provenance and public
+  documentation must be reviewed before visibility changes;
+- future ARMtix/Artix OpenRC work should begin only after that publication
+  checkpoint and should live on a dedicated development branch until validated.
 
 
+
+### 2026-11-22 — Stage 12 final closeout
+
+- Stage 12H promotion completed successfully for the exact physically validated
+  6.18.64 candidate.
+- Accepted baseline is now `archlinuxarm-stage12h-2026-11-22`.
+- Exact accepted final package inventory was reproduced with container networking
+  disabled.
+- The physically validated Stage 12F/12G image remains the release artifact;
+  the locked-rebuild image is evidence only.
+- Stage 12 is closed and no further update cycle is active.
+- Next checkpoint is public-repository/release preparation; ARMtix/Artix work is
+  deferred until publication is complete and will occur on a development branch.
 
 ### 2026-11-22 — Stage 12F/12G candidate build and physical-validation closeout
 
