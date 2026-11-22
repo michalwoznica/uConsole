@@ -569,8 +569,10 @@ Stage 12D therefore proves update discovery is read-only and distinguishes
 
 `scripts/validate-kernel-update-candidate.sh VERSION COMMIT` validates one
 explicitly selected Raspberry Pi Linux candidate without modifying project
-pins. Candidate selection is deliberately explicit rather than following a
-moving branch head during validation.
+pins. Host execution delegates to `scripts/run-kernel-update-candidate.sh`,
+which runs the validator in the existing local Arch builder image with the
+repository mounted read-only. Candidate selection is deliberately explicit
+rather than following a moving branch head during validation.
 
 The validator:
 
@@ -593,7 +595,9 @@ The validator:
 13. deliberately does **not** build the kernel Image/modules or a disk image;
 14. compares Git status after completion and fails if tracked/unignored
     repository state changed;
-15. writes a candidate report only inside the ignored candidate workspace.
+15. writes a candidate report only inside the ignored candidate workspace;
+16. records the local builder image ID plus cross-GCC, cross-binutils and DTC
+    versions used for the compatibility check.
 
 The first candidate selected from Stage 12D is:
 
@@ -605,6 +609,14 @@ commit=a40f735325391b1705161b07f36ed45e1bf04521
 Passing Stage 12E means only that the candidate is mechanically compatible
 with the current source/config/DT composition. It does not promote the kernel
 and does not replace the physically accepted 6.18.60 baseline.
+
+The first local Stage 12E attempt stopped before candidate composition because
+`aarch64-linux-gnu-gcc` was not installed on the host. That exposed an
+implementation mismatch with the project's established containerized build
+workflow. Stage 12E now keeps the developer host clean: the cross compiler and
+other build dependencies are installed only inside the disposable candidate
+container. The local Arch builder image itself must already exist; Stage 12E
+will not silently pull a moving image tag.
 
 ### Stage 12F — full candidate build and bounded physical regression, only if deliberately chosen
 

@@ -130,9 +130,14 @@ non-zero status.
 
 Stage 12E adds:
 
+- `run-kernel-update-candidate.sh` — host launcher for Stage 12E. It uses the
+  already-local Arch `base-devel` builder image, mounts the repository
+  read-only, installs the current cross-build/toolchain packages only inside
+  the disposable candidate container, and records builder/toolchain identity.
 - `validate-kernel-update-candidate.sh` — validate one explicitly selected
-  newer Raspberry Pi Linux commit in an ignored candidate workspace. It stages
-  a candidate-only PKGBUILD, executes the normal patch/config `prepare()` path
-  with `--fuzz=0`, builds/applies the CM4/uConsole device trees, and proves Git
-  state is unchanged. It intentionally stops before a full kernel or image
-  build.
+  newer Raspberry Pi Linux commit in an ignored candidate workspace. Host
+  invocation automatically delegates to the container launcher. Inside the
+  container it stages a candidate-only PKGBUILD, executes the normal
+  patch/config `prepare()` path with `--fuzz=0`, builds/applies the CM4/uConsole
+  device trees, and proves Git state is unchanged. It intentionally stops
+  before a full kernel or image build.

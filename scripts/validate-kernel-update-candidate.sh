@@ -23,6 +23,13 @@ if [[ ! "$candidate_commit" =~ ^[0-9a-f]{40}$ ]]; then
     exit 1
 fi
 
+# Host execution delegates to the project container launcher so Stage 12E does
+# not depend on a cross toolchain installed on the developer workstation.
+if [[ "${UCONSOLE_STAGE12E_CONTAINERIZED:-no}" != "yes" ]]; then
+    exec bash "$repo_root/scripts/run-kernel-update-candidate.sh" \
+        "$candidate_version" "$candidate_commit"
+fi
+
 # shellcheck disable=SC1091
 source "$repo_root/kernel/source.lock"
 # shellcheck disable=SC1091
@@ -281,6 +288,10 @@ device_tree_build=pass
 dt_overlay_application=pass
 dt_build_jobs=${jobs}
 full_kernel_build=not_run
+builder_image_id=${UCONSOLE_STAGE12E_BUILDER_IMAGE_ID:-unknown}
+cross_gcc_version=${UCONSOLE_STAGE12E_CROSS_GCC_VERSION:-unknown}
+cross_ld_version=${UCONSOLE_STAGE12E_CROSS_LD_VERSION:-unknown}
+dtc_version=${UCONSOLE_STAGE12E_DTC_VERSION:-unknown}
 project_pins_changed=no
 repository_mutated=${repository_mutated}
 REPORT

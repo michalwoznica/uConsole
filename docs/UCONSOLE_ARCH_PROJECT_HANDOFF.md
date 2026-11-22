@@ -691,11 +691,16 @@ was added; the rerun produced the complete report above. No project pin changed.
 
 ### Stage 12E — isolated kernel update-candidate compatibility validation: IMPLEMENTED, LOCAL VALIDATION PENDING
 
-Added `scripts/validate-kernel-update-candidate.sh VERSION COMMIT`.
+Added `scripts/validate-kernel-update-candidate.sh VERSION COMMIT` plus the
+containerized host launcher `scripts/run-kernel-update-candidate.sh`.
 
 Its boundary is deliberately narrower than a real update:
 
 - candidate version/commit must be explicit;
+- host execution delegates to the existing local Arch builder container;
+- the repository is mounted read-only inside the candidate container;
+- cross-build/toolchain packages are installed only inside that disposable
+  container and their versions are recorded in the candidate report;
 - only a newer kernel in the current 6.18 branch family is accepted;
 - all work stays under ignored `build/update-candidate/`;
 - the normal package-staging script is reused;
@@ -724,8 +729,9 @@ or alter the physically accepted 6.18.60 baseline.
 
 ### NEXT
 
-Run the exact Stage 12E candidate validator and review its summary before any
-full kernel build or pin change.
+Rerun the exact Stage 12E candidate validator. Host execution now
+automatically uses the containerized toolchain path; review its summary before
+any full kernel build or pin change.
 
 
 ---
@@ -745,6 +751,22 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.11 / Stage 12E containerized toolchain correction
+
+- First local Stage 12E run stopped immediately because the host did not have
+  `aarch64-linux-gnu-gcc` installed.
+- Corrected the implementation to match the established project architecture:
+  Stage 12E now executes inside the already-local Arch `base-devel` builder
+  image rather than requiring a host cross toolchain.
+- The repository is mounted read-only; only ignored `build/update-candidate/`
+  storage is writable.
+- Candidate mode permits live toolchain package installation inside the
+  disposable container; the builder image ID and GCC/binutils/DTC versions are
+  recorded in the candidate report.
+- The launcher refuses to silently pull a moving builder image tag.
+- Accepted kernel/rootfs/baseline pins remain unchanged.
+- Stage 12E remains local-validation pending for 6.18.64.
 
 ### 2026-11-21 — Revision 6.10 / Stage 12D complete, Stage 12E kernel candidate validator
 
