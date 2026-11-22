@@ -29,6 +29,8 @@ source "$repo_root/image/archlinuxarm/release-baseline.lock"
 source "$repo_root/scripts/lib/image-partition-filesystems.sh"
 # shellcheck disable=SC1091
 source "$repo_root/scripts/lib/image-rootfs-copy.sh"
+# shellcheck disable=SC1091
+source "$repo_root/scripts/lib/image-artifacts.sh"
 
 kernel_release="${UCONSOLE_IMAGE_KERNEL_RELEASE:-$BASELINE_KERNEL_RELEASE}"
 rpi_linux_commit="${UCONSOLE_IMAGE_RPI_LINUX_COMMIT:-$RPI_LINUX_COMMIT}"
@@ -272,24 +274,13 @@ e2fsck -f -n "$root_part"
 losetup -d "$loopdev"
 loopdev=""
 
-printf 'Recording raw image checksum...\n'
-raw_sha256="$(sha256sum "$image" | awk '{print $1}')"
-printf '%s  %s\n' "$raw_sha256" "$(basename "$image")" > "$raw_sha_file"
-
-printf 'Compressing image with zstd using all available CPUs...\n'
-zstd \
-    -T0 \
-    -10 \
-    --force \
+uconsole_compress_and_checksum_image \
     "$image" \
-    -o "$compressed"
-
-zstd -t "$compressed"
-
-compressed_sha256="$(sha256sum "$compressed" | awk '{print $1}')"
-printf '%s  %s\n' \
-    "$compressed_sha256" "$(basename "$compressed")" \
-    > "$compressed_sha_file"
+    "$compressed" \
+    "$raw_sha_file" \
+    "$compressed_sha_file" \
+    raw_sha256 \
+    compressed_sha256
 
 package_sha256="$(sha256sum "$package_file" | awk '{print $1}')"
 

@@ -80,6 +80,10 @@ Stage 10 adds:
   caller-provided safety margin, then copy the root and boot trees with the
   project's established rsync semantics. Mounting and target-specific rootfs
   validation remain outside the library.
+- `lib/image-artifacts.sh` — distro-neutral helper that records the raw image
+  checksum, compresses the completed image with the project's established zstd
+  settings, validates the compressed stream, and records its checksum. Target
+  naming, manifests and artifact-retention policy remain outside the library.
 
 ## Shared local/CI image build entry point
 
