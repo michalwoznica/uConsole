@@ -572,7 +572,7 @@ install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/NetworkManager-uconsole.conf" \
     "$output_rootfs/etc/NetworkManager/conf.d/10-uconsole.conf"
 install -Dm644 \
-    "$repo_root/image/archlinuxarm/rootfs/sysctl-uconsole.conf" \
+    "$repo_root/image/shared/rootfs/sysctl-uconsole.conf" \
     "$output_rootfs/etc/sysctl.d/50-uconsole-console.conf"
 install -Dm644 \
     "$repo_root/image/archlinuxarm/rootfs/uconsole-pacman-keyring-init.service" \

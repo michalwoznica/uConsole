@@ -7,3 +7,4 @@ Only move content here after verifying that its behavior is independent of the t
 Current shared assets:
 
 - `boot/config-uconsole-cm4.txt` — Raspberry Pi firmware/uConsole hardware boot policy.
+- `rootfs/sysctl-uconsole.conf` — distro-neutral console kernel logging policy.
