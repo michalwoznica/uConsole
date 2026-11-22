@@ -1,9 +1,9 @@
 # uConsole Arch Linux Project Handoff
 
 **Project:** Linux for ClockworkPi uConsole (Raspberry Pi CM4 Lite, original 2024 display)
-**Status date:** 2026-11-21
-**Document revision:** 6.10
-**Current phase:** Stage 12E isolated kernel update-candidate compatibility validation IMPLEMENTED; local validation pending
+**Status date:** 2026-11-22
+**Document revision:** 6.12
+**Current phase:** Stage 12E isolated kernel update-candidate compatibility validation IMPLEMENTED; local validation pending after confirmed container-network correction
 
 ---
 
@@ -730,8 +730,9 @@ or alter the physically accepted 6.18.60 baseline.
 ### NEXT
 
 Rerun the exact Stage 12E candidate validator. Host execution now
-automatically uses the containerized toolchain path; review its summary before
-any full kernel build or pin change.
+automatically uses the containerized toolchain path with host networking, which
+was physically confirmed to restore DNS resolution for the rootful Podman
+builder. Review its summary before any full kernel build or pin change.
 
 
 ---
@@ -751,6 +752,24 @@ In a fresh ChatGPT conversation:
 ---
 
 ## 14. Change log
+
+### 2026-11-22 — Revision 6.12 / Stage 12E container networking correction
+
+- The second local Stage 12E run reached the disposable Arch builder but
+  `pacman -Syu` could not resolve Arch package mirrors through normal rootful
+  Podman container networking.
+- Verified host DNS resolution independently.
+- Verified the expected rootful builder image ID
+  `3f2743e9ec055adcc0ae9c3a4b055aad2daca4c48aedf3198c8213efe440eda8`.
+- Verified normal rootful Podman used DNS server `192.168.0.1` but did not
+  resolve the mirror during the test.
+- Verified the same rootful container resolves correctly with
+  `--network=host`.
+- Stage 12E now uses host networking only for the deliberately online
+  candidate/toolchain-fetch container.
+- Repository mount remains read-only; accepted kernel/rootfs/baseline pins and
+  target-image networking policy remain unchanged.
+- Stage 12E remains local-validation pending for 6.18.64.
 
 ### 2026-11-22 — Revision 6.11 / Stage 12E containerized toolchain correction
 

@@ -89,10 +89,10 @@ printf 'Local builder image: %s\n' "$builder_image"
 printf 'Local builder image ID: %s\n' "$builder_image_id"
 printf 'Candidate workspace: %s\n' "$candidate_workdir"
 printf 'Repository mount in container: read-only\n'
-printf 'Container networking: enabled for candidate/toolchain fetches\n'
+printf 'Container networking: host mode for candidate/toolchain fetches\n'
 
 set +e
-"${container_cmd[@]}" run --rm --pull=never \
+"${container_cmd[@]}" run --rm --pull=never --network=host \
     -e UCONSOLE_STAGE12E_CONTAINERIZED=yes \
     -e UCONSOLE_STAGE12E_BUILDER_IMAGE_ID="$builder_image_id" \
     -e UCONSOLE_UPDATE_CANDIDATE_DIR="/candidate-root/$candidate_id" \

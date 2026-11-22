@@ -132,8 +132,9 @@ Stage 12E adds:
 
 - `run-kernel-update-candidate.sh` — host launcher for Stage 12E. It uses the
   already-local Arch `base-devel` builder image, mounts the repository
-  read-only, installs the current cross-build/toolchain packages only inside
-  the disposable candidate container, and records builder/toolchain identity.
+  read-only, uses host networking for this deliberately online candidate
+  container, installs the current cross-build/toolchain packages only inside
+  the disposable container, and records builder/toolchain identity.
 - `validate-kernel-update-candidate.sh` — validate one explicitly selected
   newer Raspberry Pi Linux commit in an ignored candidate workspace. Host
   invocation automatically delegates to the container launcher. Inside the

@@ -618,6 +618,15 @@ other build dependencies are installed only inside the disposable candidate
 container. The local Arch builder image itself must already exist; Stage 12E
 will not silently pull a moving image tag.
 
+The next local attempt reached the disposable container but its normal Podman
+network could not resolve Arch package mirrors. Host DNS was healthy, and an
+explicit rootful Podman test confirmed that the same local builder image
+resolves correctly with `--network=host`. Stage 12E therefore uses host
+networking for this deliberately online candidate-validation container. This
+changes only the candidate/toolchain fetch path: the repository remains mounted
+read-only, accepted pins remain unchanged, and no target-image networking policy
+is affected.
+
 ### Stage 12F — full candidate build and bounded physical regression, only if deliberately chosen
 
 If an update candidate passes Stage 12E and is intentionally selected for
