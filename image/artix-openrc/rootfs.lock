@@ -1,0 +1,21 @@
+# ARMtix OpenRC aarch64 rootfs pin for the public Artix / OpenRC image target.
+#
+# ARMtix is the upstream aarch64 port used to bootstrap the Artix userspace.
+# The public target remains Artix Linux / OpenRC.
+#
+# The build must use this exact dated archive and verify it against the
+# publisher's sha256sums file before extraction. Do not use an undated or
+# moving alias as a build input.
+#
+# This lock records source provenance only. It does not define package-update,
+# repository-trust, kernel-replacement, or OpenRC service policy.
+
+ROOTFS_RELEASE=20260921
+ROOTFS_ARCH=aarch64
+ROOTFS_INIT=openrc
+ROOTFS_FILENAME=armtix-openrc-20260921.tar.xz
+ROOTFS_EXPECTED_SIZE=1171764144
+ROOTFS_SHA256=250abf136930f5c7d4ba1a6d2b9b56f6b32acb072e05ccb4b6ab7aa23b834699
+
+ROOTFS_PRIMARY_BASE_URL=https://armtix.artixlinux.org/images
+ROOTFS_CHECKSUM_FILENAME=sha256sums
