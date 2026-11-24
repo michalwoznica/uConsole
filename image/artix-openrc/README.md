@@ -82,9 +82,33 @@ The networking configurator does not start target-architecture services during
 the cross-architecture build. Runtime Wi-Fi/DHCP/DNS behavior remains a
 physical-validation item.
 
+## Bluetooth integration
+
+`bluetooth.lock` pins the exact top-level ARMtix aarch64 BlueZ package
+identities used by this target: `bluez`, `bluez-utils`, and `bluez-openrc`. The
+complete dependency closure is supplied by the caller as an offline package
+directory; every supplied payload must be `aarch64` or `any`, and the
+configurator verifies all three locked identities before installation.
+
+`scripts/configure-artix-openrc-bluetooth.sh` applies only the Artix/OpenRC
+Bluetooth service policy to an already kernel-integrated rootfs. It:
+
+- installs the caller-supplied offline BlueZ package closure;
+- keeps the existing `dbus` default-runlevel service unchanged;
+- enables the OpenRC `bluetoothd` service in the default runlevel;
+- verifies `bluetoothd`, `bluetoothctl`, and `btmgmt` are present;
+- proves that the only OpenRC runlevel change is addition of `bluetoothd`.
+
+The accepted Arch Linux ARM target has already physically validated the same
+shared kernel/hardware path with normal BlueZ controller discovery, so this
+Artix layer does not add a speculative `hciuart`/`pi-bluetooth` service. The
+Bluetooth configurator does not start target-architecture services during the
+cross-architecture build. Artix controller/radio discovery remains a physical
+validation item.
+
 ## Current status
 
-The kernel/hardware-integrated rootfs composer and the Artix/OpenRC
-NetworkManager policy layer are implemented. Bluetooth, elogind-specific
-power-button policy, target image identity/layout, host-side package acquisition
-and final image assembly remain later checkpoints.
+The kernel/hardware-integrated rootfs composer, Artix/OpenRC NetworkManager
+policy layer, and Artix/OpenRC Bluetooth service layer are implemented.
+Elogind-specific power-button policy, target image identity/layout, host-side
+package acquisition and final image assembly remain later checkpoints.

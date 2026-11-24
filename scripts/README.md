@@ -212,3 +212,7 @@ it is not a new physical-validation candidate.
   default-runlevel `dhcpcd` service with OpenRC `NetworkManager`, keep standalone
   `wpa_supplicant` disabled, and install the Artix-specific direct
   `/etc/resolv.conf` DNS policy.
+- `configure-artix-openrc-bluetooth.sh` — install a caller-supplied offline
+  BlueZ package closure into an already integrated Artix rootfs, verify the
+  pinned `bluez`/`bluez-utils`/`bluez-openrc` identities, preserve `dbus`, and
+  enable only the OpenRC `bluetoothd` service in the default runlevel.

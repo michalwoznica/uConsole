@@ -1,0 +1,25 @@
+# Artix/OpenRC Bluetooth package identities for the uConsole target.
+#
+# These package versions were observed in the ARMtix aarch64 world repository
+# when the Bluetooth integration checkpoint was prepared. The rootfs Bluetooth
+# configurator requires these exact top-level package identities.
+#
+# Dependency-closure acquisition remains a host/build-orchestration concern.
+# The configurator accepts a caller-supplied package directory and verifies
+# every supplied payload is for aarch64 or any before the offline transaction.
+
+BLUETOOTH_REPO_BASE_URL=https://repo.armtixlinux.org/world/os/aarch64
+
+BLUEZ_PKGNAME=bluez
+BLUEZ_PKGVER=5.87-2
+BLUEZ_PKGARCH=aarch64
+
+BLUEZ_UTILS_PKGNAME=bluez-utils
+BLUEZ_UTILS_PKGVER=5.87-2
+BLUEZ_UTILS_PKGARCH=aarch64
+
+BLUEZ_OPENRC_PKGNAME=bluez-openrc
+BLUEZ_OPENRC_PKGVER=20210506-1
+BLUEZ_OPENRC_PKGARCH=any
+
+BLUETOOTH_SERVICE=bluetoothd
