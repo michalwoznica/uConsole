@@ -196,3 +196,13 @@ The promotion command intentionally leaves the three promoted tracked lock/
 package files uncommitted after success so they can be reviewed before the
 final Stage 12H commit. The locked-rebuild image is verification evidence only;
 it is not a new physical-validation candidate.
+
+## Artix/OpenRC rootfs composition
+
+- `build-artix-openrc-rootfs.sh` — verify and extract the pinned ARMtix/OpenRC
+  rootfs, replace its generic regular/LTS kernel stack with the shared
+  `linux-uconsole` package plus the pinned Raspberry Pi support payloads, remove
+  stale generic-kernel residue, install shared uConsole rootfs/boot policy, and
+  validate the resulting kernel/hardware-integrated rootfs while preserving the
+  existing OpenRC init/runlevel state. Service-policy integration and final
+  image assembly remain separate later steps.

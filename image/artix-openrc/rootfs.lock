@@ -3,9 +3,9 @@
 # ARMtix is the upstream aarch64 port used to bootstrap the Artix userspace.
 # The public target remains Artix Linux / OpenRC.
 #
-# The build must use this exact dated archive and verify it against the
-# publisher's sha256sums file before extraction. Do not use an undated or
-# moving alias as a build input.
+# This lock was established from the publisher's sha256sums metadata. Builds
+# must use this exact dated archive and verify the pinned size and SHA-256 before
+# extraction. Do not use an undated or moving alias as a build input.
 #
 # This lock records source provenance only. It does not define package-update,
 # repository-trust, kernel-replacement, or OpenRC service policy.

@@ -1,0 +1,16 @@
+# Raspberry Pi hardware-support package identities for the Artix/OpenRC target.
+#
+# These exact package versions come from the accepted Arch Linux ARM uConsole
+# baseline and were proven transaction-compatible with the pinned ARMtix/OpenRC
+# rootfs before Artix implementation began.
+#
+# This lock records package identity only. Acquisition/authentication belongs to
+# the host-side build orchestration; the rootfs composer requires the exact
+# package payloads to be supplied explicitly and verifies their embedded
+# package metadata before installation.
+
+RPI_FIRMWARE_PKGNAME=firmware-raspberrypi
+RPI_FIRMWARE_PKGVER=20260311-1
+
+RPI_BOOTLOADER_PKGNAME=raspberrypi-bootloader
+RPI_BOOTLOADER_PKGVER=20261118-1
