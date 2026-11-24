@@ -216,3 +216,7 @@ it is not a new physical-validation candidate.
   BlueZ package closure into an already integrated Artix rootfs, verify the
   pinned `bluez`/`bluez-utils`/`bluez-openrc` identities, preserve `dbus`, and
   enable only the OpenRC `bluetoothd` service in the default runlevel.
+- `configure-artix-openrc-elogind.sh` — preserve the pinned ARMtix rootfs
+  `elogind`/`elogind-openrc` installation and native OpenRC boot-runlevel
+  service, then install only the uConsole elogind drop-in that ignores normal
+  power-button presses while leaving other elogind policy at upstream defaults.

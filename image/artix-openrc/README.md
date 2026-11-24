@@ -53,7 +53,8 @@ layer. It:
 - requires the OpenRC init target and runlevel state to remain unchanged.
 
 This base rootfs checkpoint intentionally does **not** configure networking,
-Bluetooth, elogind policy, final `cmdline.txt`/`fstab`, or final image identity.
+Bluetooth, elogind power-button policy, final `cmdline.txt`/`fstab`, or final
+image identity.
 
 ## Networking integration
 
@@ -106,9 +107,33 @@ Bluetooth configurator does not start target-architecture services during the
 cross-architecture build. Artix controller/radio discovery remains a physical
 validation item.
 
+## Elogind power-button integration
+
+The pinned ARMtix/OpenRC rootfs already contains `elogind` and
+`elogind-openrc`, with the native OpenRC `/etc/init.d/elogind` service enabled
+in the `boot` runlevel. No additional elogind package transaction or service
+enablement is required for this checkpoint. The pinned rootfs archive itself
+therefore fixes the elogind package payload used by the target.
+
+`scripts/configure-artix-openrc-elogind.sh` applies only the uConsole
+power-button policy to an already integrated Artix rootfs. It:
+
+- requires the existing OpenRC `elogind` boot-runlevel service and `dbus`
+  default-runlevel service to be present and unchanged;
+- installs `99-uconsole-power.conf` under `/etc/elogind/logind.conf.d/`;
+- sets only `HandlePowerKey=ignore`, matching the accepted Arch Linux ARM
+  short-press behavior;
+- leaves long-press, suspend, lid, idle, and other elogind policies at their
+  upstream defaults;
+- proves that no OpenRC runlevel link changes during this integration.
+
+This is elogind-native configuration. It does not create, enable, or depend on
+a systemd `.service` unit. Runtime power-key handling remains a physical
+validation item on the Artix image.
+
 ## Current status
 
 The kernel/hardware-integrated rootfs composer, Artix/OpenRC NetworkManager
-policy layer, and Artix/OpenRC Bluetooth service layer are implemented.
-Elogind-specific power-button policy, target image identity/layout, host-side
-package acquisition and final image assembly remain later checkpoints.
+policy layer, Artix/OpenRC Bluetooth service layer, and elogind power-button
+policy layer are implemented. Target image identity/layout, host-side package
+acquisition and final image assembly remain later checkpoints.
