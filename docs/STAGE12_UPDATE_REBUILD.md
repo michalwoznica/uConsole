@@ -541,7 +541,7 @@ that the accepted baseline still agrees with:
 
 - `image/archlinuxarm/rootfs.lock`;
 - `kernel/source.lock`;
-- `image/archlinuxarm/packages/linux-uconsole/PKGBUILD`.
+- `image/shared/packages/linux-uconsole/PKGBUILD`.
 
 Only after those local invariants pass does it query upstream. For the Arch
 rootfs it reads the already configured rootfs mirror directory and selects the

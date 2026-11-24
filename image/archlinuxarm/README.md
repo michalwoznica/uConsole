@@ -2,12 +2,12 @@
 
 This is the first userspace/image target.
 
-Stage 7 now defines two reusable Arch inputs:
+The Arch image consumes shared uConsole hardware inputs including:
 
-- `packages/linux-uconsole/` — standard Arch package metadata for the custom
-  kernel;
+- `../shared/packages/linux-uconsole/` — pacman package metadata for the shared
+  custom kernel;
 - `../shared/boot/config-uconsole-cm4.txt` — uConsole-specific Raspberry Pi firmware
-  policy to be composed into the eventual image.
+  policy composed into the image.
 
 The package owns kernel/DTB/overlay/module files. The image layer owns boot
 policy, rootfs setup, networking and Arch/systemd-specific configuration.

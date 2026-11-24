@@ -9,3 +9,4 @@ Current shared assets:
 - `boot/config-uconsole-cm4.txt` — Raspberry Pi firmware/uConsole hardware boot policy.
 - `rootfs/sysctl-uconsole.conf` — distro-neutral console kernel logging policy.
 - `rootfs/uconsole-brightness-keys` — distro-neutral console brightness-key handler for the uConsole input/backlight interfaces.
+- `packages/linux-uconsole/` — shared pacman package definition for the uConsole kernel, DTBs, overlays and modules.

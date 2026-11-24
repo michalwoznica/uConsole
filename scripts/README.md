@@ -18,7 +18,7 @@ spurious CI `Permission denied` failure.
 
 Stage 7 adds:
 
-- `stage-arch-kernel-package.sh` — create a self-contained Arch makepkg
+- `stage-kernel-package.sh` — create a self-contained `linux-uconsole` makepkg
   workspace without duplicating authoritative project sources in Git;
 - `validate-kernel-config-package.sh` — compose the full pinned source tree,
   execute the actual PKGBUILD `prepare()` path, resolve the uConsole kernel

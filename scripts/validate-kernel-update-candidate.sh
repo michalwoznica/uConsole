@@ -113,7 +113,7 @@ rm -rf "$workdir"
 mkdir -p "$srcdir"
 
 printf 'Staging canonical linux-uconsole package inputs...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
 
 printf 'Creating candidate-only PKGBUILD metadata...\n'
 sed -i \

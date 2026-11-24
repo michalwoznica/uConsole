@@ -12,7 +12,7 @@ fi
 rm -rf "$destination"
 mkdir -p "$destination"
 
-package_meta="$repo_root/image/archlinuxarm/packages/linux-uconsole"
+package_meta="$repo_root/image/shared/packages/linux-uconsole"
 
 install -m644 "$package_meta/PKGBUILD" "$destination/PKGBUILD"
 install -m644 "$package_meta/linux-uconsole.preset" \

@@ -7,7 +7,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 baseline_lock="$repo_root/image/archlinuxarm/release-baseline.lock"
 rootfs_lock="$repo_root/image/archlinuxarm/rootfs.lock"
 kernel_lock="$repo_root/kernel/source.lock"
-pkgbuild="$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
+pkgbuild="$repo_root/image/shared/packages/linux-uconsole/PKGBUILD"
 
 for cmd in curl git awk grep sed sort tr; do
     if ! command -v "$cmd" >/dev/null 2>&1; then

@@ -18,7 +18,7 @@ srcdir="$workdir/src"
 
 printf 'Checking Stage 7 repository policy...\n'
 
-bash -n "$repo_root/scripts/stage-arch-kernel-package.sh"
+bash -n "$repo_root/scripts/stage-kernel-package.sh"
 
 grep -q '^CONFIG_DRM_PANEL_CWU50=m$' \
     "$repo_root/kernel/config/uconsole-cm4.config"
@@ -46,7 +46,7 @@ if grep -qE 'gpio=11=|sd_overclock|systemctl|systemd' "$boot_config"; then
 fi
 
 printf 'Staging Arch package workspace...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
 
 bash -n "$package_stage/PKGBUILD"
 

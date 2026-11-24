@@ -117,15 +117,15 @@ The complete uConsole kernel is now configured as:
 
 `bcm2711_defconfig` + `kernel/config/uconsole-cm4.config`
 
-Arch package metadata lives under:
+Shared kernel package metadata lives under:
 
-`image/archlinuxarm/packages/linux-uconsole/`
+`image/shared/packages/linux-uconsole/`
 
 Stage 7 validates composition/configuration only. Stage 8 performs the first
 complete build of Image, modules and DTBs from this package path.
 
 Stage 7 result: **PASS**. The complete project source composition and
-configuration path succeeds through the staged Arch PKGBUILD `prepare()`
+configuration path succeeds through the staged PKGBUILD `prepare()`
 function. The resolved kernel release is `6.18.60-1-uconsole`, and
 `make prepare` succeeds.
 

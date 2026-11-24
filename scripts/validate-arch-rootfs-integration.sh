@@ -9,7 +9,7 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rootfs_lock="$repo_root/image/archlinuxarm/rootfs.lock"
 kernel_lock="$repo_root/kernel/source.lock"
-pkgbuild="$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
+pkgbuild="$repo_root/image/shared/packages/linux-uconsole/PKGBUILD"
 
 for required in "$rootfs_lock" "$kernel_lock" "$pkgbuild"; do
     if [[ ! -s "$required" ]]; then
@@ -246,7 +246,7 @@ do
 done
 
 printf 'Staging real linux-uconsole makepkg workspace...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
 mkdir -p "$pkgdest" "$build_home"
 
 if ! id -u uconsole-build >/dev/null 2>&1; then

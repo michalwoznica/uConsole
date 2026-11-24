@@ -27,7 +27,7 @@ fi
 baseline_lock="$repo_root/image/archlinuxarm/release-baseline.lock"
 rootfs_lock="$repo_root/image/archlinuxarm/rootfs.lock"
 kernel_lock="$repo_root/kernel/source.lock"
-pkgbuild="$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
+pkgbuild="$repo_root/image/shared/packages/linux-uconsole/PKGBUILD"
 physical_lock="$repo_root/image/archlinuxarm/stage12g-physical-validation.lock"
 
 for required in \
@@ -448,7 +448,7 @@ fi
 
 expected_changes=(
     "image/archlinuxarm/release-baseline.lock"
-    "image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
+    "image/shared/packages/linux-uconsole/PKGBUILD"
     "kernel/source.lock"
 )
 mapfile -t actual_changes < <(

@@ -57,7 +57,7 @@ Expected release for package revision 1:
 
 Package metadata lives at:
 
-`image/archlinuxarm/packages/linux-uconsole/`
+`image/shared/packages/linux-uconsole/`
 
 Package name:
 
@@ -84,7 +84,7 @@ drivers.
 
 Use:
 
-`scripts/stage-arch-kernel-package.sh DESTINATION`
+`scripts/stage-kernel-package.sh DESTINATION`
 
 to create a self-contained makepkg workspace from the Git-tracked
 authoritative project files.

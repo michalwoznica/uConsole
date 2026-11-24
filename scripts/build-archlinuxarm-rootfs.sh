@@ -320,7 +320,7 @@ if [[ -n "$prebuilt_kernel_package" ]]; then
     cp -a "$prebuilt_kernel_package" "$output_package_dir/"
 else
     printf 'Staging linux-uconsole package workspace...\n'
-    bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+    bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
     mkdir -p "$build_home"
 
     if ! id -u uconsole-build >/dev/null 2>&1; then

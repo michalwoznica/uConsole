@@ -14,8 +14,8 @@ on:
       - 'kernel/patches/0005-misc-integrate-uconsole-amplifier-switch.patch'
       - 'kernel/sources/cwu50.lock'
       - 'kernel/sources/ocp8178.lock'
-      - 'image/archlinuxarm/packages/linux-uconsole/**'
-      - 'scripts/stage-arch-kernel-package.sh'
+      - 'image/shared/packages/linux-uconsole/**'
+      - 'scripts/stage-kernel-package.sh'
       - 'scripts/validate-full-kernel-build.sh'
       - '.github/workflows/validate-full-kernel-build.yml'
   pull_request:
@@ -31,8 +31,8 @@ on:
       - 'kernel/patches/0005-misc-integrate-uconsole-amplifier-switch.patch'
       - 'kernel/sources/cwu50.lock'
       - 'kernel/sources/ocp8178.lock'
-      - 'image/archlinuxarm/packages/linux-uconsole/**'
-      - 'scripts/stage-arch-kernel-package.sh'
+      - 'image/shared/packages/linux-uconsole/**'
+      - 'scripts/stage-kernel-package.sh'
       - 'scripts/validate-full-kernel-build.sh'
       - '.github/workflows/validate-full-kernel-build.yml'
   workflow_dispatch:

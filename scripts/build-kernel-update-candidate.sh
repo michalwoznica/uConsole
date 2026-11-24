@@ -146,7 +146,7 @@ mkdir -p "$workdir" "$package_dir" "$baseline_package_dir" "$artifact_dir"
 chmod 0755 "$workdir" "$package_dir" "$baseline_package_dir" "$artifact_dir"
 
 printf 'Staging candidate-only PKGBUILD...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
 sed -i \
     -e "s/^pkgver=.*/pkgver=${candidate_version}/" \
     -e "s/^_commit=.*/_commit=${candidate_commit}/" \

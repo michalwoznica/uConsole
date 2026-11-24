@@ -16,8 +16,8 @@ on:
       - 'kernel/sources/ocp8178.lock'
       - 'image/shared/boot/config-uconsole-cm4.txt'
       - 'image/archlinuxarm/boot/**'
-      - 'image/archlinuxarm/packages/linux-uconsole/**'
-      - 'scripts/stage-arch-kernel-package.sh'
+      - 'image/shared/packages/linux-uconsole/**'
+      - 'scripts/stage-kernel-package.sh'
       - 'scripts/validate-kernel-config-package.sh'
       - '.github/workflows/validate-kernel-config-package.yml'
   pull_request:
@@ -35,8 +35,8 @@ on:
       - 'kernel/sources/ocp8178.lock'
       - 'image/shared/boot/config-uconsole-cm4.txt'
       - 'image/archlinuxarm/boot/**'
-      - 'image/archlinuxarm/packages/linux-uconsole/**'
-      - 'scripts/stage-arch-kernel-package.sh'
+      - 'image/shared/packages/linux-uconsole/**'
+      - 'scripts/stage-kernel-package.sh'
       - 'scripts/validate-kernel-config-package.sh'
       - '.github/workflows/validate-kernel-config-package.yml'
   workflow_dispatch:

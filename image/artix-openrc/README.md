@@ -7,6 +7,8 @@ hardware support, and distro-neutral image-building helpers as the Arch Linux
 ARM target. Artix-specific code is limited to userspace integration that
 genuinely differs from Arch/systemd.
 
+The shared kernel package definition is `../shared/packages/linux-uconsole/`.
+
 ## Upstream userspace source
 
 The aarch64 userspace bootstrap comes from the ARMtix OpenRC rootfs. ARMtix is

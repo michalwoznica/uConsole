@@ -27,11 +27,11 @@ pkgdir="$workdir/pkg"
 
 printf 'Checking Stage 8 repository policy...\n'
 
-bash -n "$repo_root/scripts/stage-arch-kernel-package.sh"
-bash -n "$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
+bash -n "$repo_root/scripts/stage-kernel-package.sh"
+bash -n "$repo_root/image/shared/packages/linux-uconsole/PKGBUILD"
 
 printf 'Staging Arch package workspace...\n'
-bash "$repo_root/scripts/stage-arch-kernel-package.sh" "$package_stage"
+bash "$repo_root/scripts/stage-kernel-package.sh" "$package_stage"
 
 printf 'Fetching exact Stage 8 source inputs...\n'
 mkdir -p "$srcdir" "$pkgdir"

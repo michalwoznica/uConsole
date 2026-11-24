@@ -1,6 +1,6 @@
 # Maintained by the uConsole Linux project.
 # This PKGBUILD is staged with authoritative project inputs by:
-#   scripts/stage-arch-kernel-package.sh
+#   scripts/stage-kernel-package.sh
 #
 # Build source: exact project-pinned Raspberry Pi Linux commit, not branch HEAD.
 
@@ -148,7 +148,7 @@ package() {
   mkdir -p "${pkgdir}/boot"
   make ARCH=arm64 INSTALL_DTBS_PATH="${pkgdir}/boot" dtbs_install
 
-  # Match the Raspberry Pi firmware layout used by Arch Linux ARM.
+  # Match the Raspberry Pi firmware boot layout consumed by uConsole images.
   if [[ -d "${pkgdir}/boot/broadcom" ]]; then
     find "${pkgdir}/boot/broadcom" -type f -print0 |
       xargs -0 -r mv -t "${pkgdir}/boot"
@@ -167,7 +167,7 @@ s|%KERNVER%|${kernver}|g
     install -Dm644 /dev/stdin \
       "${pkgdir}/etc/mkinitcpio.d/linux-uconsole.preset"
 
-  # Trigger Arch's mkinitcpio install hook without adding a project-specific
+  # Trigger the standard mkinitcpio install hook without adding a project-specific
   # systemd/OpenRC hook.
   touch "${modulesdir}/vmlinuz"
 }

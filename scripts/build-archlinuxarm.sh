@@ -102,12 +102,12 @@ mkdir -p "$workdir" "$artifact_dir" "$cache_dir/kernel-packages"
 chmod 0755 "$workdir" "$artifact_dir" "$cache_dir" "$cache_dir/kernel-packages"
 
 kernel_inputs=(
-    "$repo_root/image/archlinuxarm/packages/linux-uconsole/PKGBUILD"
-    "$repo_root/image/archlinuxarm/packages/linux-uconsole/linux-uconsole.preset"
+    "$repo_root/image/shared/packages/linux-uconsole/PKGBUILD"
+    "$repo_root/image/shared/packages/linux-uconsole/linux-uconsole.preset"
     "$repo_root/kernel/config/uconsole-cm4.config"
     "$repo_root/kernel/overlays/clockworkpi-uconsole-cm4-overlay.dts"
     "$repo_root/kernel/drivers/uconsole-amp-switch.c"
-    "$repo_root/scripts/stage-arch-kernel-package.sh"
+    "$repo_root/scripts/stage-kernel-package.sh"
 )
 for patch_file in "$repo_root"/kernel/patches/000[1-5]-*.patch; do
     kernel_inputs+=("$patch_file")
