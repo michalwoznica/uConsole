@@ -206,3 +206,9 @@ it is not a new physical-validation candidate.
   validate the resulting kernel/hardware-integrated rootfs while preserving the
   existing OpenRC init/runlevel state. Service-policy integration and final
   image assembly remain separate later steps.
+- `configure-artix-openrc-networking.sh` — install a caller-supplied offline
+  NetworkManager package closure into an already integrated Artix rootfs, verify
+  the pinned `networkmanager`/`networkmanager-openrc` identities, replace the
+  default-runlevel `dhcpcd` service with OpenRC `NetworkManager`, keep standalone
+  `wpa_supplicant` disabled, and install the Artix-specific direct
+  `/etc/resolv.conf` DNS policy.

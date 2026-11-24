@@ -52,12 +52,39 @@ layer. It:
   firmware, modules, and uConsole drivers;
 - requires the OpenRC init target and runlevel state to remain unchanged.
 
-This rootfs checkpoint intentionally does **not** configure NetworkManager,
-Bluetooth, elogind policy, DNS, final `cmdline.txt`/`fstab`, or final image
-identity.
+This base rootfs checkpoint intentionally does **not** configure networking,
+Bluetooth, elogind policy, final `cmdline.txt`/`fstab`, or final image identity.
+
+## Networking integration
+
+`networking.lock` pins the exact top-level ARMtix aarch64 NetworkManager package
+identities used by this target. The complete dependency closure is supplied by
+the caller as an offline package directory; every supplied payload must be
+`aarch64` or `any`, and the configurator verifies the locked `networkmanager`
+and `networkmanager-openrc` identities before installation.
+
+`scripts/configure-artix-openrc-networking.sh` applies only the Artix/OpenRC
+networking policy to an already kernel-integrated rootfs. It:
+
+- installs the caller-supplied offline NetworkManager package closure;
+- disables the upstream `dhcpcd` service without removing its package;
+- enables the OpenRC `NetworkManager` service in the default runlevel;
+- keeps standalone `wpa_supplicant` disabled while retaining its package for
+  NetworkManager's Wi-Fi backend;
+- preserves the existing `dbus` service state;
+- installs `10-uconsole-dns.conf` with `dns=default` and `rc-manager=file`, so
+  NetworkManager writes active-connection nameservers directly to the regular
+  `/etc/resolv.conf`;
+- proves that the only OpenRC runlevel change is the intended
+  `dhcpcd` -> `NetworkManager` handoff.
+
+The networking configurator does not start target-architecture services during
+the cross-architecture build. Runtime Wi-Fi/DHCP/DNS behavior remains a
+physical-validation item.
 
 ## Current status
 
-The kernel/hardware-integrated Artix rootfs composer is implemented. The next
-work is Artix/OpenRC userspace service integration, followed by target image
-identity/layout and final image assembly.
+The kernel/hardware-integrated rootfs composer and the Artix/OpenRC
+NetworkManager policy layer are implemented. Bluetooth, elogind-specific
+power-button policy, target image identity/layout, host-side package acquisition
+and final image assembly remain later checkpoints.
