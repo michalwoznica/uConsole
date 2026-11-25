@@ -66,7 +66,7 @@ required_commands=(
     awk basename blkid blockdev bsdtar cat cmp cp df du e2fsck find
     fsck.vfat grep losetup mkdir mkfs.ext4 mkfs.vfat mktemp mount mountpoint
     readlink rm rsync seq sfdisk sha256sum sleep sort sync tail tr truncate
-    udevadm umount zstd
+    umount zstd
 )
 missing=()
 for cmd in "${required_commands[@]}"; do
@@ -270,8 +270,10 @@ loopdev="$(
         --sector-size "$LOGICAL_SECTOR_SIZE" \
         "$image"
 )"
-udevadm settle
 
+# --partscan asks the kernel to scan this loop device's partition table.
+# Avoid a global udevadm settle here: unrelated host udev work must not block
+# image assembly. The target partition nodes are polled explicitly below.
 actual_sector_size="$(blockdev --getss "$loopdev")"
 if [[ "$actual_sector_size" != "$LOGICAL_SECTOR_SIZE" ]]; then
     printf 'ERROR: reattached loop logical sector size mismatch: got %s expected %s\n' \

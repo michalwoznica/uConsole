@@ -65,7 +65,7 @@ esac
 required_commands=(
     awk blkid blockdev bsdtar cmp e2fsck find fsck.vfat grep losetup
     mkfs.ext4 mkfs.vfat mount mountpoint readlink rsync sfdisk sha256sum
-    sudo sync truncate udevadm umount zstd
+    sudo sync truncate umount zstd
 )
 missing=()
 for cmd in "${required_commands[@]}"; do
