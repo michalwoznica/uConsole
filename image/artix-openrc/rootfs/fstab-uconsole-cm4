@@ -1,0 +1,5 @@
+# uConsole CM4 Artix Linux / OpenRC filesystem policy.
+# Stable PARTUUIDs are defined by image/artix-openrc/image-layout.lock.
+
+PARTUUID=55434152-02  /      ext4  defaults  0  1
+PARTUUID=55434152-01  /boot  vfat  defaults  0  2

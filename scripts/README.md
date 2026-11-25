@@ -220,3 +220,16 @@ it is not a new physical-validation candidate.
   `elogind`/`elogind-openrc` installation and native OpenRC boot-runlevel
   service, then install only the uConsole elogind drop-in that ignores normal
   power-button presses while leaving other elogind policy at upstream defaults.
+- `finalize-artix-openrc-rootfs.sh` — verify the completed OpenRC service
+  policy, install the target-specific deterministic `cmdline.txt` and
+  `/etc/fstab`, and require the complete OpenRC runlevel graph to remain
+  unchanged.
+- `build-artix-openrc-image.sh` — assemble a finalized Artix rootfs into the
+  deterministic two-partition microSD image using the shared partition,
+  rootfs-copy, compression and checksum helpers; validate the populated image
+  before filesystem checks and emit the target manifest/checksums/`.img.zst`.
+- `build-artix-openrc.sh` — host orchestrator for the complete Artix image
+  path. It accepts exact caller-supplied kernel/Raspberry Pi payloads plus
+  offline NetworkManager and BlueZ package closures, runs all Artix rootfs
+  integration layers in order, finalizes boot identity, and invokes the image
+  builder. Package acquisition remains separate from deterministic assembly.

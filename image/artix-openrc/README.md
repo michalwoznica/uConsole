@@ -131,9 +131,61 @@ This is elogind-native configuration. It does not create, enable, or depend on
 a systemd `.service` unit. Runtime power-key handling remains a physical
 validation item on the Artix image.
 
+## Final image identity and assembly
+
+`image-layout.lock` defines an Artix-specific deterministic DOS/MBR identity
+while intentionally retaining the same proven 8 GiB two-partition geometry as
+the Arch Linux ARM target. Artix uses its own disk identifier, PARTUUIDs,
+filesystem UUID/labels, `cmdline.txt`, and `/etc/fstab`; the low-level partition,
+filesystem, rootfs-copy, compression and checksum mechanics remain shared.
+
+`scripts/finalize-artix-openrc-rootfs.sh` is the final userspace gate before
+image construction. It verifies the completed NetworkManager, Bluetooth,
+elogind, D-Bus and OpenRC runlevel state, installs the deterministic Artix
+`cmdline.txt` and `/etc/fstab`, and proves that finalization itself does not
+change any OpenRC runlevel link.
+
+`scripts/build-artix-openrc-image.sh` treats that finalized rootfs as read-only
+input. It builds and validates the partitioned image, checks the copied boot,
+kernel, module, OpenRC and service-policy state while mounted, performs FAT/ext4
+filesystem checks after unmount, and emits the compressed `.img.zst`, checksum
+files and manifest. As with the accepted Arch image, the raw 8 GiB image is
+removed after successful compression.
+
+`scripts/build-artix-openrc.sh` is the host-side orchestration entry point. It
+requires the exact `linux-uconsole`, Raspberry Pi firmware and bootloader
+payloads plus caller-supplied offline NetworkManager and BlueZ dependency
+closures. An already-downloaded pinned ARMtix rootfs may be supplied through
+`UCONSOLE_ARTIX_ROOTFS_ARCHIVE`; otherwise the rootfs composer downloads the
+pinned archive in its disposable container. The orchestrator intentionally does
+not resolve or substitute package versions: package acquisition/provenance
+remains explicit and the existing integration scripts reject identities that do
+not match the committed locks.
+
+The final image remains console-only. This checkpoint does not add a graphical
+environment, systemd service management, timezone/country assumptions, or any
+new runtime policy beyond the already validated Artix integration layers.
+
+A complete local assembly is invoked as:
+
+```text
+scripts/build-artix-openrc.sh \
+  /path/to/linux-uconsole.pkg.tar.zst \
+  /path/to/firmware-raspberrypi.pkg.tar.xz \
+  /path/to/raspberrypi-bootloader.pkg.tar.xz \
+  /path/to/networkmanager-package-closure \
+  /path/to/bluez-package-closure
+```
+
+Each closure directory should contain only the package payloads resolved for
+that integration layer. The configurators validate package architecture and the
+committed top-level package identities before performing their offline
+transactions.
+
 ## Current status
 
-The kernel/hardware-integrated rootfs composer, Artix/OpenRC NetworkManager
-policy layer, Artix/OpenRC Bluetooth service layer, and elogind power-button
-policy layer are implemented. Target image identity/layout, host-side package
-acquisition and final image assembly remain later checkpoints.
+The complete Artix/OpenRC image composition path is implemented: kernel/hardware
+rootfs composition, NetworkManager, Bluetooth, elogind power-button policy,
+final deterministic boot/filesystem identity, and partitioned `.img.zst`
+assembly. A real full image build and physical-device validation remain the
+acceptance gates before this target can be treated as released/stable.
