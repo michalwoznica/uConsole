@@ -1,0 +1,27 @@
+# Artix/OpenRC runtime-service package identities for the uConsole target.
+#
+# These package versions were observed in the ARMtix aarch64 world repository
+# after physical validation identified two missing runtime pieces:
+# - evtest for the shared uConsole brightness-key handler;
+# - chrony + chrony-openrc for network time synchronization.
+#
+# Dependency-closure acquisition remains a host/build-orchestration concern.
+# The configurator accepts a caller-supplied package directory and verifies
+# every supplied payload is for aarch64 or any before the offline transaction.
+
+RUNTIME_REPO_BASE_URL=https://repo.armtixlinux.org/world/os/aarch64
+
+EVTEST_PKGNAME=evtest
+EVTEST_PKGVER=1.36-1
+EVTEST_PKGARCH=aarch64
+
+CHRONY_PKGNAME=chrony
+CHRONY_PKGVER=4.9-1
+CHRONY_PKGARCH=aarch64
+
+CHRONY_OPENRC_PKGNAME=chrony-openrc
+CHRONY_OPENRC_PKGVER=20210506-2
+CHRONY_OPENRC_PKGARCH=any
+
+CHRONY_SERVICE=chrony
+BRIGHTNESS_SERVICE=uconsole-brightness-keys

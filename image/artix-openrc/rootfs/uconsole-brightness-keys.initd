@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="uConsole brightness-key handler"
+command="/usr/lib/uconsole/uconsole-brightness-keys"
+command_background=true
+pidfile="/run/uconsole-brightness-keys.pid"
+
+depend() {
+    need localmount
+    after modules
+}
+
+start_pre() {
+    if [ ! -x /usr/bin/evtest ]; then
+        eerror "uConsole brightness-key handler requires /usr/bin/evtest"
+        return 1
+    fi
+    if [ ! -x "$command" ]; then
+        eerror "uConsole brightness-key handler is missing: $command"
+        return 1
+    fi
+}

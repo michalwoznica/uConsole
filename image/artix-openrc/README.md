@@ -131,6 +131,46 @@ This is elogind-native configuration. It does not create, enable, or depend on
 a systemd `.service` unit. Runtime power-key handling remains a physical
 validation item on the Artix image.
 
+
+## Runtime services integration
+
+`runtime.lock` pins the exact top-level ARMtix aarch64 runtime package
+identities added after physical validation: `evtest`, `chrony`, and
+`chrony-openrc`. The caller supplies their complete dependency closure as an
+offline package directory, and the configurator verifies every payload is for
+`aarch64` or `any` before installation.
+
+`scripts/configure-artix-openrc-runtime.sh` applies the two runtime fixes proven
+necessary on physical hardware:
+
+- installs `evtest`, which the shared
+  `/usr/lib/uconsole/uconsole-brightness-keys` handler uses to consume
+  `KEY_BRIGHTNESSDOWN` / `KEY_BRIGHTNESSUP` events;
+- installs a native OpenRC `uconsole-brightness-keys` service and enables it in
+  the default runlevel;
+- removes the `hwclock` boot-runlevel service because physical validation
+  showed that this CM4/uConsole exposes no `/dev/rtc*`;
+- enables OpenRC `swclock` in the boot runlevel so shutdown time is preserved
+  across RTC-less boots;
+- installs `chrony` + `chrony-openrc` and enables the native OpenRC `chrony`
+  service in the default runlevel for network time correction;
+- installs an RTC-less chrony client policy using the global `pool.ntp.org`
+  pool with `iburst` and `makestep 1.0 3`, so a clock that starts far from real
+  time can be stepped promptly once NTP becomes reachable;
+- overrides only the packaged OpenRC service startup policy needed by this
+  target: the `chrony` OpenRC service does not hard-depend on OpenRC `net` and uses the packaged
+  non-blocking `FAST_STARTUP` path. This lets it remain running on a fresh image
+  before Wi-Fi has been configured and retry source resolution after networking
+  appears;
+- preserves the existing ARMtix boot-runlevel `esysusers` and
+  `etmpfiles-setup` services, which create chrony's packaged system user and
+  runtime/state directories before the default runlevel starts the `chrony` service;
+- proves that the OpenRC runlevel delta is exactly
+  `hwclock` -> `swclock` plus addition of `chrony` and
+  `uconsole-brightness-keys`.
+
+No timezone, country, locale, or systemd service policy is introduced.
+
 ## Final image identity and assembly
 
 `image-layout.lock` defines an Artix-specific deterministic DOS/MBR identity
@@ -141,7 +181,8 @@ filesystem, rootfs-copy, compression and checksum mechanics remain shared.
 
 `scripts/finalize-artix-openrc-rootfs.sh` is the final userspace gate before
 image construction. It verifies the completed NetworkManager, Bluetooth,
-elogind, D-Bus and OpenRC runlevel state, installs the deterministic Artix
+elogind, brightness, RTC-less clock/time-sync, D-Bus and OpenRC runlevel state,
+installs the deterministic Artix
 `cmdline.txt` and `/etc/fstab`, and proves that finalization itself does not
 change any OpenRC runlevel link.
 
@@ -154,8 +195,9 @@ removed after successful compression.
 
 `scripts/build-artix-openrc.sh` is the host-side orchestration entry point. It
 requires the exact `linux-uconsole`, Raspberry Pi firmware and bootloader
-payloads plus caller-supplied offline NetworkManager and BlueZ dependency
-closures. An already-downloaded pinned ARMtix rootfs may be supplied through
+payloads plus caller-supplied offline NetworkManager, BlueZ, and runtime
+dependency closures. An already-downloaded pinned ARMtix rootfs may be supplied
+through
 `UCONSOLE_ARTIX_ROOTFS_ARCHIVE`; otherwise the rootfs composer downloads the
 pinned archive in its disposable container. The orchestrator intentionally does
 not resolve or substitute package versions: package acquisition/provenance
@@ -174,7 +216,8 @@ scripts/build-artix-openrc.sh \
   /path/to/firmware-raspberrypi.pkg.tar.xz \
   /path/to/raspberrypi-bootloader.pkg.tar.xz \
   /path/to/networkmanager-package-closure \
-  /path/to/bluez-package-closure
+  /path/to/bluez-package-closure \
+  /path/to/runtime-package-closure
 ```
 
 Each closure directory should contain only the package payloads resolved for
@@ -184,8 +227,13 @@ transactions.
 
 ## Current status
 
-The complete Artix/OpenRC image composition path is implemented: kernel/hardware
-rootfs composition, NetworkManager, Bluetooth, elogind power-button policy,
-final deterministic boot/filesystem identity, and partitioned `.img.zst`
-assembly. A real full image build and physical-device validation remain the
-acceptance gates before this target can be treated as released/stable.
+The first complete Artix/OpenRC image was built successfully and physically
+validated on the uConsole. Boot/console, Wi-Fi/NetworkManager, DNS, Bluetooth,
+battery/charging, power-button policy, analog audio/headphone switching and
+clean power-off all passed. Physical validation also identified two concrete
+runtime defects: the brightness handler lacked its `evtest` dependency/service,
+and the RTC-less device was incorrectly using `hwclock`, leaving the system at
+1970 after reboot. This checkpoint adds the corresponding OpenRC-native fixes;
+a rebuilt image and focused regression validation of brightness keys plus clock
+behavior remain required before the Artix target can be treated as
+release-ready.

@@ -26,6 +26,8 @@ source "$repo_root/image/artix-openrc/networking.lock"
 # shellcheck disable=SC1091
 source "$repo_root/image/artix-openrc/bluetooth.lock"
 # shellcheck disable=SC1091
+source "$repo_root/image/artix-openrc/runtime.lock"
+# shellcheck disable=SC1091
 source "$repo_root/image/artix-openrc/image-layout.lock"
 # shellcheck disable=SC1091
 source "$repo_root/kernel/source.lock"
@@ -176,6 +178,19 @@ validate_finalized_rootfs() {
     cmp -s \
         "$repo_root/image/artix-openrc/rootfs/elogind-uconsole-power.conf" \
         "$tree/etc/elogind/logind.conf.d/99-uconsole-power.conf"
+    cmp -s \
+        "$repo_root/image/artix-openrc/rootfs/uconsole-brightness-keys.initd" \
+        "$tree/etc/init.d/$BRIGHTNESS_SERVICE"
+    cmp -s \
+        "$repo_root/image/artix-openrc/rootfs/chrony-uconsole.conf" \
+        "$tree/etc/chrony.conf"
+    grep -Fxq 'rc_need="!net"' "$tree/etc/conf.d/$CHRONY_SERVICE"
+    grep -Fxq 'FAST_STARTUP="yes"' "$tree/etc/conf.d/$CHRONY_SERVICE"
+    test -f "$tree/usr/lib/sysusers.d/chrony.conf"
+    test -f "$tree/usr/lib/tmpfiles.d/chrony.conf"
+    test -x "$tree/usr/bin/evtest"
+    test -x "$tree/usr/bin/chronyd"
+    test -x "$tree/etc/init.d/$CHRONY_SERVICE"
 
     [[ -L "$tree/etc/runlevels/default/$NETWORKMANAGER_SERVICE" ]]
     [[ "$(readlink "$tree/etc/runlevels/default/$NETWORKMANAGER_SERVICE")" == "/etc/init.d/$NETWORKMANAGER_SERVICE" ]]
@@ -187,6 +202,17 @@ validate_finalized_rootfs() {
     [[ "$(readlink "$tree/etc/runlevels/default/dbus")" == "/etc/init.d/dbus" ]]
     [[ -L "$tree/etc/runlevels/boot/elogind" ]]
     [[ "$(readlink "$tree/etc/runlevels/boot/elogind")" == "/etc/init.d/elogind" ]]
+    [[ ! -e "$tree/etc/runlevels/boot/hwclock" && ! -L "$tree/etc/runlevels/boot/hwclock" ]]
+    [[ -L "$tree/etc/runlevels/boot/esysusers" ]]
+    [[ "$(readlink "$tree/etc/runlevels/boot/esysusers")" == "/etc/init.d/esysusers" ]]
+    [[ -L "$tree/etc/runlevels/boot/etmpfiles-setup" ]]
+    [[ "$(readlink "$tree/etc/runlevels/boot/etmpfiles-setup")" == "/etc/init.d/etmpfiles-setup" ]]
+    [[ -L "$tree/etc/runlevels/boot/swclock" ]]
+    [[ "$(readlink "$tree/etc/runlevels/boot/swclock")" == "/etc/init.d/swclock" ]]
+    [[ -L "$tree/etc/runlevels/default/$CHRONY_SERVICE" ]]
+    [[ "$(readlink "$tree/etc/runlevels/default/$CHRONY_SERVICE")" == "/etc/init.d/$CHRONY_SERVICE" ]]
+    [[ -L "$tree/etc/runlevels/default/$BRIGHTNESS_SERVICE" ]]
+    [[ "$(readlink "$tree/etc/runlevels/default/$BRIGHTNESS_SERVICE")" == "/etc/init.d/$BRIGHTNESS_SERVICE" ]]
 
     if find "$tree/etc/runlevels" -type l -printf '%l\n' |
         grep -Ev '^/etc/init\.d/' |
@@ -355,6 +381,9 @@ networkmanager_openrc_package=${NETWORKMANAGER_OPENRC_PKGNAME}-${NETWORKMANAGER_
 bluez_package=${BLUEZ_PKGNAME}-${BLUEZ_PKGVER}
 bluez_utils_package=${BLUEZ_UTILS_PKGNAME}-${BLUEZ_UTILS_PKGVER}
 bluez_openrc_package=${BLUEZ_OPENRC_PKGNAME}-${BLUEZ_OPENRC_PKGVER}
+evtest_package=${EVTEST_PKGNAME}-${EVTEST_PKGVER}
+chrony_package=${CHRONY_PKGNAME}-${CHRONY_PKGVER}
+chrony_openrc_package=${CHRONY_OPENRC_PKGNAME}-${CHRONY_OPENRC_PKGVER}
 image_filename=$(basename "$image")
 image_size_bytes=$IMAGE_SIZE_BYTES
 image_raw_sha256=$raw_sha256
@@ -374,6 +403,9 @@ boot_size_sectors=$BOOT_SIZE_SECTORS
 root_start_sector=$ROOT_START_SECTOR
 network_service=$NETWORKMANAGER_SERVICE
 bluetooth_service=$BLUETOOTH_SERVICE
+brightness_service=$BRIGHTNESS_SERVICE
+clock_boot_service=swclock
+time_sync_service=$CHRONY_SERVICE
 elogind_service=elogind
 initramfs_loaded=no
 uboot_used=no

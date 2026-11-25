@@ -23,6 +23,8 @@ fi
 source "$repo_root/image/artix-openrc/networking.lock"
 # shellcheck disable=SC1091
 source "$repo_root/image/artix-openrc/bluetooth.lock"
+# shellcheck disable=SC1091
+source "$repo_root/image/artix-openrc/runtime.lock"
 
 required_commands=(cmp diff find grep install mktemp pacman readlink rm sort)
 missing=()
@@ -83,6 +85,9 @@ require_package_version "$NETWORKMANAGER_OPENRC_PKGNAME" "$NETWORKMANAGER_OPENRC
 require_package_version "$BLUEZ_PKGNAME" "$BLUEZ_PKGVER"
 require_package_version "$BLUEZ_UTILS_PKGNAME" "$BLUEZ_UTILS_PKGVER"
 require_package_version "$BLUEZ_OPENRC_PKGNAME" "$BLUEZ_OPENRC_PKGVER"
+require_package_version "$EVTEST_PKGNAME" "$EVTEST_PKGVER"
+require_package_version "$CHRONY_PKGNAME" "$CHRONY_PKGVER"
+require_package_version "$CHRONY_OPENRC_PKGNAME" "$CHRONY_OPENRC_PKGVER"
 
 for package_name in elogind elogind-openrc dbus dbus-openrc linux-uconsole; do
     if ! pacman_target -Q "$package_name" >/dev/null 2>&1; then
@@ -102,6 +107,16 @@ require_link \
     "/etc/init.d/$BLUETOOTH_SERVICE"
 require_link "$rootfs/etc/runlevels/default/dbus" "/etc/init.d/dbus"
 require_link "$rootfs/etc/runlevels/boot/elogind" "/etc/init.d/elogind"
+require_link "$rootfs/etc/runlevels/boot/esysusers" "/etc/init.d/esysusers"
+require_link "$rootfs/etc/runlevels/boot/etmpfiles-setup" "/etc/init.d/etmpfiles-setup"
+require_absent_link "$rootfs/etc/runlevels/boot/hwclock"
+require_link "$rootfs/etc/runlevels/boot/swclock" "/etc/init.d/swclock"
+require_link \
+    "$rootfs/etc/runlevels/default/$CHRONY_SERVICE" \
+    "/etc/init.d/$CHRONY_SERVICE"
+require_link \
+    "$rootfs/etc/runlevels/default/$BRIGHTNESS_SERVICE" \
+    "/etc/init.d/$BRIGHTNESS_SERVICE"
 
 cmp -s \
     "$repo_root/image/artix-openrc/rootfs/NetworkManager-uconsole.conf" \
@@ -118,6 +133,19 @@ cmp -s \
 cmp -s \
     "$repo_root/image/shared/rootfs/uconsole-brightness-keys" \
     "$rootfs/usr/lib/uconsole/uconsole-brightness-keys"
+cmp -s \
+    "$repo_root/image/artix-openrc/rootfs/uconsole-brightness-keys.initd" \
+    "$rootfs/etc/init.d/$BRIGHTNESS_SERVICE"
+cmp -s \
+    "$repo_root/image/artix-openrc/rootfs/chrony-uconsole.conf" \
+    "$rootfs/etc/chrony.conf"
+grep -Fxq 'rc_need="!net"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
+grep -Fxq 'FAST_STARTUP="yes"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
+test -f "$rootfs/usr/lib/sysusers.d/chrony.conf"
+test -f "$rootfs/usr/lib/tmpfiles.d/chrony.conf"
+test -x "$rootfs/usr/bin/evtest"
+test -x "$rootfs/usr/bin/chronyd"
+test -x "$rootfs/etc/init.d/$CHRONY_SERVICE"
 
 if [[ -L "$rootfs/etc/resolv.conf" || ! -f "$rootfs/etc/resolv.conf" ]]; then
     printf 'ERROR: final Artix resolv.conf must be a regular file for NetworkManager rc-manager=file.\n' >&2

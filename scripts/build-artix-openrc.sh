@@ -7,8 +7,8 @@ workdir="${UCONSOLE_BUILD_DIR:-$repo_root/build/artix-openrc}"
 artifact_dir="${UCONSOLE_ARTIFACT_DIR:-$repo_root/out/artix-openrc}"
 rootfs_archive="${UCONSOLE_ARTIX_ROOTFS_ARCHIVE:-}"
 
-if [[ "$#" -ne 5 ]]; then
-    printf 'usage: %s LINUX_UCONSOLE_PACKAGE RPI_FIRMWARE_PACKAGE RPI_BOOTLOADER_PACKAGE NETWORK_PACKAGE_DIR BLUETOOTH_PACKAGE_DIR\n' "$0" >&2
+if [[ "$#" -ne 6 ]]; then
+    printf 'usage: %s LINUX_UCONSOLE_PACKAGE RPI_FIRMWARE_PACKAGE RPI_BOOTLOADER_PACKAGE NETWORK_PACKAGE_DIR BLUETOOTH_PACKAGE_DIR RUNTIME_PACKAGE_DIR\n' "$0" >&2
     exit 2
 fi
 
@@ -17,6 +17,7 @@ firmware_package="$(readlink -f "$2")"
 bootloader_package="$(readlink -f "$3")"
 network_package_dir="$(readlink -f "$4")"
 bluetooth_package_dir="$(readlink -f "$5")"
+runtime_package_dir="$(readlink -f "$6")"
 
 for package_file in "$kernel_package" "$firmware_package" "$bootloader_package"; do
     if [[ ! -s "$package_file" ]]; then
@@ -24,7 +25,7 @@ for package_file in "$kernel_package" "$firmware_package" "$bootloader_package";
         exit 1
     fi
 done
-for package_dir in "$network_package_dir" "$bluetooth_package_dir"; do
+for package_dir in "$network_package_dir" "$bluetooth_package_dir" "$runtime_package_dir"; do
     if [[ ! -d "$package_dir" ]]; then
         printf 'ERROR: required offline package directory is missing: %s\n' "$package_dir" >&2
         exit 1
@@ -105,6 +106,7 @@ printf 'Workspace: %s\n' "$workdir"
 printf 'Artifacts: %s\n' "$artifact_dir"
 printf 'Network package closure: %s\n' "$network_package_dir"
 printf 'Bluetooth package closure: %s\n' "$bluetooth_package_dir"
+printf 'Runtime package closure: %s\n' "$runtime_package_dir"
 
 sudo -n rm -rf "$workdir" "$artifact_dir"
 mkdir -p "$workdir" "$artifact_dir"
@@ -118,6 +120,7 @@ container_mounts=(
     -v "$bootloader_package:/input/raspberrypi-bootloader.pkg:ro"
     -v "$network_package_dir:/input/network-packages:ro"
     -v "$bluetooth_package_dir:/input/bluetooth-packages:ro"
+    -v "$runtime_package_dir:/input/runtime-packages:ro"
 )
 container_env=()
 if [[ -n "$rootfs_archive" ]]; then
@@ -154,6 +157,10 @@ printf 'Composing complete Artix/OpenRC rootfs in disposable container...\n'
 
         bash /repo/scripts/configure-artix-openrc-elogind.sh \
             /work/rootfs
+
+        bash /repo/scripts/configure-artix-openrc-runtime.sh \
+            /work/rootfs \
+            /input/runtime-packages
 
         bash /repo/scripts/finalize-artix-openrc-rootfs.sh \
             /work/rootfs
