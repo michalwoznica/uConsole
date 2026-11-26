@@ -5,6 +5,10 @@
 # - evtest for the shared uConsole brightness-key handler;
 # - chrony + chrony-openrc for network time synchronization.
 #
+# The pinned ARMtix source image already contains ntp + ntp-openrc. This
+# checkpoint intentionally replaces that stock time-sync stack with chrony, so
+# the replaced package names are part of the runtime integration contract too.
+#
 # Dependency-closure acquisition remains a host/build-orchestration concern.
 # The configurator accepts a caller-supplied package directory and verifies
 # every supplied payload is for aarch64 or any before the offline transaction.
@@ -22,6 +26,10 @@ CHRONY_PKGARCH=aarch64
 CHRONY_OPENRC_PKGNAME=chrony-openrc
 CHRONY_OPENRC_PKGVER=20210506-2
 CHRONY_OPENRC_PKGARCH=any
+
+REPLACED_NTP_PKGNAME=ntp
+REPLACED_NTP_OPENRC_PKGNAME=ntp-openrc
+REPLACED_NTP_SERVICE_NAMES="sntp ntp-client ntpd"
 
 CHRONY_SERVICE=chrony
 BRIGHTNESS_SERVICE=uconsole-brightness-keys

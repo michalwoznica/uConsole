@@ -220,8 +220,9 @@ it is not a new physical-validation candidate.
   `elogind`/`elogind-openrc` installation and native OpenRC boot-runlevel
   service, then install only the uConsole elogind drop-in that ignores normal
   power-button presses while leaving other elogind policy at upstream defaults.
-- `configure-artix-openrc-runtime.sh` — install the pinned `evtest`, `chrony`
-  and `chrony-openrc` runtime closure; enable the native OpenRC
+- `configure-artix-openrc-runtime.sh` — replace the stock ARMtix `ntp` /
+  `ntp-openrc` time-sync stack with the pinned `chrony` / `chrony-openrc`
+  runtime closure; install pinned `evtest`; enable the native OpenRC
   `uconsole-brightness-keys` service; replace RTC-dependent `hwclock` with
   OpenRC `swclock`; install the RTC-less chrony client policy; and enable native
   OpenRC `chrony` in a non-blocking, network-independent startup mode so it can

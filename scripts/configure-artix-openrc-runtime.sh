@@ -59,6 +59,17 @@ for package_name in linux-uconsole networkmanager networkmanager-openrc bluez bl
     fi
 done
 
+# The pinned ARMtix image ships its stock NTP implementation. Chrony is the
+# selected uConsole time-sync implementation, so require the known source state
+# before replacing it rather than forcing pacman through an init-timed conflict.
+for package_name in "$REPLACED_NTP_PKGNAME" "$REPLACED_NTP_OPENRC_PKGNAME"; do
+    if ! pacman_target -Q "$package_name" >/dev/null 2>&1; then
+        printf 'ERROR: pinned ARMtix stock time-sync package is missing before replacement: %s\n' \
+            "$package_name" >&2
+        exit 1
+    fi
+done
+
 require_link() {
     local path="$1"
     local target="$2"
@@ -168,6 +179,30 @@ verify_locked_package "$EVTEST_PKGNAME" "$EVTEST_PKGVER" "$EVTEST_PKGARCH"
 verify_locked_package "$CHRONY_PKGNAME" "$CHRONY_PKGVER" "$CHRONY_PKGARCH"
 verify_locked_package "$CHRONY_OPENRC_PKGNAME" "$CHRONY_OPENRC_PKGVER" "$CHRONY_OPENRC_PKGARCH"
 
+# The pinned ARMtix rootfs has been inspected directly. Its stock OpenRC NTP
+# layer consists of exactly these service/configuration names, and none of the
+# services is enabled in any runlevel. Assert that known source state before
+# replacing the stock ntp + ntp-openrc packages with chrony.
+read -r -a stock_ntp_services <<< "$REPLACED_NTP_SERVICE_NAMES"
+for service_name in "${stock_ntp_services[@]}"; do
+    if [[ ! -f "$rootfs/etc/init.d/$service_name" ]]; then
+        printf 'ERROR: pinned ARMtix stock NTP init script is missing: /etc/init.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+    if [[ ! -f "$rootfs/etc/conf.d/$service_name" ]]; then
+        printf 'ERROR: pinned ARMtix stock NTP config is missing: /etc/conf.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+    if find "$rootfs/etc/runlevels" -type l \
+        -lname "/etc/init.d/$service_name" -print -quit | grep -q .; then
+        printf 'ERROR: pinned ARMtix stock NTP service is unexpectedly enabled: %s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+done
+
 workdir="$(mktemp -d /tmp/uconsole-artix-runtime.XXXXXX)"
 system_hooks=""
 system_hooks_saved=""
@@ -264,6 +299,18 @@ fi
 target_ldconfig_mode="$(stat -Lc '%a' "$target_ldconfig")"
 chmod a-x "$target_ldconfig"
 
+printf 'Replacing stock ARMtix NTP implementation with chrony...\n'
+# Removing the old init-timed provider and installing the new provider are two
+# offline transactions, so ignore dependencies only for this temporary gap. The
+# completed runtime integration re-validates the target package database.
+pacman_target \
+    --noconfirm \
+    --noscriptlet \
+    --nosave \
+    -Rdd \
+    "$REPLACED_NTP_OPENRC_PKGNAME" \
+    "$REPLACED_NTP_PKGNAME"
+
 printf 'Installing Artix/OpenRC runtime package set...\n'
 pacman_target \
     --noconfirm \
@@ -293,13 +340,23 @@ install -Dm0644 \
     "$repo_root/image/artix-openrc/rootfs/chrony-uconsole.conf" \
     "$rootfs/etc/chrony.conf"
 
-if [[ ! -f "$rootfs/etc/conf.d/$CHRONY_SERVICE" ]]; then
+chrony_openrc_conf="$rootfs/etc/conf.d/$CHRONY_SERVICE"
+if [[ ! -f "$chrony_openrc_conf" ]]; then
     printf 'ERROR: chrony-openrc did not provide /etc/conf.d/%s.\n' "$CHRONY_SERVICE" >&2
     exit 1
 fi
-printf '\n' >> "$rootfs/etc/conf.d/$CHRONY_SERVICE"
+
+# chrony-openrc already ships defaults such as FAST_STARTUP=yes.  Normalize
+# the two uConsole-owned assignments rather than appending duplicate shell
+# variables whose effective value would depend on file order.
+awk '
+    !/^[[:space:]]*rc_need[[:space:]]*=/ &&
+    !/^[[:space:]]*FAST_STARTUP[[:space:]]*=/
+' "$chrony_openrc_conf" > "$workdir/chrony-openrc.conf"
+cat "$workdir/chrony-openrc.conf" > "$chrony_openrc_conf"
+printf '\n' >> "$chrony_openrc_conf"
 cat "$repo_root/image/artix-openrc/rootfs/chrony-uconsole-openrc.conf" >> \
-    "$rootfs/etc/conf.d/$CHRONY_SERVICE"
+    "$chrony_openrc_conf"
 
 rm -f "$rootfs/etc/runlevels/boot/hwclock"
 ln -s /etc/init.d/swclock "$rootfs/etc/runlevels/boot/swclock"
@@ -315,16 +372,36 @@ pacman_target -Q "$CHRONY_PKGNAME" |
 pacman_target -Q "$CHRONY_OPENRC_PKGNAME" |
     grep -Fxq "$CHRONY_OPENRC_PKGNAME $CHRONY_OPENRC_PKGVER"
 
+for package_name in "$REPLACED_NTP_PKGNAME" "$REPLACED_NTP_OPENRC_PKGNAME"; do
+    if pacman_target -Q "$package_name" >/dev/null 2>&1; then
+        printf 'ERROR: replaced ARMtix time-sync package remains installed: %s\n' \
+            "$package_name" >&2
+        exit 1
+    fi
+done
+for service_name in "${stock_ntp_services[@]}"; do
+    if [[ -e "$rootfs/etc/init.d/$service_name" || -L "$rootfs/etc/init.d/$service_name" ]]; then
+        printf 'ERROR: replaced ARMtix time-sync init script remains: /etc/init.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+    if [[ -e "$rootfs/etc/conf.d/$service_name" || -L "$rootfs/etc/conf.d/$service_name" ]]; then
+        printf 'ERROR: replaced ARMtix time-sync config remains: /etc/conf.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+done
+
 cmp -s \
     "$repo_root/image/artix-openrc/rootfs/uconsole-brightness-keys.initd" \
     "$rootfs/etc/init.d/$BRIGHTNESS_SERVICE"
 cmp -s \
     "$repo_root/image/artix-openrc/rootfs/chrony-uconsole.conf" \
     "$rootfs/etc/chrony.conf"
-grep -Fxq 'rc_need="!net"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
-grep -Fxq 'FAST_STARTUP="yes"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
-if [[ "$(grep -Fxc 'rc_need="!net"' "$rootfs/etc/conf.d/$CHRONY_SERVICE")" -ne 1 ||
-      "$(grep -Fxc 'FAST_STARTUP="yes"' "$rootfs/etc/conf.d/$CHRONY_SERVICE")" -ne 1 ]]; then
+grep -Fxq 'rc_need="!net"' "$chrony_openrc_conf"
+grep -Fxq 'FAST_STARTUP="yes"' "$chrony_openrc_conf"
+if [[ "$(awk '/^[[:space:]]*rc_need[[:space:]]*=/{n++} END{print n+0}' "$chrony_openrc_conf")" -ne 1 ||
+      "$(awk '/^[[:space:]]*FAST_STARTUP[[:space:]]*=/{n++} END{print n+0}' "$chrony_openrc_conf")" -ne 1 ]]; then
     printf 'ERROR: uConsole chrony OpenRC service overrides are not uniquely installed.\n' >&2
     exit 1
 fi
@@ -350,9 +427,11 @@ require_link "$rootfs/etc/runlevels/boot/elogind" "/etc/init.d/elogind"
 require_link "$rootfs/etc/runlevels/boot/esysusers" "/etc/init.d/esysusers"
 require_link "$rootfs/etc/runlevels/boot/etmpfiles-setup" "/etc/init.d/etmpfiles-setup"
 
-# Prove the runlevel delta is exactly the intended four-link runtime policy.
+# Prove the runlevel delta is exactly the intended runtime policy. The pinned
+# source has no NTP service enabled, so the only removals/additions are hwclock
+# -> swclock plus chrony and the brightness-key service.
 grep -Fvx 'boot/hwclock -> /etc/init.d/hwclock' \
-    "$workdir/runlevels.before" > "$workdir/runlevels.expected"
+    "$workdir/runlevels.before" > "$workdir/runlevels.expected" || true
 printf 'boot/swclock -> /etc/init.d/swclock\n' >> "$workdir/runlevels.expected"
 printf 'default/%s -> /etc/init.d/%s\n' \
     "$CHRONY_SERVICE" "$CHRONY_SERVICE" >> "$workdir/runlevels.expected"

@@ -89,6 +89,28 @@ require_package_version "$EVTEST_PKGNAME" "$EVTEST_PKGVER"
 require_package_version "$CHRONY_PKGNAME" "$CHRONY_PKGVER"
 require_package_version "$CHRONY_OPENRC_PKGNAME" "$CHRONY_OPENRC_PKGVER"
 
+for package_name in "$REPLACED_NTP_PKGNAME" "$REPLACED_NTP_OPENRC_PKGNAME"; do
+    if pacman_target -Q "$package_name" >/dev/null 2>&1; then
+        printf 'ERROR: replaced ARMtix time-sync package remains in final rootfs: %s\n' \
+            "$package_name" >&2
+        exit 1
+    fi
+done
+
+read -r -a replaced_ntp_services <<< "$REPLACED_NTP_SERVICE_NAMES"
+for service_name in "${replaced_ntp_services[@]}"; do
+    if [[ -e "$rootfs/etc/init.d/$service_name" || -L "$rootfs/etc/init.d/$service_name" ]]; then
+        printf 'ERROR: replaced ARMtix time-sync init script remains in final rootfs: /etc/init.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+    if [[ -e "$rootfs/etc/conf.d/$service_name" || -L "$rootfs/etc/conf.d/$service_name" ]]; then
+        printf 'ERROR: replaced ARMtix time-sync config remains in final rootfs: /etc/conf.d/%s\n' \
+            "$service_name" >&2
+        exit 1
+    fi
+done
+
 for package_name in elogind elogind-openrc dbus dbus-openrc linux-uconsole; do
     if ! pacman_target -Q "$package_name" >/dev/null 2>&1; then
         printf 'ERROR: required final Artix package is not installed: %s\n' \
@@ -139,8 +161,14 @@ cmp -s \
 cmp -s \
     "$repo_root/image/artix-openrc/rootfs/chrony-uconsole.conf" \
     "$rootfs/etc/chrony.conf"
-grep -Fxq 'rc_need="!net"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
-grep -Fxq 'FAST_STARTUP="yes"' "$rootfs/etc/conf.d/$CHRONY_SERVICE"
+chrony_openrc_conf="$rootfs/etc/conf.d/$CHRONY_SERVICE"
+grep -Fxq 'rc_need="!net"' "$chrony_openrc_conf"
+grep -Fxq 'FAST_STARTUP="yes"' "$chrony_openrc_conf"
+if [[ "$(awk '/^[[:space:]]*rc_need[[:space:]]*=/{n++} END{print n+0}' "$chrony_openrc_conf")" -ne 1 ||
+      "$(awk '/^[[:space:]]*FAST_STARTUP[[:space:]]*=/{n++} END{print n+0}' "$chrony_openrc_conf")" -ne 1 ]]; then
+    printf 'ERROR: final chrony OpenRC configuration contains duplicate uConsole-owned assignments.\n' >&2
+    exit 1
+fi
 test -f "$rootfs/usr/lib/sysusers.d/chrony.conf"
 test -f "$rootfs/usr/lib/tmpfiles.d/chrony.conf"
 test -x "$rootfs/usr/bin/evtest"

@@ -136,9 +136,10 @@ validation item on the Artix image.
 
 `runtime.lock` pins the exact top-level ARMtix aarch64 runtime package
 identities added after physical validation: `evtest`, `chrony`, and
-`chrony-openrc`. The caller supplies their complete dependency closure as an
-offline package directory, and the configurator verifies every payload is for
-`aarch64` or `any` before installation.
+`chrony-openrc`. It also records the stock ARMtix `ntp` / `ntp-openrc` package
+names that this checkpoint intentionally replaces. The caller supplies the new
+runtime dependency closure as an offline package directory, and the configurator
+verifies every supplied payload is for `aarch64` or `any` before installation.
 
 `scripts/configure-artix-openrc-runtime.sh` applies the two runtime fixes proven
 necessary on physical hardware:
@@ -152,8 +153,10 @@ necessary on physical hardware:
   showed that this CM4/uConsole exposes no `/dev/rtc*`;
 - enables OpenRC `swclock` in the boot runlevel so shutdown time is preserved
   across RTC-less boots;
-- installs `chrony` + `chrony-openrc` and enables the native OpenRC `chrony`
-  service in the default runlevel for network time correction;
+- verifies the pinned ARMtix stock NTP service files (`sntp`, `ntp-client`, and
+  `ntpd`) are present and disabled, removes the stock `ntp` + `ntp-openrc`
+  time-sync stack, then installs `chrony` + `chrony-openrc` and enables the
+  native OpenRC `chrony` service in the default runlevel for network time correction;
 - installs an RTC-less chrony client policy using the global `pool.ntp.org`
   pool with `iburst` and `makestep 1.0 3`, so a clock that starts far from real
   time can be stepped promptly once NTP becomes reachable;
@@ -165,9 +168,9 @@ necessary on physical hardware:
 - preserves the existing ARMtix boot-runlevel `esysusers` and
   `etmpfiles-setup` services, which create chrony's packaged system user and
   runtime/state directories before the default runlevel starts the `chrony` service;
-- proves that the OpenRC runlevel delta is exactly
-  `hwclock` -> `swclock` plus addition of `chrony` and
-  `uconsole-brightness-keys`.
+- proves that the OpenRC runlevel delta is exactly `hwclock` -> `swclock` plus
+  addition of `chrony` and `uconsole-brightness-keys`; the pinned source has no
+  stock NTP service enabled in a runlevel.
 
 No timezone, country, locale, or systemd service policy is introduced.
 
